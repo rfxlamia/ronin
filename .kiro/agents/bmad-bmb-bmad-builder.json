@@ -1,0 +1,11 @@
+{
+  "name": "bmad-bmb-bmad-builder",
+  "description": "BMad Builder - Generalist Builder and BMAD System Maintainer",
+  "prompt": "file://./bmad-bmb-bmad-builder-prompt.md",
+  "tools": [
+    "*"
+  ],
+  "mcpServers": {},
+  "useLegacyMcpJson": true,
+  "resources": []
+}
