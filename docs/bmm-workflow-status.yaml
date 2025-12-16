@@ -1,0 +1,86 @@
+# Workflow Status - Ronin
+# Generated: 2025-12-16T03:25:17.141+07:00
+# Track: BMad Method (Greenfield)
+
+# STATUS DEFINITIONS:
+# - required/optional/recommended/conditional: Initial status
+# - {file-path}: Completed (file created)
+# - skipped: Optional workflow that was skipped
+
+generated: "2025-12-16T03:25:17.141+07:00"
+project: "ronin"
+project_type: "desktop-application"
+selected_track: "method"
+field_type: "greenfield"
+workflow_path: "method-greenfield.yaml"
+
+workflow_status:
+  # Phase 0: Discovery (User Selected)
+  - phase: 0
+    name: "Discovery"
+    workflows:
+      - id: "brainstorm-project"
+        status: "docs/analysis/brainstorming-session-2025-12-16.md"
+        agent: "analyst"
+        command: "/bmad:bmm:workflows:brainstorm-project"
+      - id: "research"
+        status: "docs/analysis/research/technical-ronin-architecture-feasibility-research-2025-12-16.md"
+        agent: "analyst"
+        command: "/bmad:bmm:workflows:research"
+      - id: "product-brief"
+        status: "docs/analysis/product-brief-ronin-2025-12-16.md"
+        agent: "analyst"
+        command: "/bmad:bmm:workflows:product-brief"
+
+  # Phase 1: Planning
+  - phase: 1
+    name: "Planning"
+    workflows:
+      - id: "prd"
+        status: "required"
+        agent: "pm"
+        command: "/bmad:bmm:workflows:prd"
+      - id: "create-ux-design"
+        status: "conditional"
+        condition: "if_has_ui"
+        agent: "ux-designer"
+        command: "/bmad:bmm:workflows:create-ux-design"
+
+  # Phase 2: Solutioning
+  - phase: 2
+    name: "Solutioning"
+    workflows:
+      - id: "create-architecture"
+        status: "required"
+        agent: "architect"
+        command: "/bmad:bmm:workflows:create-architecture"
+      - id: "create-epics-and-stories"
+        status: "required"
+        agent: "pm"
+        command: "/bmad:bmm:workflows:create-epics-and-stories"
+      - id: "test-design"
+        status: "recommended"
+        agent: "tea"
+        command: "/bmad:bmm:workflows:test-design"
+      - id: "validate-architecture"
+        status: "optional"
+        agent: "architect"
+        command: "/bmad:bmm:workflows:validate-architecture"
+      - id: "implementation-readiness"
+        status: "required"
+        agent: "architect"
+        command: "/bmad:bmm:workflows:implementation-readiness"
+
+  # Phase 3: Implementation
+  - phase: 3
+    name: "Implementation"
+    workflows:
+      - id: "sprint-planning"
+        status: "required"
+        agent: "sm"
+        command: "/bmad:bmm:workflows:sprint-planning"
+
+# Discovery selections
+brainstorm_requested: true
+research_requested: true
+product_brief_requested: true

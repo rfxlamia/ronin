@@ -1,0 +1,11 @@
+{
+  "name": "bmad-bmm-pm",
+  "description": "John - Investigative Product Strategist + Market-Savvy PM",
+  "prompt": "file://./bmad-bmm-pm-prompt.md",
+  "tools": [
+    "*"
+  ],
+  "mcpServers": {},
+  "useLegacyMcpJson": true,
+  "resources": []
+}

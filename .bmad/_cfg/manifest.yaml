@@ -1,0 +1,11 @@
+installation:
+  version: 6.0.0-alpha.16
+  installDate: '2025-12-15T19:56:00.515Z'
+  lastUpdated: '2025-12-15T19:56:00.515Z'
+modules:
+  - core
+  - bmm
+customModules: []
+ides:
+  - antigravity
+  - kiro-cli
