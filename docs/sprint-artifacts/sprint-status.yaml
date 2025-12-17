@@ -1,0 +1,103 @@
+# generated: 2025-12-18
+# project: ronin
+# project_key: ronin
+# tracking_system: file-system
+# story_location: /home/v/project/ronin/docs/sprint-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder
+#   - ready-for-dev: Draft approved and story context created
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically drafts next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2025-12-18
+project: ronin
+project_key: ronin
+tracking_system: file-system
+story_location: /home/v/project/ronin/docs/sprint-artifacts
+
+development_status:
+  epic-1: in-progress
+  1-1-initialize-tauri-project: ready-for-dev
+  1-2-configure-design-system: backlog
+  1-3-set-up-sqlite-database: backlog
+  1-4-create-app-shell: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-empty-state-add-project-wizard: backlog
+  2-2-projectcard-component: backlog
+  2-3-health-indicators-status: backlog
+  2-4-generic-folder-mode: backlog
+  2-5-dashboard-grid-layout: backlog
+  2-6-project-search-filter: backlog
+  2-7-ronin-oath-celebration: backlog
+  2-8-remove-untrack-project: backlog
+  2-9-project-auto-detection-on-first-launch: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-openrouter-api-integration: backlog
+  3-2-git-history-analysis: backlog
+  3-3-contextpanel-component: backlog
+  3-4-ai-context-generation: backlog
+  3-5-ai-attribution-display: backlog
+  3-6-error-states-offline-mode: backlog
+  3-7-devlog-analysis-for-ai-context: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-devlog-editor-component: backlog
+  4-2-file-sync-with-repository: backlog
+  4-3-devlog-history-view: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-git-status-display: backlog
+  5-2-one-click-commit: backlog
+  5-3-one-click-push-with-guardrails: backlog
+  5-4-edge-case-handling: backlog
+  5-5-distinguish-git-vs-folder-projects: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-window-title-tracking-x11: backlog
+  6-2-window-title-tracking-wayland-gnome: backlog
+  6-3-file-modification-tracking: backlog
+  6-4-context-aggregator: backlog
+  6-5-privacy-controls: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-system-tray-icon: backlog
+  7-2-global-hotkey: backlog
+  7-3-desktop-notifications: backlog
+  7-4-settings-panel: backlog
+  7-5-update-check-notification: backlog
+  7-6-local-telemetry-opt-in: backlog
+  7-7-startup-on-boot-toggle: backlog
+  epic-7-retrospective: optional
