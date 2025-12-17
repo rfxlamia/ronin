@@ -1,0 +1,55 @@
+- [community/zapier.md](community/zapier.md): Connect OpenRouter with 8000+ apps using the Zapier integration.
+- [community/xcode.md](community/xcode.md): Integrate OpenRouter with Apple Intelligence in Xcode 26.
+- [community/vercel-ai-sdk.md](community/vercel-ai-sdk.md): Integrate OpenRouter using the Vercel AI SDK for Next.js applications.
+- [community/pydantic-ai.md](community/pydantic-ai.md): Use PydanticAI's high-level interface to work with OpenRouter models in Python.
+- [community/openai-sdk.md](community/openai-sdk.md): Use the official OpenAI SDKs (Python/Node.js) to interact with the OpenRouter API.
+- [community/mastra.md](community/mastra.md): Integrate OpenRouter with Mastra for unified AI model access using the OpenRouter AI provider.
+- [community/langfuse.md](community/langfuse.md): Use Langfuse for observability and tracing of OpenRouter API calls in Python.
+- [community/livekit.md](community/livekit.md): Build voice AI agents with access to 500+ models using the LiveKit Agents framework and OpenRouter.
+- [community/langchain.md](community/langchain.md): Integrate OpenRouter with LangChain for Python and JavaScript using OpenAI compatibility.
+- [community/arize.md](community/arize.md): Use Arize and OpenInference for observability and tracing of OpenRouter LLM applications.
+- [community/effect-ai-sdk.md](community/effect-ai-sdk.md): Integrate OpenRouter into TypeScript Effect applications using the Effect AI SDK.
+- [community/frameworks-and-integrations-overview.md](community/frameworks-and-integrations-overview.md): Overview of OpenRouter integrations with popular frameworks like LangChain, LlamaIndex, and OpenAI SDK.
+- [guides/distillation.md](guides/distillation.md): Filter for models that allow training on their outputs to ensure compliance with distillation policies.
+- [guides/user-tracking.md](guides/user-tracking.md): Use the `user` parameter to track your sub-users for improved caching, load balancing, and detailed reporting.
+- [guides/activity-export.md](guides/activity-export.md): Export OpenRouter usage data as CSV or PDF reports, grouped by API key, model, or organization member.
+- [guides/usage-accounting.md](guides/usage-accounting.md): Get real-time token counts, costs, and cache usage in API responses by enabling the `usage` parameter.
+- [guides/for-providers.md](guides/for-providers.md): Providers can list models on OpenRouter by implementing a model list endpoint and ensuring reliable uptime.
+- [guides/organization-management.md](guides/organization-management.md): Create organizations to share credits, manage API keys centrally, and collaborate with team members.
+- [guides/mcp-servers.md](guides/mcp-servers.md): Use Anthropic's Model Context Protocol (MCP) servers with OpenRouter to give LLMs access to tools and data.
+- [guides/crypto-api.md](guides/crypto-api.md): Programmatically purchase OpenRouter credits using cryptocurrency (ETH, USDC) via the Coinbase integration.
+- [best-practices/reasoning-tokens.md](best-practices/reasoning-tokens.md): Control reasoning (thinking) tokens in supported models using the `reasoning` parameter for enhanced output quality and transparency.
+- [best-practices/uptime-optimization.md](best-practices/uptime-optimization.md): OpenRouter maximizes uptime through real-time monitoring and intelligent routing, with customizable fallback options.
+- [best-practices/prompt-caching.md](best-practices/prompt-caching.md): Reduce costs and latency by caching prompts with supported providers like Anthropic, OpenAI, and Google.
+- [best-practices/latency-and-performance.md](best-practices/latency-and-performance.md): OpenRouter adds minimal latency (~15ms) via edge computing and efficient caching, with best practices for optimization.
+- [privacy/logging.md](privacy/logging.md): Control data retention and training policies per provider, with options to opt-out of training and restrict routing.
+- [privacy/data-collection.md](privacy/data-collection.md): OpenRouter does not store prompts or responses unless enabled, but collects metadata for reporting and ranking.
+- [broadcast/weave.md](broadcast/weave.md): Connect W&B Weave to OpenRouter Broadcast to automatically receive and visualize traces from your API requests.
+- [broadcast/braintrust.md](broadcast/braintrust.md): Connect Braintrust to OpenRouter Broadcast for end-to-end evaluation and monitoring of your LLM applications.
+- [broadcast/datadog.md](broadcast/datadog.md): Connect Datadog LLM Observability to OpenRouter Broadcast for root cause analysis and performance monitoring.
+- [broadcast/langfuse.md](broadcast/langfuse.md): Connect Langfuse to OpenRouter Broadcast to automatically trace and debug your LLM applications.
+- [broadcast/broadcast-overview.md](broadcast/broadcast-overview.md): Broadcast allows you to automatically send OpenRouter request traces to multiple observability platforms like Langfuse, Datadog, and Weave.
+- [app-attribution.md](app-attribution.md): Attribute your API usage to your app using `HTTP-Referer` and `X-Title` headers to appear in rankings and access analytics.
+- [zdr.md](zdr.md): OpenRouter's Zero Data Retention (ZDR) policy ensures that your data is not stored or trained on by providers if you opt-in.
+- [zero-completion-insurance.md](zero-completion-insurance.md): Automatically avoid charges for failed or empty AI responses with OpenRouter's zero completion insurance.
+- [routers/body-builder.md](routers/body-builder.md): Use natural language to generate parallel OpenRouter API requests for multiple models using the Body Builder model.
+- [routers/auto-router.md](routers/auto-router.md): Automatically select the best model for your prompt using OpenRouter's Auto Router, powered by NotDiamond.
+- [model-routing.md](model-routing.md): Route requests dynamically between models using the Auto Router or the `models` fallback parameter.
+- [message-transforms.md](message-transforms.md): Optimize context window usage with "middle-out" compression to fit prompts within model limits.
+- [structured-outputs.md](structured-outputs.md): Enforce JSON Schema validation on model responses to ensure consistent, type-safe outputs.
+- [model-variants/free.md](model-variants/free.md): Access free model versions using the `:free` variant suffix.
+- [provider-selection.md](provider-selection.md): Customize routing with `provider` preferences (sort, order, ignore, allow, data policy) to optimize for cost, performance, and compliance.
+- [model-fallbacks.md](model-fallbacks.md): Automatically failover to backup models if the primary model is unavailable using the `models` array.
+- [auto-model-selection.md](auto-model-selection.md): Automatically select the best model for your prompt using the `openrouter/auto` model ID.
+- [faq.md](faq.md): Answers to common questions about OpenRouter's API, models, pricing, authentication, and support.
+- [auth/byok.md](auth/byok.md): Use your own provider API keys (BYOK) with OpenRouter to manage rate limits and costs directly.
+- [auth/provisioning-api-keys.md](auth/provisioning-api-keys.md): Programmatically create and manage API keys using the provisioning endpoints.
+- [auth/oauth.md](auth/oauth.md): Implement secure user authentication using OAuth PKCE to connect users to OpenRouter.
+- [multimodal/videos.md](multimodal/videos.md): Send video files (URLs or base64) to compatible models for analysis and description.
+- [multimodal/pdfs.md](multimodal/pdfs.md): Process PDF documents (text-based or scanned) with any model using direct URLs or base64 data.
+- [multimodal/image-generation.md](multimodal/image-generation.md): Generate images from text prompts using models with image output capabilities.
+- [multimodal/images.md](multimodal/images.md): Send images to vision models via the API using URLs or base64 encoding for analysis.
+- [multimodal/overview.md](multimodal/overview.md): Overview of OpenRouter's multimodal capabilities, including support for images, PDFs, audio, and video inputs.
+- [models.md](models.md): Browse and access 400+ AI models through the standardized Models API with comprehensive metadata and pricing.
+- [principles.md](principles.md): OpenRouter's mission is to provide the best prices, performance, and availability through a unified, standardized API.
+- [quickstart.md](quickstart.md): Get started with OpenRouter's unified API using the OpenRouter SDK, OpenAI SDK, or direct API calls.

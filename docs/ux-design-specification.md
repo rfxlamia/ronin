@@ -1,5 +1,6 @@
 ---
-stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+lastStep: 14
 inputDocuments: 
   - docs/prd.md
   - docs/analysis/product-brief-ronin-2025-12-16.md
@@ -839,3 +840,391 @@ flowchart TD
 | **Onboarding** | Time to first project visible | <30s |
 | **Morning Ritual** | Time to oriented | <5s |
 | **One-Click Commit** | Clicks to commit | ≤3 |
+
+## Component Strategy
+
+### Design System Components (shadcn/ui)
+
+**Available and will use:**
+
+| Component | Ronin Usage |
+|-----------|-------------|
+| **Button** | CTAs, actions (with Libre Baskerville override) |
+| **Card** | Base for ProjectCard |
+| **Collapsible** | ProjectCard expand/collapse (Radix-based, accessible) |
+| **Input** | Search, commit message |
+| **Badge** | Status indicators base |
+| **Dialog** | Confirmations, settings |
+| **Dropdown** | Editor selection, filters |
+| **Textarea** | DEVLOG editor |
+| **Toast** | Success/error notifications |
+| **Skeleton** | Loading states |
+| **Tooltip** | Help text, attribution details |
+
+### Custom Components
+
+#### 1. ProjectCard
+
+**Purpose:** Display project with health status, expandable to show AI context
+
+**Anatomy:**
+```
+┌─────────────────────────────────────┐
+│ [Title: Libre Baskerville]  [Badge] │
+│ branch · uncommitted · last active  │  ← Collapsed
+├─────────────────────────────────────┤
+│ AI Context (when expanded)          │
+│ • Last session: ...                 │
+│ • Stuck on: ...                     │
+│ • Suggestion: ...                   │
+│ 🔀 15 edits · 🔍 3 searches         │  ← Attribution
+│ [Open in IDE]                       │  ← CTA
+└─────────────────────────────────────┘
+```
+
+**States:** Collapsed, Expanded, Loading (meditation animation), Error
+
+**Variants:** Git project, Generic folder (no git info)
+
+**Implementation:** Use Radix Collapsible (via shadcn) - handles keyboard nav and ARIA by default
+
+---
+
+#### 2. HealthBadge
+
+**Purpose:** Visual status indicator with icon + color
+
+**Variants:**
+
+| Status | Icon (MVP) | Icon (v0.3) | Color |
+|--------|------------|-------------|-------|
+| Active | 🔥 | Custom flame SVG | Green tint |
+| Dormant | 😴 | Custom moon SVG | Gray/muted |
+| Stuck | ⚠️ | Custom knot SVG | Amber |
+| Attention | 📌 | Custom pin SVG | Antique Brass |
+
+**Accessibility:** Icon + color + text (not color-only)
+
+---
+
+#### 3. ContextPanel
+
+**Purpose:** Display AI-generated context with visible attribution
+
+**Anatomy:**
+```
+┌─────────────────────────────────────┐
+│ Context Recovery          [Refresh] │
+├─────────────────────────────────────┤
+│ Last session: Nov 23                │
+│ You were editing: auth.rs:142       │
+│ Stuck on: Lifetime mismatch         │
+│ Suggestion: Try Arc<Mutex<>>        │
+├─────────────────────────────────────┤
+│ Based on: 🔀 15 · 🔍 3 · 📝 DEVLOG  │  ← Always visible
+│ [▼ View sources]                    │  ← Expandable
+└─────────────────────────────────────┘
+```
+
+**States:** 
+- `idle` - Nothing or placeholder
+- `streaming` - Show chunks as they arrive
+- `complete` - Full context + attribution
+- `error` - Error message + retry button
+
+**Implementation:** Simple state machine with useState
+
+---
+
+#### 4. RoninLoader
+
+**Purpose:** Loading animation that feels like ritual, not waiting
+
+**Variants:**
+
+| Phase | Variant | Animation |
+|-------|---------|-----------|
+| **MVP v0.2** | Pulse | Static ronin silhouette, scale pulse (1.0 → 1.02 → 1.0), 2s loop |
+| **MVP v0.3** | Meditation | Ronin sitting with subtle breathing, Lottie animation |
+| **MVP v0.3** | Ready | Smooth transition to standing stance on complete |
+
+**Accessibility:** `prefers-reduced-motion` → opacity fade (0.7 → 1.0 → 0.7)
+
+---
+
+#### 5. ResumeButton
+
+**Purpose:** Quick shortcut to last session
+
+**Anatomy:**
+```
+┌─────────────────────────────────────┐
+│ ↩ Resume: chippy                    │
+│   feature/login · 2 hours ago       │
+└─────────────────────────────────────┘
+```
+
+**States:** Visible (recent session exists), Hidden (no recent session)
+
+---
+
+#### 6. EmptyState
+
+**Purpose:** First-time user welcome, zero projects
+
+**Anatomy:**
+```
+┌─────────────────────────────────────┐
+│      [Ronin illustration]           │
+│                                     │
+│   Your journey begins.              │
+│   Add your first project to start.  │
+│                                     │
+│      [Add Project] (CTA)            │
+└─────────────────────────────────────┘
+```
+
+**Priority:** MVP v0.1 - first emotional touchpoint for new users
+
+---
+
+#### 7. ErrorState
+
+**Purpose:** Reusable error display with recovery action
+
+**Anatomy:**
+```
+┌─────────────────────────────────────┐
+│   [Ronin sharpening blade]          │
+│                                     │
+│   Something went wrong.             │
+│   [Retry] [View details]            │
+└─────────────────────────────────────┘
+```
+
+**Variants:** Network error, AI error, Generic error
+
+---
+
+### Implementation Roadmap
+
+| Phase | Components | Needed For |
+|-------|------------|------------|
+| **MVP v0.1** | ProjectCard (basic), HealthBadge (emoji), EmptyState, Button, Input, Card | Dashboard, onboarding |
+| **MVP v0.2** | ContextPanel, RoninLoader (pulse), ErrorState, Toast, Dialog | AI integration, feedback |
+| **MVP v0.3** | HealthBadge (custom SVG), RoninLoader (Lottie), ResumeButton, Command palette | Polish, power users |
+
+### Component Testing Strategy
+
+| Component | Test Focus |
+|-----------|------------|
+| **ProjectCard** | Expand/collapse, keyboard nav, screen reader |
+| **HealthBadge** | All variants render, not color-only |
+| **ContextPanel** | Streaming states, error recovery |
+| **RoninLoader** | Reduced motion respected |
+| **EmptyState** | CTA clickable, illustration loads |
+
+**Tools:** Storybook for visual testing + Playwright for interaction tests
+
+## UX Consistency Patterns
+
+### Button Hierarchy
+
+| Level | Font | Style | Use Case |
+|-------|------|-------|----------|
+| **Primary** | Libre Baskerville | Antique Brass bg, white text | Main CTAs: "Add Project", "Open in IDE" |
+| **Secondary** | Work Sans | Border only, no fill | Supporting actions: "View DEVLOG", "Commit" |
+| **Tertiary** | Work Sans | Text only, underline on hover | Minor actions: "Cancel", "Skip" |
+| **Destructive** | Work Sans | Red tint | Dangerous: "Delete", "Remove" |
+
+**Spacing:** Always 16px between adjacent buttons
+
+### Feedback Patterns
+
+| Type | Visual | Duration | Use Case |
+|------|--------|----------|----------|
+| **Success** | Toast, green tint, ✓ icon | 3 seconds, auto-dismiss | Commit success, push success |
+| **Error** | Toast, red tint, ✗ icon | Persistent until dismissed | API error, git error |
+| **Warning** | Inline, amber tint, ⚠️ | Persistent | "Remote has changes" |
+| **Info** | Inline, gray, ℹ️ | Persistent | Tips, first-time hints |
+| **Loading** | RoninLoader animation | Until complete | AI context, initial load |
+
+**AI Streaming Feedback:**
+
+| Phase | Visual | Text |
+|-------|--------|------|
+| **Connecting** | Pulse | "Connecting to AI..." |
+| **Streaming** | Chunks appear | None - content IS feedback |
+| **Complete** | Checkmark flash | None |
+| **Timeout** | Warning | "Taking longer than usual..." |
+
+**Principle:** Errors persist, success auto-dismisses. Streaming is its own feedback.
+
+### Form Patterns
+
+| Element | Behavior |
+|---------|----------|
+| **Input focus** | Antique Brass border ring |
+| **Validation timing** | On blur (not on keystroke) |
+| **Validation error** | Inline error below field, red text |
+| **Required fields** | Asterisk (*) after label |
+| **Placeholder** | Friar Gray, disappears on focus |
+| **Disabled** | 50% opacity, cursor not-allowed |
+
+**Commit message input:**
+- Placeholder: "Describe your changes..."
+- Submit on Enter (Cmd+Enter for multiline)
+
+### Navigation Patterns
+
+| Pattern | Implementation |
+|---------|----------------|
+| **Primary nav** | Top bar with logo, search, add button |
+| **Project switching** | Click card on dashboard (no sidebar in MVP) |
+| **Back navigation** | Collapse card returns to dashboard view |
+| **Global hotkey** | Ctrl+Alt+R opens/focuses Ronin |
+
+**No page navigation** - everything happens on dashboard with expanding cards.
+
+### Keyboard Shortcuts
+
+| Shortcut | Action | Scope |
+|----------|--------|-------|
+| `Ctrl+Alt+R` | Open/focus Ronin | Global (system) |
+| `Ctrl+K` | Focus search | In-app |
+| `Escape` | Close expanded card / Clear search | In-app |
+| `Enter` | Expand focused card | In-app |
+| `Tab` | Navigate between cards | In-app |
+
+Documented in Settings → Keyboard Shortcuts
+
+### Confirmation Patterns
+
+| Action | Confirmation? | Reason |
+|--------|---------------|--------|
+| **Commit** | No | Reversible (git reset) |
+| **Push** | Only if remote ahead | Prevent conflicts |
+| **Archive project** | Yes | Hides from view |
+| **Delete project** | Yes + type name | Destructive |
+| **Remove from tracking** | Yes | Loses history |
+
+**Principle:** Confirm destructive actions only. Skip reversible ones.
+
+### Empty & Loading States
+
+| State | Visual | Message |
+|-------|--------|---------|
+| **Empty dashboard** | Ronin illustration | "Your journey begins. Add your first project." |
+| **No AI data** | Subtle placeholder | "Keep working, I'm learning your patterns." |
+| **Loading (quick)** | Skeleton shimmer | No text |
+| **Loading (AI)** | RoninLoader meditation | "Analyzing your activity..." |
+| **Error** | Ronin sharpening blade | "Something went wrong. [Retry]" |
+
+### Animation Patterns
+
+**Animation Tokens:**
+```css
+--animation-fast: 100ms;
+--animation-normal: 200ms;
+--animation-slow: 300ms;
+--easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+```
+
+| Animation | Duration | Easing | Reduced Motion |
+|-----------|----------|--------|----------------|
+| **Card expand** | 200ms | ease-out | Instant |
+| **Toast appear** | 150ms | ease-out | Instant |
+| **Hover states** | 100ms | ease | No change |
+| **RoninLoader** | 2000ms loop | ease-in-out | Opacity pulse |
+
+**Reduced Motion Support:**
+```css
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; }
+}
+```
+
+**Principle:** Animations are subtle, purposeful. Never block interaction.
+
+## Responsive Design & Accessibility
+
+### Responsive Strategy
+
+**Platform:** Desktop application (Tauri) - Linux first, Windows/macOS later
+
+**Desktop-only for MVP** - No mobile/tablet version planned.
+
+**Window Size Adaptation:**
+
+| Window Size | Layout | Card Grid |
+|-------------|--------|-----------|
+| **Small** (<900px) | Single column | 1 card per row |
+| **Medium** (900-1200px) | Two columns | 2 cards per row |
+| **Large** (>1200px) | Three columns | 3 cards per row |
+
+**Minimum Window Size:** 800 x 600px (enforced by Tauri)
+
+### Breakpoint Strategy
+
+**Desktop-focused breakpoints:**
+
+```css
+--bp-single: 900px;   /* 1 column */
+--bp-double: 1200px;  /* 2 columns */
+/* Above 1200px: 3 columns */
+```
+
+**Approach:** Desktop-first (not mobile-first) since this is a desktop app.
+
+### Accessibility Strategy
+
+**Target:** WCAG 2.1 Level AA
+
+| Requirement | Implementation |
+|-------------|----------------|
+| **Color contrast** | ≥4.5:1 for text, ≥3:1 for UI elements |
+| **Not color-only** | Status uses icon + color + text |
+| **Keyboard navigation** | All actions accessible via keyboard |
+| **Focus indicators** | Visible focus ring (Antique Brass) |
+| **Screen reader** | ARIA labels on custom components |
+| **Reduced motion** | Respect `prefers-reduced-motion` |
+| **Font scaling** | Support system font size preferences |
+
+**Component-Specific Accessibility:**
+
+| Component | Accessibility Need |
+|-----------|-------------------|
+| **ProjectCard** | Keyboard expand/collapse, announce status |
+| **HealthBadge** | Not color-only (icon + text) |
+| **ContextPanel** | Announce when AI content streams in |
+| **RoninLoader** | Reduced motion alternative |
+
+### Testing Strategy
+
+**Accessibility Testing:**
+
+| Tool | Purpose |
+|------|---------|
+| **axe DevTools** | Automated WCAG checking |
+| **Lighthouse** | Accessibility audit |
+| **Keyboard-only** | Manual navigation test |
+| **Screen reader** | Orca (Linux), NVDA (Windows) |
+
+**Window Size Testing:**
+- 800x600 (minimum)
+- 1920x1080 (common)
+- 2560x1440 (large)
+
+### Implementation Guidelines
+
+**Responsive:**
+- CSS Grid for card layout
+- `clamp()` for fluid typography
+- Test window resize behavior
+
+**Accessibility:**
+- Semantic HTML (`<main>`, `<nav>`, `<article>`)
+- ARIA labels on interactive elements
+- Focus trap in dialogs
+- Skip link to main content
+- Announce dynamic content changes (AI streaming)
