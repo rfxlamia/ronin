@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ronin - Design Directions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ronin-primary: #CC785C;
+      --ronin-secondary: #828179;
+      --ronin-background: #F0EFEA;
+      --ronin-surface: #FFFFFF;
+      --ronin-text: #141413;
+      --ronin-border: #e0dfda;
+      --font-serif: 'Libre Baskerville', Georgia, serif;
+      --font-sans: 'Work Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    .dark {
+      --ronin-background: #141413;
+      --ronin-surface: #1a1a19;
+      --ronin-text: #F0EFEA;
+      --ronin-border: #2a2a28;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--ronin-background);
+      color: var(--ronin-text);
+      line-height: 1.6;
+    }
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: var(--ronin-surface);
+      border-bottom: 1px solid var(--ronin-border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+    }
+    .nav h1 { font-size: 1.25rem; font-weight: 600; }
+    .nav-links { display: flex; gap: 1rem; }
+    .nav-links a {
+      color: var(--ronin-secondary);
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      background: var(--ronin-primary);
+      color: white;
+    }
+    .theme-toggle {
+      background: var(--ronin-border);
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    main { padding-top: 80px; }
+    .section {
+      min-height: 100vh;
+      padding: 3rem;
+      display: none;
+    }
+    .section.active { display: block; }
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      font-family: var(--font-serif);
+    }
+    .section-desc {
+      color: var(--ronin-secondary);
+      margin-bottom: 2rem;
+      max-width: 600px;
+    }
+    .mockup-container {
+      background: var(--ronin-surface);
+      border-radius: 12px;
+      border: 1px solid var(--ronin-border);
+      overflow: hidden;
+      max-width: 1200px;
+    }
+    /* Direction 1: Clean Minimal */
+    .d1-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--ronin-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .d1-logo { font-weight: 600; font-size: 1.125rem; font-family: var(--font-serif); }
+    .d1-search {
+      background: var(--ronin-background);
+      border: 1px solid var(--ronin-border);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      width: 300px;
+      font-family: var(--font-sans);
+    }
+    .d1-content { padding: 1.5rem; }
+    .d1-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1rem;
+    }
+    .d1-card {
+      background: var(--ronin-background);
+      border-radius: 8px;
+      padding: 1.25rem;
+      border: 1px solid var(--ronin-border);
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .d1-card:hover {
+      border-color: var(--ronin-primary);
+      transform: translateY(-2px);
+    }
+    .d1-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+    .d1-card-title { font-weight: 600; font-size: 1rem; font-family: var(--font-serif); }
+    .d1-badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .d1-badge.dormant { background: #f5f5f5; color: #757575; }
+    .d1-badge.stuck { background: #fff3e0; color: #e65100; }
+    .d1-card-meta {
+      font-size: 0.875rem;
+      color: var(--ronin-secondary);
+      font-family: var(--font-mono);
+    }
+    .d1-card-context {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--ronin-border);
+      font-size: 0.875rem;
+    }
+    .d1-card-context strong { color: var(--ronin-primary); }
+    .d1-attribution {
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--ronin-secondary);
+      font-family: var(--font-mono);
+    }
+    /* CTA Button with Serif */
+    .btn-cta {
+      font-family: var(--font-serif);
+      background: var(--ronin-primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+    .btn-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <h1>浪人 Ronin - Design Directions</h1>
+    <div class="nav-links">
+      <a href="#d1" class="active" onclick="showSection('d1')">1. Clean Minimal</a>
+      <a href="#d2" onclick="showSection('d2')">2. Dense Dashboard</a>
+      <a href="#d3" onclick="showSection('d3')">3. Sidebar Nav</a>
+      <a href="#d4" onclick="showSection('d4')">4. Card Expanded</a>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙 Dark</button>
+  <main>
+    <!-- Direction 1: Clean Minimal -->
+    <section id="d1" class="section active">
+      <h2 class="section-title">Direction 1: Clean Minimal</h2>
+      <p class="section-desc">Claude-inspired. Maximum whitespace, content-first. Cards breathe. Information hierarchy through spacing, not decoration.</p>
+      <div class="mockup-container">
+        <div class="d1-header">
+          <span class="d1-logo">浪人 Ronin</span>
+          <input type="text" class="d1-search" placeholder="Search projects... (Ctrl+K)">
+          <button class="btn-cta">Add Project</button>
+        </div>
+        <div class="d1-content">
+          <div class="d1-grid">
+            <div class="d1-card">
+              <div class="d1-card-header">
+                <span class="d1-card-title">chippy</span>
+                <span class="d1-badge dormant">😴 21 days</span>
+              </div>
+              <div class="d1-card-meta">feature/login · 3 uncommitted</div>
+              <div class="d1-card-context">
+                <strong>Last session:</strong> Debugging token refresh in auth.rs:142<br>
+                <strong>Stuck on:</strong> Lifetime mismatch error<br>
+                <strong>Suggestion:</strong> Try Arc&lt;Mutex&lt;&gt;&gt; pattern
+              </div>
+              <div class="d1-attribution">Based on: 🔀 15 edits · 🔍 3 searches</div>
+              <button class="btn-cta" style="margin-top:1rem;width:100%;">Open in IDE</button>
+            </div>
+            <div class="d1-card">
+              <div class="d1-card-header">
+                <span class="d1-card-title">ronin</span>
+                <span class="d1-badge">🔥 Active</span>
+              </div>
+              <div class="d1-card-meta">main · 0 uncommitted</div>
+            </div>
+            <div class="d1-card">
+              <div class="d1-card-header">
+                <span class="d1-card-title">freelance-client</span>
+                <span class="d1-badge stuck">⚠️ Stuck</span>
+              </div>
+              <div class="d1-card-meta">main · 5 uncommitted</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Direction 2: Dense Dashboard -->
+    <section id="d2" class="section">
+      <h2 class="section-title">Direction 2: Dense Dashboard</h2>
+      <p class="section-desc">Linear-inspired. Information-dense but organized. More projects visible at once. Power-user focused.</p>
+      <div class="mockup-container">
+        <div class="d1-header">
+          <span class="d1-logo">浪人 Ronin</span>
+          <div style="display:flex;gap:0.5rem;">
+            <span style="padding:0.5rem 1rem;background:var(--ronin-primary);color:white;border-radius:4px;font-size:0.875rem;">All (15)</span>
+            <span style="padding:0.5rem 1rem;background:var(--ronin-background);border-radius:4px;font-size:0.875rem;">Active (3)</span>
+            <span style="padding:0.5rem 1rem;background:var(--ronin-background);border-radius:4px;font-size:0.875rem;">Dormant (8)</span>
+            <span style="padding:0.5rem 1rem;background:var(--ronin-background);border-radius:4px;font-size:0.875rem;">Stuck (2)</span>
+          </div>
+          <button class="btn-cta">+ Add</button>
+        </div>
+        <div style="padding:1rem;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
+            <thead>
+              <tr style="text-align:left;color:var(--ronin-secondary);border-bottom:1px solid var(--ronin-border);">
+                <th style="padding:0.75rem;">Project</th>
+                <th style="padding:0.75rem;">Status</th>
+                <th style="padding:0.75rem;">Branch</th>
+                <th style="padding:0.75rem;">Last Activity</th>
+                <th style="padding:0.75rem;">Context</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid var(--ronin-border);cursor:pointer;" onmouseover="this.style.background='var(--ronin-background)'" onmouseout="this.style.background='transparent'">
+                <td style="padding:0.75rem;font-weight:500;">chippy</td>
+                <td style="padding:0.75rem;"><span class="d1-badge dormant">😴 Dormant</span></td>
+                <td style="padding:0.75rem;font-family:var(--font-mono);">feature/login</td>
+                <td style="padding:0.75rem;">21 days ago</td>
+                <td style="padding:0.75rem;color:var(--ronin-secondary);">Stuck on lifetime issue</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--ronin-border);cursor:pointer;" onmouseover="this.style.background='var(--ronin-background)'" onmouseout="this.style.background='transparent'">
+                <td style="padding:0.75rem;font-weight:500;">ronin</td>
+                <td style="padding:0.75rem;"><span class="d1-badge">🔥 Active</span></td>
+                <td style="padding:0.75rem;font-family:var(--font-mono);">main</td>
+                <td style="padding:0.75rem;">2 hours ago</td>
+                <td style="padding:0.75rem;color:var(--ronin-secondary);">Working on UX spec</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--ronin-border);cursor:pointer;" onmouseover="this.style.background='var(--ronin-background)'" onmouseout="this.style.background='transparent'">
+                <td style="padding:0.75rem;font-weight:500;">freelance-client</td>
+                <td style="padding:0.75rem;"><span class="d1-badge stuck">⚠️ Stuck</span></td>
+                <td style="padding:0.75rem;font-family:var(--font-mono);">main</td>
+                <td style="padding:0.75rem;">5 days ago</td>
+                <td style="padding:0.75rem;color:var(--ronin-secondary);">5 uncommitted changes</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Direction 3: Sidebar Navigation -->
+    <section id="d3" class="section">
+      <h2 class="section-title">Direction 3: Sidebar Navigation</h2>
+      <p class="section-desc">VS Code / GitHub Desktop inspired. Persistent sidebar for quick project switching. Main area for detail.</p>
+      <div class="mockup-container" style="display:flex;min-height:500px;">
+        <div style="width:250px;border-right:1px solid var(--ronin-border);padding:1rem;background:var(--ronin-background);">
+          <div style="font-weight:600;margin-bottom:1rem;font-size:0.875rem;color:var(--ronin-secondary);">PROJECTS</div>
+          <div style="display:flex;flex-direction:column;gap:0.25rem;">
+            <div style="padding:0.5rem 0.75rem;background:var(--ronin-primary);color:white;border-radius:4px;display:flex;justify-content:space-between;align-items:center;">
+              <span>chippy</span><span style="font-size:0.75rem;">😴</span>
+            </div>
+            <div style="padding:0.5rem 0.75rem;border-radius:4px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+              <span>ronin</span><span style="font-size:0.75rem;">🔥</span>
+            </div>
+            <div style="padding:0.5rem 0.75rem;border-radius:4px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+              <span>freelance-client</span><span style="font-size:0.75rem;">⚠️</span>
+            </div>
+          </div>
+        </div>
+        <div style="flex:1;padding:1.5rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+            <div>
+              <h3 style="font-size:1.5rem;font-weight:600;">chippy</h3>
+              <span style="font-family:var(--font-mono);color:var(--ronin-secondary);font-size:0.875rem;">feature/login · 3 uncommitted · 21 days inactive</span>
+            </div>
+            <button class="btn-cta">Open in IDE</button>
+          </div>
+          <div style="background:var(--ronin-background);padding:1.25rem;border-radius:8px;margin-bottom:1rem;">
+            <div style="font-weight:600;margin-bottom:0.5rem;color:var(--ronin-primary);">AI Context</div>
+            <p style="margin-bottom:0.5rem;">Last session: Debugging token refresh in <code style="font-family:var(--font-mono);background:var(--ronin-surface);padding:0.125rem 0.25rem;border-radius:2px;">auth.rs:142</code></p>
+            <p style="margin-bottom:0.5rem;">Stuck on: Lifetime mismatch error</p>
+            <p>Suggestion: Try <code style="font-family:var(--font-mono);background:var(--ronin-surface);padding:0.125rem 0.25rem;border-radius:2px;">Arc&lt;Mutex&lt;&gt;&gt;</code> pattern</p>
+            <div style="margin-top:0.75rem;font-size:0.75rem;color:var(--ronin-secondary);font-family:var(--font-mono);">Based on: 🔀 15 edits · 🔍 3 searches · 📝 DEVLOG</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Direction 4: Expanded Card Focus -->
+    <section id="d4" class="section">
+      <h2 class="section-title">Direction 4: Expanded Card Focus</h2>
+      <p class="section-desc">Card expands in-place when clicked. Context appears within the card. No page navigation needed.</p>
+      <div class="mockup-container">
+        <div class="d1-header">
+          <span class="d1-logo">浪人 Ronin</span>
+          <input type="text" class="d1-search" placeholder="Search projects...">
+          <button class="btn-cta">Add Project</button>
+        </div>
+        <div class="d1-content">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+            <!-- Expanded Card -->
+            <div style="grid-column:span 2;background:var(--ronin-background);border-radius:8px;padding:1.5rem;border:2px solid var(--ronin-primary);">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
+                <div>
+                  <div style="font-weight:600;font-size:1.25rem;">chippy</div>
+                  <div style="font-family:var(--font-mono);color:var(--ronin-secondary);font-size:0.875rem;">feature/login · 3 uncommitted</div>
+                </div>
+                <span class="d1-badge dormant">😴 21 days</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+                <div>
+                  <div style="font-weight:600;color:var(--ronin-primary);margin-bottom:0.5rem;">Context Recovery</div>
+                  <p style="font-size:0.875rem;margin-bottom:0.5rem;"><strong>Last session:</strong> Debugging token refresh</p>
+                  <p style="font-size:0.875rem;margin-bottom:0.5rem;"><strong>File:</strong> <code style="font-family:var(--font-mono);">auth.rs:142</code></p>
+                  <p style="font-size:0.875rem;margin-bottom:0.5rem;"><strong>Stuck on:</strong> Lifetime mismatch</p>
+                  <p style="font-size:0.875rem;"><strong>Suggestion:</strong> Try Arc&lt;Mutex&lt;&gt;&gt;</p>
+                  <div style="margin-top:0.75rem;font-size:0.75rem;color:var(--ronin-secondary);font-family:var(--font-mono);">🔀 15 edits · 🔍 3 searches</div>
+                </div>
+                <div>
+                  <div style="font-weight:600;color:var(--ronin-primary);margin-bottom:0.5rem;">Quick Actions</div>
+                  <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                    <button class="btn-cta" style="width:100%;">Open in IDE</button>
+                    <button style="width:100%;padding:0.75rem;border:1px solid var(--ronin-border);background:var(--ronin-surface);border-radius:6px;cursor:pointer;font-family:var(--font-sans);">View DEVLOG</button>
+                    <button style="width:100%;padding:0.75rem;border:1px solid var(--ronin-border);background:var(--ronin-surface);border-radius:6px;cursor:pointer;font-family:var(--font-sans);">Commit Changes</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Collapsed Cards -->
+            <div class="d1-card">
+              <div class="d1-card-header">
+                <span class="d1-card-title">ronin</span>
+                <span class="d1-badge">🔥 Active</span>
+              </div>
+              <div class="d1-card-meta">main · 0 uncommitted</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function showSection(id) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.querySelector(`a[href="#${id}"]`).classList.add('active');
+    }
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+      const btn = document.querySelector('.theme-toggle');
+      btn.textContent = document.body.classList.contains('dark') ? '☀️ Light' : '🌙 Dark';
+    }
+  </script>
+</body>
+</html>
