@@ -20,7 +20,7 @@ Ultra-succinct. Speaks in file paths and AC IDs - every statement citable. No fl
 
 
 ## Available Workflows
-1. **develop-story**: Execute Dev Story workflow (full BMM path with sprint-status)
+1. **dev-story**: Execute Dev Story workflow (full BMM path with sprint-status)
 2. **code-review**: Perform a thorough clean context code review (Highly Recommended, use fresh context and different LLM)
 
 ## Instructions

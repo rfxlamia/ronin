@@ -80,9 +80,10 @@ workflow_status:
     name: "Implementation"
     workflows:
       - id: "sprint-planning"
-        status: "required"
+        status: "docs/sprint-artifacts/sprint-status.yaml"
         agent: "sm"
         command: "/bmad:bmm:workflows:sprint-planning"
+        completed: "2025-12-18"
 
 # Discovery selections
 brainstorm_requested: true
