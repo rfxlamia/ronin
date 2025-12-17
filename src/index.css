@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+/* ===== FONT FACES ===== */
+
+/* Work Sans - Variable Font (supports 100-900 weights) */
+@font-face {
+  font-family: "Work Sans";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/WorkSans-Variable.woff2") format("woff2");
+}
+
+/* JetBrains Mono - Variable Font (supports 100-800 weights) */
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("/fonts/JetBrainsMono-Variable.woff2") format("woff2");
+}
+
+/* Libre Baskerville - Static Fonts */
+@font-face {
+  font-family: "Libre Baskerville";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/LibreBaskerville-Regular.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Libre Baskerville";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/LibreBaskerville-Italic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Libre Baskerville";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/LibreBaskerville-Bold.woff2") format("woff2");
+}
+
+/* ===== TAILWIND THEME CONFIGURATION ===== */
+@theme {
+  /* Ronin Brand Colors */
+  --color-ronin-brass: #CC785C;
+  --color-ronin-gray: #828179;
+  --color-ronin-cararra: #F0EFEA;
+  --color-ronin-cod: #141413;
+
+  /* shadcn/ui semantic colors - Light mode defaults */
+  --color-background: hsl(48 20% 93%);
+  --color-foreground: hsl(60 4% 8%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(60 4% 8%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(60 4% 8%);
+  --color-primary: hsl(16 52% 58%);
+  --color-primary-foreground: hsl(48 20% 93%);
+  --color-secondary: hsl(53 3% 50%);
+  --color-secondary-foreground: hsl(60 4% 8%);
+  --color-muted: hsl(48 10% 85%);
+  --color-muted-foreground: hsl(53 3% 50%);
+  --color-accent: hsl(16 52% 58%);
+  --color-accent-foreground: hsl(48 20% 93%);
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(48 10% 88%);
+  --color-input: hsl(48 10% 88%);
+  --color-ring: hsl(16 52% 58%);
+
+  /* Chart colors */
+  --color-chart-1: hsl(16 52% 58%);
+  --color-chart-2: hsl(53 3% 50%);
+  --color-chart-3: hsl(48 20% 70%);
+  --color-chart-4: hsl(16 40% 45%);
+  --color-chart-5: hsl(60 4% 30%);
+
+  /* Font Families */
+  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-serif: "Libre Baskerville", ui-serif, Georgia, serif;
+
+  /* Animation Tokens */
+  --animation-fast: 100ms;
+  --animation-normal: 200ms;
+  --animation-slow: 300ms;
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+/* ===== ROOT CSS VARIABLES ===== */
+:root {
+  --radius: 0.5rem;
+}
+
+/* ===== DARK MODE ===== */
+.dark {
+  --color-background: hsl(60 4% 8%);
+  --color-foreground: hsl(48 20% 93%);
+  --color-card: hsl(60 4% 10%);
+  --color-card-foreground: hsl(48 20% 93%);
+  --color-popover: hsl(60 4% 10%);
+  --color-popover-foreground: hsl(48 20% 93%);
+  --color-primary: hsl(16 52% 58%);
+  --color-primary-foreground: hsl(60 4% 8%);
+  --color-secondary: hsl(53 3% 40%);
+  --color-secondary-foreground: hsl(48 20% 93%);
+  --color-muted: hsl(60 4% 15%);
+  --color-muted-foreground: hsl(53 3% 63%);
+  --color-accent: hsl(16 52% 58%);
+  --color-accent-foreground: hsl(60 4% 8%);
+  --color-destructive: hsl(0 62% 50%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(60 4% 16%);
+  --color-input: hsl(60 4% 16%);
+  --color-ring: hsl(16 52% 58%);
+  --color-chart-1: hsl(16 52% 58%);
+  --color-chart-2: hsl(53 3% 63%);
+  --color-chart-3: hsl(48 20% 50%);
+  --color-chart-4: hsl(16 40% 65%);
+  --color-chart-5: hsl(48 20% 80%);
+}
+
+/* ===== BASE STYLES ===== */
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
