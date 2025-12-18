@@ -11,6 +11,17 @@ pub struct Project {
     pub updated_at: Option<String>,
 }
 
+/// Response struct for frontend - guarantees id is present
+#[derive(Debug, Clone, Serialize)]
+pub struct ProjectResponse {
+    pub id: i64,
+    pub path: String,
+    pub name: String,
+    pub r#type: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 /// Detect if a directory contains a Git repository
 pub fn detect_git_repo<P: AsRef<Path>>(path: P) -> bool {
     let git_dir = PathBuf::from(path.as_ref()).join(".git");
@@ -32,7 +43,7 @@ pub fn extract_folder_name<P: AsRef<Path>>(path: P) -> Result<String, String> {
 pub async fn add_project(
     path: String,
     pool: tauri::State<'_, crate::db::DbPool>,
-) -> Result<Project, String> {
+) -> Result<ProjectResponse, String> {
     // Validate the path exists
     let project_path = PathBuf::from(&path);
     if !project_path.exists() {
@@ -73,25 +84,56 @@ pub async fn add_project(
     // Get the inserted project ID
     let project_id = conn.last_insert_rowid();
 
-    // Fetch the complete project record
-    let project: Project = conn
+    // Fetch the complete project record and return as ProjectResponse
+    let response: ProjectResponse = conn
         .query_row(
             "SELECT id, path, name, type, created_at, updated_at FROM projects WHERE id = ?1",
             rusqlite::params![project_id],
             |row| {
-                Ok(Project {
+                Ok(ProjectResponse {
                     id: row.get(0)?,
                     path: row.get(1)?,
                     name: row.get(2)?,
                     r#type: row.get(3)?,
-                    created_at: row.get(4)?,
-                    updated_at: row.get(5)?,
+                    created_at: row.get::<_, Option<String>>(4)?.unwrap_or_default(),
+                    updated_at: row.get::<_, Option<String>>(5)?.unwrap_or_default(),
                 })
             },
         )
         .map_err(|e| format!("Failed to fetch inserted project: {}", e))?;
 
-    Ok(project)
+    Ok(response)
+}
+
+/// Get all projects from the database
+#[tauri::command]
+pub async fn get_projects(
+    pool: tauri::State<'_, crate::db::DbPool>,
+) -> Result<Vec<ProjectResponse>, String> {
+    let conn = pool
+        .get()
+        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+
+    let mut stmt = conn
+        .prepare("SELECT id, path, name, type, created_at, updated_at FROM projects ORDER BY updated_at DESC")
+        .map_err(|e| format!("Failed to prepare statement: {}", e))?;
+
+    let projects = stmt
+        .query_map([], |row| {
+            Ok(ProjectResponse {
+                id: row.get(0)?,
+                path: row.get(1)?,
+                name: row.get(2)?,
+                r#type: row.get(3)?,
+                created_at: row.get::<_, Option<String>>(4)?.unwrap_or_default(),
+                updated_at: row.get::<_, Option<String>>(5)?.unwrap_or_default(),
+            })
+        })
+        .map_err(|e| format!("Failed to query projects: {}", e))?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| format!("Failed to collect projects: {}", e))?;
+
+    Ok(projects)
 }
 
 #[cfg(test)]
