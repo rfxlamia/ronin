@@ -16,12 +16,8 @@ export function RoninLoader({ onComplete }: RoninLoaderProps) {
         const checkFonts = async () => {
             try {
                 await document.fonts.ready;
-                setFontsLoaded(true);
-            } catch (error) {
-                console.error('Font loading error:', error);
-                // Proceed anyway after minimum time
-                setFontsLoaded(true);
-            }
+            } catch { /* Font loading failed, proceed anyway */ }
+            setFontsLoaded(true);
         };
 
         checkFonts();
@@ -42,10 +38,7 @@ export function RoninLoader({ onComplete }: RoninLoaderProps) {
                 <img
                     src="/assets/loading/ronin-loader-pulse.svg"
                     alt="Ronin meditation"
-                    className="w-48 h-48 object-contain"
-                    style={{
-                        animation: 'ronin-pulse 2s ease-in-out infinite',
-                    }}
+                    className="w-48 h-48 object-contain animate-ronin-pulse"
                 />
                 <p className="text-xl font-serif text-foreground">
                     Analyzing your activity...

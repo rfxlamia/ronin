@@ -1,51 +1,54 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { AppShell } from '../AppShell';
+import { BrowserRouter } from 'react-router-dom';
+import { AppShell } from './AppShell';
+
+vi.mock('@tauri-apps/api/window', () => ({
+    getCurrentWindow: () => ({
+        minimize: vi.fn(),
+        toggleMaximize: vi.fn(),
+        close: vi.fn(),
+    }),
+}));
+
+const renderWithRouter = (children: React.ReactNode) => {
+    return render(<BrowserRouter>{children}</BrowserRouter>);
+};
 
 describe('AppShell', () => {
     it('should render Ronin logo in Libre Baskerville', () => {
-        render(\u003cAppShell\u003e\u003cdiv\u003eTest Content\u003c / div\u003e\u003c / AppShell\u003e);
-
+        renderWithRouter(<AppShell><div>Test Content</div></AppShell>);
         const logo = screen.getByText('Ronin');
         expect(logo).toBeInTheDocument();
         expect(logo).toHaveClass('font-serif');
     });
 
     it('should have data-tauri-drag-region on header', () => {
-        const { container } = render(
-        \u003cAppShell\u003e\u003cdiv\u003eTest Content\u003c / div\u003e\u003c / AppShell\u003e
-    );
+        const { container } = renderWithRouter(<AppShell><div>Test Content</div></AppShell>);
+        const header = container.querySelector('[data-tauri-drag-region]');
+        expect(header).toBeInTheDocument();
+        expect(header?.tagName).toBe('HEADER');
+    });
 
-    const header = container.querySelector('[data-tauri-drag-region]');
-    expect(header).toBeInTheDocument();
-    expect(header?.tagName).toBe('HEADER');
-});
+    it('should render theme toggle', () => {
+        renderWithRouter(<AppShell><div>Test Content</div></AppShell>);
+        const buttons = screen.getAllByRole('button');
+        expect(buttons.length).toBeGreaterThan(0);
+    });
 
-it('should render theme toggle', () => {
-    render(\u003cAppShell\u003e\u003cdiv\u003eTest Content\u003c / div\u003e\u003c / AppShell\u003e);
+    it('should render children content', () => {
+        renderWithRouter(<AppShell><div data-testid="test-content">Test Content</div></AppShell>);
+        expect(screen.getByTestId('test-content')).toBeInTheDocument();
+    });
 
-    // Theme toggle button should be present
-    const themeButton = screen.getByRole('button');
-    expect(themeButton).toBeInTheDocument();
-});
+    it('should use semantic HTML structure', () => {
+        const { container } = renderWithRouter(<AppShell><div>Test Content</div></AppShell>);
+        expect(container.querySelector('header')).toBeInTheDocument();
+        expect(container.querySelector('main')).toBeInTheDocument();
+    });
 
-it('should render children content', () => {
-    render(
-        \u003cAppShell\u003e
-        \u003cdiv data - testid=\"test-content\"\u003eTest Content\u003c/div\u003e
-        \u003c / AppShell\u003e
-    );
-
-    expect(screen.getByTestId('test-content')).toBeInTheDocument();
-    expect(screen.getByText('Test Content')).toBeInTheDocument();
-});
-
-it('should use semantic HTML structure', () => {
-    const { container } = render(
-    \u003cAppShell\u003e\u003cdiv\u003eTest Content\u003c / div\u003e\u003c / AppShell\u003e
-    );
-
-expect(container.querySelector('header')).toBeInTheDocument();
-expect(container.querySelector('main')).toBeInTheDocument();
-  });
+    it('should have Settings navigation link', () => {
+        renderWithRouter(<AppShell><div>Test Content</div></AppShell>);
+        expect(screen.getByText('Settings')).toBeInTheDocument();
+    });
 });

@@ -1,45 +1,41 @@
 import { ModeToggle } from './mode-toggle';
 import { WindowControls } from './WindowControls';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { Link } from 'react-router-dom';
 import { ReactNode } from 'react';
+import { Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface AppShellProps {
     children: ReactNode;
 }
 
 export function AppShell({ children }: AppShellProps) {
-    const handleDragStart = async (e: React.MouseEvent) => {
-        // Only start drag if clicking on the title bar area (not on buttons)
-        if ((e.target as HTMLElement).closest('button')) return;
-
-        try {
-            const appWindow = getCurrentWindow();
-            await appWindow.startDragging();
-        } catch (error) {
-            console.error('Failed to start dragging:', error);
-        }
-    };
-
     return (
         <div className="min-h-screen bg-background flex flex-col">
             {/* Custom Title Bar */}
             <header
-                onMouseDown={handleDragStart}
-                className="flex items-center justify-between px-6 py-4 border-b border-border bg-card cursor-move"
+                data-tauri-drag-region
+                className="flex items-center justify-between px-6 py-4 border-b border-border bg-card"
             >
                 {/* Logo area */}
-                <h1 className="text-2xl font-serif font-bold text-foreground select-none">
+                <h1 className="text-2xl font-serif font-bold text-foreground select-none pointer-events-none">
                     Ronin
                 </h1>
                 {/* Non-draggable controls area */}
-                <div className="flex items-center gap-4 cursor-default">
+                <nav className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" asChild title="Settings">
+                        <Link to="/settings">
+                            <Settings className="h-[1.2rem] w-[1.2rem]" />
+                            <span className="sr-only">Settings</span>
+                        </Link>
+                    </Button>
                     <ModeToggle />
                     <WindowControls />
-                </div>
+                </nav>
             </header>
 
             {/* Main Content Area */}
-            <main className="flex-1 overflow-auto">
+            <main className="flex-1 overflow-auto animate-fade-in">
                 {children}
             </main>
         </div>

@@ -170,6 +170,14 @@ body {
   }
 }
 
+@utility animate-ronin-pulse {
+  animation: ronin-pulse 2s ease-in-out infinite;
+}
+
+@utility animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
 /* Respect prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
 

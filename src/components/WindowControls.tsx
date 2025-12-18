@@ -4,29 +4,20 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 export function WindowControls() {
     const handleMinimize = async () => {
         try {
-            const appWindow = getCurrentWindow();
-            await appWindow.minimize();
-        } catch (error) {
-            console.error('Failed to minimize:', error);
-        }
+            await getCurrentWindow().minimize();
+        } catch { /* Tauri API unavailable in browser */ }
     };
 
     const handleMaximize = async () => {
         try {
-            const appWindow = getCurrentWindow();
-            await appWindow.toggleMaximize();
-        } catch (error) {
-            console.error('Failed to maximize:', error);
-        }
+            await getCurrentWindow().toggleMaximize();
+        } catch { /* Tauri API unavailable in browser */ }
     };
 
     const handleClose = async () => {
         try {
-            const appWindow = getCurrentWindow();
-            await appWindow.close();
-        } catch (error) {
-            console.error('Failed to close:', error);
-        }
+            await getCurrentWindow().close();
+        } catch { /* Tauri API unavailable in browser */ }
     };
 
     return (

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@/components/theme-provider';
 import { RoninLoader } from '@/components/RoninLoader';
@@ -8,11 +8,12 @@ import { Settings } from '@/pages/Settings';
 
 function App() {
   const [loadingComplete, setLoadingComplete] = useState(false);
+  const handleLoadingComplete = useCallback(() => setLoadingComplete(true), []);
 
   if (!loadingComplete) {
     return (
       <ThemeProvider defaultTheme="system" storageKey="ronin-ui-theme">
-        <RoninLoader onComplete={() => setLoadingComplete(true)} />
+        <RoninLoader onComplete={handleLoadingComplete} />
       </ThemeProvider>
     );
   }
