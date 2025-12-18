@@ -178,6 +178,57 @@ body {
   animation: fade-in 0.3s ease-out;
 }
 
+/* Collapsible expand/collapse animations - 200ms ease-out per AC-2 */
+@keyframes collapsible-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+
+  to {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes collapsible-up {
+  from {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+@utility animate-collapsible-down {
+  animation: collapsible-down 200ms ease-out;
+}
+
+@utility animate-collapsible-up {
+  animation: collapsible-up 200ms ease-out;
+}
+
+/* Development placeholder for assets */
+.ronin-placeholder {
+  border: 2px dashed #CC785C;
+  /* Antique Brass - impossible to miss */
+  background: repeating-linear-gradient(45deg,
+      transparent,
+      transparent 10px,
+      rgba(204, 120, 92, 0.1) 10px,
+      rgba(204, 120, 92, 0.1) 20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  color: #CC785C;
+  font-size: 0.875rem;
+  padding: 1rem;
+}
+
 /* Respect prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
 
