@@ -1,3 +1,4 @@
+mod commands;
 mod db;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -13,8 +14,12 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(db_pool)
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            commands::projects::add_project
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

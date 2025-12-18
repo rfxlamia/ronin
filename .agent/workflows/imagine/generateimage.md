@@ -1,10 +1,10 @@
 ---
-name: imagine
 description: Generate professional Imagen 3/4 prompts for key frames from validated screenplay
-type: creative-pipeline-stage-05
 ---
 
 # Imagine Workflow
+
+<critical_notes>"this is a dedicated workflow for full pipeline content generation for social media. running it in different case might need to reasoning the workflow to your specific case."</critical_notes>
 
 **Goal:** Generate detailed Imagen 3/4 prompts for key frames from the validated screenplay.
 

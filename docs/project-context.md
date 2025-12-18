@@ -16,13 +16,15 @@ _Critical rules that AI agents MUST follow when implementing code for Ronin. Foc
 | Layer | Technology | Notes |
 |-------|------------|-------|
 | **Desktop** | Tauri v2 | Rust backend + React webview |
-| **Frontend** | React 18+, TypeScript | Strict mode |
+| **Frontend** | React 19.2.3, TypeScript | Strict mode, verified safe (no CVE) |
 | **UI** | shadcn/ui + Tailwind CSS | Copy-paste components, NOT npm |
 | **Backend** | Rust (stable), Tokio | Async runtime |
 | **Database** | SQLite + WAL mode | Local-first, ACID |
 | **AI** | OpenRouter API | Cloud LLM, graceful offline |
 | **Git** | Shell commands (MVP) | `git` CLI, NOT git2-rs yet |
 | **File Watch** | notify crate | inotify on Linux |
+
+**Security Note:** React 19.2.3 verified safe. CVSS 10.0 RCE vulnerability affected 19.0.0-19.2.0 only. Code review workflow includes security analysis.
 
 ---
 
@@ -233,6 +235,57 @@ try {
   console.error('AI context error:', error);
 }
 ```
+
+---
+
+## Development Workflow Rules
+
+### Asset Generation Protocol (Epic 2+)
+
+**Sequence during dev-story:**
+1. Build logic with HTML placeholders using `.ronin-placeholder` class
+2. Flag when placeholders are present
+3. Ask: "Do you want to run /generateimage workflow?"
+4. If yes: Analyze prompt → Generate via Nano Banana Pro → Select variant → Convert (PNG→SVG→TSX)
+
+**Placeholder Standard:**
+```tsx
+<div className="ronin-placeholder" style={{ width: '48px', height: '48px' }}>
+  [Icon Name]
+</div>
+```
+
+**CSS Class:** `.ronin-placeholder` in `src/index.css` - dashed Antique Brass border with striped background (visually obvious, unsearchable)
+
+### Manual Test Notes (Epic 2+)
+
+**Required in all story files with user interactions:**
+```markdown
+## Manual Test Notes (Product Lead Verification)
+
+### Test Case 1: [Feature Name]
+**Steps:**
+1. [Action]
+2. [Action]
+
+**Expected Result:**
+- [Specific outcome]
+- [Visual state]
+
+**Actual Result:** [To be filled during verification]
+```
+
+**Purpose:** Product Lead (V) can personally verify story implementation by following test steps.
+
+### Regression Testing Protocol (Epic 2+)
+
+**Before marking any story done:**
+1. Run all tests from current epic
+2. Run all tests from previous epics
+3. Verify no regressions introduced
+4. Test count must grow incrementally (never decrease)
+
+**Command:** `npm test` (must pass 100%)
 
 ---
 
