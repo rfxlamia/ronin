@@ -226,3 +226,7 @@ Claude 3.7 Sonnet (2025-01-19)
 
 ### Verdict
 ✅ **APPROVED** - All HIGH and MEDIUM issues resolved. Story ready for done status.
+
+### Known Limitation
+
+**Git projects show database `updated_at` instead of actual last activity.** This is expected behavior until Epic 5 (Git Operations) implements git commit date parsing. Folder projects correctly show filesystem last modified dates.
