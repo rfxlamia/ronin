@@ -11,10 +11,16 @@ import { cn } from '@/lib/utils';
 
 interface ProjectCardProps {
     project: Project;
+    onExpandChange?: () => void;
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, onExpandChange }: ProjectCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
+
+    const handleExpandChange = (open: boolean) => {
+        setIsExpanded(open);
+        onExpandChange?.();
+    };
 
     const TypeIcon = project.type === 'git' ? GitBranch : Folder;
     const daysSinceActivity = calculateDaysSince(
@@ -26,7 +32,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
     const healthStatus = calculateProjectHealth(project);
 
     return (
-        <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <Collapsible open={isExpanded} onOpenChange={handleExpandChange}>
             <Card className="overflow-hidden transition-shadow duration-200 hover:shadow-md">
                 <CollapsibleTrigger asChild>
                     <button

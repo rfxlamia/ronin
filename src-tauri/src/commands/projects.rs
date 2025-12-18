@@ -234,6 +234,25 @@ pub async fn get_projects(
     Ok(projects)
 }
 
+/// Delete a project from the database
+#[tauri::command]
+pub async fn delete_project(
+    project_id: i64,
+    pool: tauri::State<'_, crate::db::DbPool>,
+) -> Result<(), String> {
+    let conn = pool
+        .get()
+        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+
+    conn.execute(
+        "DELETE FROM projects WHERE id = ?1",
+        rusqlite::params![project_id],
+    )
+    .map_err(|e| format!("Failed to delete project: {}", e))?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
