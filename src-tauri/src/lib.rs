@@ -19,7 +19,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             commands::projects::add_project,
-            commands::projects::get_projects
+            commands::projects::get_projects,
+            commands::projects::delete_project
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
