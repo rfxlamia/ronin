@@ -26,6 +26,8 @@ describe('ProjectCard', () => {
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-12-10T00:00:00Z',
         healthStatus: 'dormant',
+        fileCount: 15,
+        lastActivityAt: '2024-12-10T00:00:00Z',
     };
 
     describe('Collapsed State', () => {
@@ -58,6 +60,30 @@ describe('ProjectCard', () => {
             const { container } = render(<ProjectCard project={mockFolderProject} />);
             const icon = container.querySelector('[data-icon="folder"]');
             expect(icon).toBeInTheDocument();
+        });
+
+        it('shows file count for folder projects', () => {
+            render(<ProjectCard project={mockFolderProject} />);
+            expect(screen.getByText(/15 files/i)).toBeInTheDocument();
+        });
+
+        it('shows singular "file" for folder with 1 file', () => {
+            const singleFileProject: Project = {
+                ...mockFolderProject,
+                fileCount: 1,
+            };
+            render(<ProjectCard project={singleFileProject} />);
+            expect(screen.getByText(/1 file$/i)).toBeInTheDocument();
+        });
+
+        it('handles folder with 0 files (empty or not found)', () => {
+            const emptyFolderProject: Project = {
+                ...mockFolderProject,
+                fileCount: 0,
+                lastActivityAt: undefined,
+            };
+            render(<ProjectCard project={emptyFolderProject} />);
+            expect(screen.getByText(/0 files/i)).toBeInTheDocument();
         });
 
         it('has proper ARIA attributes when collapsed', () => {

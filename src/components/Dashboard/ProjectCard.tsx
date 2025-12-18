@@ -52,6 +52,11 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
                                 <div className="flex items-center gap-3 flex-wrap">
                                     <HealthBadge status={healthStatus} />
+                                    {project.type === 'folder' && project.fileCount !== undefined ? (
+                                        <span className="text-sm text-muted-foreground font-sans">
+                                            {project.fileCount} {project.fileCount === 1 ? 'file' : 'files'}
+                                        </span>
+                                    ) : null}
                                     <span className="text-sm text-muted-foreground font-sans">
                                         {activityText}
                                     </span>
