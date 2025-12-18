@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ProjectCard } from './ProjectCard';
-import type { Project } from '@/stores/projectStore';
+import type { Project } from '@/types/project';
 
 describe('ProjectCard', () => {
     const mockGitProject: Project = {
@@ -10,10 +10,10 @@ describe('ProjectCard', () => {
         name: 'Test Project',
         path: '/home/user/test-project',
         type: 'git',
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-12-15T00:00:00Z',
-        lastActivityAt: '2024-12-15T00:00:00Z',
-        healthStatus: 'Active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        lastActivityAt: new Date().toISOString(),
+        healthStatus: 'active', // Optional, ignored by calculation but keeps type valid
         gitBranch: 'main',
         uncommittedCount: 3,
     };
@@ -25,7 +25,7 @@ describe('ProjectCard', () => {
         type: 'folder',
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-12-10T00:00:00Z',
-        healthStatus: 'Dormant',
+        healthStatus: 'dormant',
     };
 
     describe('Collapsed State', () => {
@@ -43,7 +43,8 @@ describe('ProjectCard', () => {
 
         it('shows HealthBadge component with correct status', () => {
             render(<ProjectCard project={mockGitProject} />);
-            expect(screen.getByLabelText(/Project status: Active/i)).toBeInTheDocument();
+            // mockGitProject has uncommitted changes > 0, so it should be 'attention'
+            expect(screen.getByLabelText(/Project status: attention/i)).toBeInTheDocument();
         });
 
         it('shows GitBranch icon for git projects', () => {

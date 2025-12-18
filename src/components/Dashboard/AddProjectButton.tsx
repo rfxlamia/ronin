@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '@/components/ui/button';
-import { useProjectStore, type Project } from '@/stores/projectStore';
+import { useProjectStore } from '@/stores/projectStore';
+import type { Project } from '@/types/project';
 import { FolderPlus } from 'lucide-react';
 
 export function AddProjectButton() {

@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { HealthBadge } from './HealthBadge';
 import { calculateDaysSince, formatDaysSince } from '@/lib/utils/dateUtils';
-import type { Project } from '@/stores/projectStore';
+import { calculateProjectHealth } from '@/lib/logic/projectHealth';
+import type { Project } from '@/types/project';
 import { cn } from '@/lib/utils';
 
 interface ProjectCardProps {
@@ -21,8 +22,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
     );
     const activityText = formatDaysSince(daysSinceActivity);
 
-    // Default health status if not provided
-    const healthStatus = project.healthStatus || 'Dormant';
+    // Calculate health status dynamically
+    const healthStatus = calculateProjectHealth(project);
 
     return (
         <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
