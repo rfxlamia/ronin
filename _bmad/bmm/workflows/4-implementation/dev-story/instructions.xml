@@ -138,12 +138,14 @@
     <critical>Load all available context to inform implementation</critical>
 
     <action>Load {project_context} for coding standards and project-wide patterns (if exists)</action>
-    <action>Parse sections: Story, Acceptance Criteria, Tasks/Subtasks, Dev Notes, Dev Agent Record, File List, Change Log, Status</action>
+    <action>Parse sections: Story, Acceptance Criteria, Tasks/Subtasks, Dev Notes, Manual Test Notes, Dev Agent Record, File List, Change Log, Status</action>
     <action>Load comprehensive context from story file's Dev Notes section</action>
     <action>Extract developer guidance from Dev Notes: architecture requirements, previous learnings, technical specifications</action>
+    <action>If "Manual Test Notes" section exists: Read and acknowledge test cases for Product Lead verification</action>
     <action>Use enhanced story context to inform implementation decisions and approaches</action>
     <output>✅ **Context Loaded**
       Story and project context available for implementation
+      {{#if manual_test_notes_exist}}Manual Test Notes: {{test_case_count}} test cases for Product Lead verification{{/if}}
     </output>
   </step>
 

@@ -27,4 +27,5 @@ rusqlite = { version = "0.37.0", features = ["bundled"] }
 rusqlite_migration = "2.3.0"
 r2d2 = "0.8.10"
 r2d2_sqlite = "0.31.0"
+tauri-plugin-dialog = "2.4.2"
 

@@ -7,6 +7,11 @@ export interface Project {
     type: 'git' | 'folder';
     created_at: string;
     updated_at: string;
+    // Optional fields - populated by future stories
+    gitBranch?: string;
+    uncommittedCount?: number;
+    lastActivityAt?: string;
+    healthStatus?: 'Active' | 'Dormant' | 'Stuck' | 'Attention';
 }
 
 interface ProjectStore {
