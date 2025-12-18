@@ -260,6 +260,16 @@ This document provides the complete epic and story breakdown for Ronin, decompos
 - Project filtering and search
 - Ronin Oath display (post-onboarding celebration)
 
+**Known Issues & Notes (2025-12-18):**
+> [!WARNING]
+> The following gaps were identified during Story 2.3 code review:
+
+1. **Missing "Add Project" Button in Dashboard Header** - Currently "Add Project" only exists in EmptyState (Story 2.1). Need to add button in Dashboard header when projects already exist. *Consider creating Story 2.10 or amending Story 2.1.*
+
+2. **ProjectCard Expand Animation Not Smooth** - When card in first row expands, all cards below visibly shift down causing perceived "heaviness". *Consider CSS `layout` animation or flip technique in Story 2.5 (Dashboard Grid Layout).*
+
+3. **Settings Back Button (FIXED)** - Hotfixed in AppShell.tsx: shows Home icon when on Settings page to navigate back to Dashboard.
+
 ---
 
 ### Epic 3: Context Recovery & AI Consultant

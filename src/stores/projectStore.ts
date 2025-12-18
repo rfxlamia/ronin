@@ -1,18 +1,6 @@
 import { create } from 'zustand';
 
-export interface Project {
-    id: number;
-    path: string;
-    name: string;
-    type: 'git' | 'folder';
-    created_at: string;
-    updated_at: string;
-    // Optional fields - populated by future stories
-    gitBranch?: string;
-    uncommittedCount?: number;
-    lastActivityAt?: string;
-    healthStatus?: 'Active' | 'Dormant' | 'Stuck' | 'Attention';
-}
+import type { Project } from '@/types/project';
 
 interface ProjectStore {
     projects: Project[];

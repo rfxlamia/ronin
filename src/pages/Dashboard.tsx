@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { useProjectStore, type Project } from '@/stores/projectStore';
+import { useProjectStore } from '@/stores/projectStore';
+import type { Project } from '@/types/project';
 import { EmptyState } from '@/components/Dashboard/EmptyState';
 import { ProjectCard } from '@/components/Dashboard/ProjectCard';
 

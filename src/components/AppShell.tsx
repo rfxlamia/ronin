@@ -1,8 +1,8 @@
 import { ModeToggle } from './mode-toggle';
 import { WindowControls } from './WindowControls';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ReactNode } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface AppShellProps {
@@ -10,6 +10,9 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+    const location = useLocation();
+    const isOnSettings = location.pathname === '/settings';
+
     return (
         <div className="min-h-screen bg-background flex flex-col">
             {/* Custom Title Bar */}
@@ -23,12 +26,21 @@ export function AppShell({ children }: AppShellProps) {
                 </h1>
                 {/* Non-draggable controls area */}
                 <nav className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" asChild title="Settings">
-                        <Link to="/settings">
-                            <Settings className="h-[1.2rem] w-[1.2rem]" />
-                            <span className="sr-only">Settings</span>
-                        </Link>
-                    </Button>
+                    {isOnSettings ? (
+                        <Button variant="ghost" size="icon" asChild title="Dashboard">
+                            <Link to="/">
+                                <Home className="h-[1.2rem] w-[1.2rem]" />
+                                <span className="sr-only">Dashboard</span>
+                            </Link>
+                        </Button>
+                    ) : (
+                        <Button variant="ghost" size="icon" asChild title="Settings">
+                            <Link to="/settings">
+                                <Settings className="h-[1.2rem] w-[1.2rem]" />
+                                <span className="sr-only">Settings</span>
+                            </Link>
+                        </Button>
+                    )}
                     <ModeToggle />
                     <WindowControls />
                 </nav>
