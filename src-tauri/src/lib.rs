@@ -18,7 +18,8 @@ pub fn run() {
         .manage(db_pool)
         .invoke_handler(tauri::generate_handler![
             greet,
-            commands::projects::add_project
+            commands::projects::add_project,
+            commands::projects::get_projects
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
