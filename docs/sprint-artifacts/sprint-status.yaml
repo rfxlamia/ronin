@@ -51,7 +51,7 @@ development_status:
   epic-2: in-progress
   2-1-empty-state-add-project-wizard: done
   2-2-projectcard-component: done
-  2-3-health-indicators-status: backlog
+  2-3-health-indicators-status: ready-for-dev
   2-4-generic-folder-mode: backlog
   2-5-dashboard-grid-layout: backlog
   2-6-project-search-filter: backlog
