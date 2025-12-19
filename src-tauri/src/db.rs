@@ -111,6 +111,23 @@ pub(crate) fn run_migrations(
         .map_err(|e| format!("Failed to add is_archived column: {}", e))?;
     }
 
+    // Check if deleted_at column exists
+    let deleted_at_exists: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('projects') WHERE name='deleted_at'",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("Failed to check deleted_at column: {}", e))?;
+
+    if deleted_at_exists == 0 {
+        conn.execute(
+            "ALTER TABLE projects ADD COLUMN deleted_at DATETIME",
+            [],
+        )
+        .map_err(|e| format!("Failed to add deleted_at column: {}", e))?;
+    }
+
     Ok(())
 }
 

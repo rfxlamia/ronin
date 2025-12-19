@@ -21,6 +21,7 @@ pub fn run() {
             commands::projects::add_project,
             commands::projects::get_projects,
             commands::projects::delete_project,
+            commands::projects::remove_project,
             commands::projects::archive_project,
             commands::projects::restore_project,
             commands::settings::get_setting,

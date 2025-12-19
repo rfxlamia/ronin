@@ -1,6 +1,6 @@
 # Story 2.8: Remove/Untrack Project
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -23,22 +23,23 @@ so that **I can keep my dashboard clean and focused on active projects**.
 
 ## Tasks / Subtasks
 
-- [ ] **Database Migration (Soft Delete)**
-  - [ ] Update `src-tauri/src/db.rs` to add `deleted_at` column to `projects` table (nullable DATETIME)
-  - [ ] Ensure migration is idempotent (check if column exists first)
-- [ ] **Backend Implementation**
-  - [ ] Implement `remove_project` command in `src-tauri/src/commands/projects.rs`
-  - [ ] Update `get_projects` query to exclude records where `deleted_at IS NOT NULL`
+- [x] **Database Migration (Soft Delete)**
+  - [x] Update `src-tauri/src/db.rs` to add `deleted_at` column to `projects` table (nullable DATETIME)
+  - [x] Ensure migration is idempotent (check if column exists first)
+- [x] **Backend Implementation**
+  - [x] Implement `remove_project` command in `src-tauri/src/commands/projects.rs`
+  - [x] Update `get_projects` query to exclude records where `deleted_at IS NOT NULL`
   - [ ] Update Silent Observer / Context Aggregator project fetching logic to exclude `deleted_at IS NOT NULL` projects
-- [ ] **Frontend Implementation**
-  - [ ] Update `src/components/ProjectCard.tsx` to add "Remove" option to the dropdown menu
-  - [ ] Create confirmation dialog (using shadcn/ui `Dialog` or `AlertDialog`)
-  - [ ] Update `src/stores/projectStore.ts` to handle the removal action (wait for confirmation)
-- [ ] **Testing**
-  - [ ] Unit test: Verify `remove_project` sets `deleted_at` timestamp
-  - [ ] Unit test: Verify `get_projects` filters out deleted projects
-  - [ ] Unit test: Verify Silent Observer ignores deleted projects
-  - [ ] Manual test: Verify files on disk remain untouched after removal
+- [x] **Frontend Implementation**
+  - [x] Update `src/components/ProjectCard.tsx` to add "Remove" option to the dropdown menu
+  - [x] Create confirmation dialog (using shadcn/ui `Dialog` or `AlertDialog`)
+  - [x] Update `src/stores/projectStore.ts` to handle the removal action (wait for confirmation)
+- [x] **Testing**
+  - [x] Unit test: Verify `remove_project` sets `deleted_at` timestamp
+  - [x] Unit test: Verify `get_projects` filters out deleted projects
+  - [ ] Unit test: Verify Silent Observer ignores deleted projects *(Deferred: Silent Observer not yet implemented)*
+  - [x] Manual test: Verify files on disk remain untouched after removal
+  - [x] Unit test: Remove dialog UI flow (added by code review)
 
 ## Dev Notes
 
@@ -108,7 +109,7 @@ so that **I can keep my dashboard clean and focused on active projects**.
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Qwen Code
 
 ### Debug Log References
 
@@ -117,13 +118,54 @@ so that **I can keep my dashboard clean and focused on active projects**.
 
 ### Completion Notes List
 
-- [ ] Schema migration successful
-- [ ] Command implementation verified
-- [ ] Frontend integration verified
+- [x] Schema migration successful: Added `deleted_at` column to projects table with idempotent migration
+- [x] Command implementation verified: Added `remove_project` command with proper soft delete functionality
+- [x] Frontend integration verified: Added "Remove" option to ProjectCard with confirmation dialog
+- [x] Success toast on removal (AC7) - Fixed by code review
+- [x] AlertDialogAction destructive variant prop - Fixed by code review
+- [x] Remove dialog tests added - Fixed by code review
 
 ### File List
 
 - src-tauri/src/db.rs
 - src-tauri/src/commands/projects.rs
-- src/components/ProjectCard.tsx
+- src-tauri/src/lib.rs
+- src-tauri/Cargo.lock
+- src/components/Dashboard/ProjectCard.tsx
+- src/components/Dashboard/ProjectCard.test.tsx
+- src/components/ui/alert-dialog.tsx *(NEW)*
+- src/components/ui/button.tsx
 - src/stores/projectStore.ts
+- src/App.tsx
+- package.json
+- package-lock.json
+
+### Senior Developer Review (AI)
+
+**Reviewer:** Antigravity (Gemini)  
+**Date:** 2025-12-19  
+**Status:** ✅ APPROVED
+
+**Issues Found & Fixed:**
+
+| Severity | Issue | Resolution |
+|----------|-------|------------|
+| HIGH | AC7 missing success toast | Added toast.success() with sonner library |
+| HIGH | AlertDialogAction didn't accept variant prop | Fixed component to pass variant to buttonVariants() |
+| MEDIUM | alert-dialog.tsx untracked | Added to git |
+| MEDIUM | File List incomplete | Updated with all 12 modified/new files |
+| MEDIUM | No tests for Remove dialog | Added 4 tests for dialog flow |
+| LOW | Inline style for font | Replaced with Tailwind font-serif class |
+
+**Post-Review Fixes (User Verification):**
+
+| Issue | Resolution |
+|-------|------------|
+| Toast using default font | Added Work Sans font styling to Toaster in App.tsx |
+| Re-adding removed project fails | Updated add_project to restore soft-deleted projects |
+
+**Test Results:**
+- Backend: 27/27 passed
+- Frontend: 107/107 passed (4 new)
+
+**Note:** Silent Observer/Context Aggregator tasks are deferred as that feature is not yet implemented (Epic 6).
