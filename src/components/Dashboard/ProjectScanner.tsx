@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { invoke } from '@tauri-apps/api/core';
-import { RoninLoader } from '@/components/ui/loader'; // Assuming this exists based on requirements
+import { RoninLoader } from '@/components/ui/loader';
 import { Project } from '@/types/project';
+import { useProjectStore } from '@/stores/projectStore';
 
 interface ScannedProject {
   path: string;
@@ -16,6 +17,7 @@ interface ProjectScannerProps {
 }
 
 export const ProjectScanner = ({ onImportComplete }: ProjectScannerProps) => {
+  const addProject = useProjectStore((state) => state.addProject);
   const [scanning, setScanning] = useState(false);
   const [scannedProjects, setScannedProjects] = useState<ScannedProject[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
@@ -33,7 +35,7 @@ export const ProjectScanner = ({ onImportComplete }: ProjectScannerProps) => {
     setScanning(true);
     setError(null);
     setScannedProjects([]);
-    
+
     try {
       const projects: ScannedProject[] = await invoke('scan_projects');
       setScannedProjects(projects);
@@ -60,13 +62,15 @@ export const ProjectScanner = ({ onImportComplete }: ProjectScannerProps) => {
 
     try {
       const importedProjects: Project[] = [];
-      
+
       // Import each selected project
       for (const path of selectedProjects) {
         try {
           // Use the existing add_project command which handles resurrection of soft-deleted projects
           const project: Project = await invoke('add_project', { path });
           importedProjects.push(project);
+          // Add to store immediately so Dashboard updates
+          addProject(project);
         } catch (err) {
           console.error(`Failed to import project at ${path}:`, err);
           // Continue with other projects even if one fails
@@ -104,8 +108,8 @@ export const ProjectScanner = ({ onImportComplete }: ProjectScannerProps) => {
           <div className="space-y-4">
             <div className="max-h-64 overflow-y-auto">
               {scannedProjects.map((project) => (
-                <div 
-                  key={project.path} 
+                <div
+                  key={project.path}
                   className="flex items-center space-x-4 py-2 border-b border-border last:border-b-0"
                 >
                   <Checkbox
@@ -114,8 +118,8 @@ export const ProjectScanner = ({ onImportComplete }: ProjectScannerProps) => {
                     onCheckedChange={() => handleProjectToggle(project.path)}
                   />
                   <div className="grid gap-1">
-                    <label 
-                      htmlFor={`project-${project.path}`} 
+                    <label
+                      htmlFor={`project-${project.path}`}
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
                       {project.name}
@@ -143,18 +147,18 @@ export const ProjectScanner = ({ onImportComplete }: ProjectScannerProps) => {
         )}
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row sm:justify-between gap-3">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={handleScan}
           disabled={scanning}
         >
           {scanning ? 'Scanning...' : 'Scan for Projects'}
         </Button>
-        
+
         {scannedProjects.length > 0 && (
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setScannedProjects([]);
                 setSelectedProjects(new Set());
@@ -162,7 +166,7 @@ export const ProjectScanner = ({ onImportComplete }: ProjectScannerProps) => {
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleImportSelected}
               disabled={selectedProjects.size === 0}
             >

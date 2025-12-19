@@ -24,6 +24,7 @@ pub fn run() {
             commands::projects::remove_project,
             commands::projects::archive_project,
             commands::projects::restore_project,
+            commands::projects::scan_projects,
             commands::settings::get_setting,
             commands::settings::update_setting
         ])

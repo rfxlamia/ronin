@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { calculateProjectHealth } from './projectHealth';
-import { Project, DEFAULT_DORMANCY_THRESHOLD } from '@/types/project';
+import { Project } from '@/types/project';
+import { DEFAULT_DORMANCY_THRESHOLD } from '@/types/health';
 
 // Helper to create a partial project for testing
 const createProject = (overrides: Partial<Project>): Project => ({

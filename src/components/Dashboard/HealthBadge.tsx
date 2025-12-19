@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-import { ProjectHealth } from '@/types/project';
+import { ProjectHealth } from '@/types/health';
 
 interface HealthBadgeProps {
     status: ProjectHealth;

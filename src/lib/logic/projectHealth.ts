@@ -1,4 +1,5 @@
-import { Project, ProjectHealth, DEFAULT_DORMANCY_THRESHOLD } from '@/types/project';
+import { Project } from '@/types/project';
+import { ProjectHealth, DEFAULT_DORMANCY_THRESHOLD } from '@/types/health';
 import { calculateDaysSince } from '@/lib/utils/dateUtils';
 
 /**

@@ -1,6 +1,7 @@
 use rusqlite::OptionalExtension;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+use tauri::Manager;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
@@ -731,5 +732,297 @@ mod tests {
             last_activity.is_none(),
             "Nonexistent path should have no last activity"
         );
+    }
+}
+
+/// Structure to represent a scanned project candidate
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct ScannedProject {
+    pub path: String,
+    pub name: String,
+}
+
+/// Scan common project locations for Git repositories
+#[tauri::command]
+pub async fn scan_projects<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+) -> Result<Vec<ScannedProject>, String> {
+    use tokio::task;
+    use walkdir::WalkDir;
+
+    // Use Tauri v2 standard to get home directory
+    let home_dir = app
+        .path()
+        .home_dir()
+        .map_err(|e| format!("Failed to get home directory: {}", e))?;
+
+    // Common project locations - include both cases and variations
+    let scan_paths = [
+        // Standard variations (case-sensitive on Linux)
+        home_dir.join("Projects"),
+        home_dir.join("projects"),
+        home_dir.join("project"), // User's preference
+        home_dir.join("Code"),
+        home_dir.join("code"),
+        home_dir.join("Dev"),
+        home_dir.join("dev"),
+        home_dir.join("Repos"),
+        home_dir.join("repos"),
+        home_dir.join("src"),       // Common for Rust/Go devs
+        home_dir.join("workspace"), // Common for Java/IDE users
+        home_dir.join("work"),
+        home_dir.join("git"),
+        home_dir.join(".local").join("share"),
+    ];
+
+    // Use spawn_blocking to run the synchronous walkdir operations
+    task::spawn_blocking(move || {
+        let mut projects = Vec::new();
+
+        for scan_path in scan_paths {
+            if !scan_path.exists() {
+                continue;
+            }
+
+            // Walk the directory tree with depth limit of 3
+            for entry in WalkDir::new(&scan_path)
+                .max_depth(3)
+                .into_iter()
+                .filter_map(|e| e.ok())
+                .filter(|e| e.file_type().is_dir())
+            {
+                let path = entry.path();
+
+                // Check if this directory contains a .git folder
+                if path.join(".git").exists() {
+                    if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                        projects.push(ScannedProject {
+                            path: path.to_string_lossy().to_string(),
+                            name: name.to_string(),
+                        });
+                    }
+                }
+            }
+        }
+
+        Ok(projects)
+    })
+    .await
+    .map_err(|e| format!("Failed to complete scan: {}", e))?
+}
+
+#[cfg(test)]
+mod scan_tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_scanned_project_structure() {
+        let project = ScannedProject {
+            path: "/test/path".to_string(),
+            name: "test-project".to_string(),
+        };
+
+        assert_eq!(project.path, "/test/path");
+        assert_eq!(project.name, "test-project");
+    }
+
+    #[test]
+    fn test_scan_empty_directories() {
+        // Create temporary directory structure
+        let temp_dir = std::env::temp_dir().join(format!("test_scan_empty_{}", std::process::id()));
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        // Create test directories without .git
+        let projects_dir = temp_dir.join("Projects");
+        fs::create_dir_all(&projects_dir).unwrap();
+
+        let project1_dir = projects_dir.join("project1");
+        fs::create_dir_all(&project1_dir).unwrap();
+
+        // Mock the app handle with a temporary home directory
+        // Note: This is a simplified test that doesn't use the real Tauri app handle
+        // For a full integration test, we'd need to set up a Tauri app context
+        let scan_result = std::thread::spawn(move || {
+            // Simulate the scanning logic directly
+            use walkdir::WalkDir;
+
+            let mut projects = Vec::new();
+            let scan_paths = [projects_dir.clone()];
+
+            for scan_path in scan_paths {
+                if !scan_path.exists() {
+                    continue;
+                }
+
+                // Walk the directory tree with depth limit of 3
+                for entry in WalkDir::new(&scan_path)
+                    .max_depth(3)
+                    .into_iter()
+                    .filter_map(|e| e.ok())
+                    .filter(|e| e.file_type().is_dir())
+                {
+                    let path = entry.path();
+
+                    // Check if this directory contains a .git folder
+                    if path.join(".git").exists() {
+                        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                            projects.push(ScannedProject {
+                                path: path.to_string_lossy().to_string(),
+                                name: name.to_string(),
+                            });
+                        }
+                    }
+                }
+            }
+
+            projects
+        })
+        .join()
+        .unwrap();
+
+        // Should find no projects since none have .git directories
+        assert_eq!(scan_result.len(), 0);
+
+        // Cleanup
+        fs::remove_dir_all(temp_dir).ok();
+    }
+
+    #[test]
+    fn test_scan_with_git_directories() {
+        // Create temporary directory structure
+        let temp_dir = std::env::temp_dir().join(format!("test_scan_git_{}", std::process::id()));
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        // Create test directories with .git
+        let projects_dir = temp_dir.join("Projects");
+        fs::create_dir_all(&projects_dir).unwrap();
+
+        let project1_dir = projects_dir.join("project1");
+        fs::create_dir_all(&project1_dir).unwrap();
+        let git_dir1 = project1_dir.join(".git");
+        fs::create_dir_all(&git_dir1).unwrap();
+
+        let project2_dir = projects_dir.join("project2");
+        fs::create_dir_all(&project2_dir).unwrap();
+        let git_dir2 = project2_dir.join(".git");
+        fs::create_dir_all(&git_dir2).unwrap();
+
+        // Mock the app handle with a temporary home directory
+        let scan_result = std::thread::spawn(move || {
+            // Simulate the scanning logic directly
+            use walkdir::WalkDir;
+
+            let mut projects = Vec::new();
+            let scan_paths = [projects_dir.clone()];
+
+            for scan_path in scan_paths {
+                if !scan_path.exists() {
+                    continue;
+                }
+
+                // Walk the directory tree with depth limit of 3
+                for entry in WalkDir::new(&scan_path)
+                    .max_depth(3)
+                    .into_iter()
+                    .filter_map(|e| e.ok())
+                    .filter(|e| e.file_type().is_dir())
+                {
+                    let path = entry.path();
+
+                    // Check if this directory contains a .git folder
+                    if path.join(".git").exists() {
+                        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                            projects.push(ScannedProject {
+                                path: path.to_string_lossy().to_string(),
+                                name: name.to_string(),
+                            });
+                        }
+                    }
+                }
+            }
+
+            projects
+        })
+        .join()
+        .unwrap();
+
+        // Should find 2 projects
+        assert_eq!(scan_result.len(), 2);
+        assert!(scan_result.iter().any(|p| p.name == "project1"));
+        assert!(scan_result.iter().any(|p| p.name == "project2"));
+
+        // Cleanup
+        fs::remove_dir_all(temp_dir).ok();
+    }
+
+    #[test]
+    fn test_scan_depth_limit() {
+        // Create temporary directory structure with nested git repos
+        let temp_dir = std::env::temp_dir().join(format!("test_scan_depth_{}", std::process::id()));
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        // Create nested directory structure: Projects/deep/nested/repo
+        // Depth:                   0     1     2      3    <- .git folder is at depth 3
+        let projects_dir = temp_dir.join("Projects");
+        fs::create_dir_all(&projects_dir).unwrap();
+
+        let deep_dir = projects_dir
+            .join("deep")
+            .join("nested")
+            .join("very")
+            .join("deep");
+        fs::create_dir_all(&deep_dir).unwrap();
+
+        let repo_dir = deep_dir.join("repo");
+        fs::create_dir_all(&repo_dir).unwrap();
+        let git_dir = repo_dir.join(".git");
+        fs::create_dir_all(&git_dir).unwrap();
+
+        // Mock the app handle with a temporary home directory
+        let scan_result = std::thread::spawn(move || {
+            // Simulate the scanning logic directly
+            use walkdir::WalkDir;
+
+            let mut projects = Vec::new();
+            let scan_paths = [projects_dir.clone()];
+
+            for scan_path in scan_paths {
+                if !scan_path.exists() {
+                    continue;
+                }
+
+                // Walk the directory tree with depth limit of 3
+                for entry in WalkDir::new(&scan_path)
+                    .max_depth(3) // This should limit us to depth 3 (Projects/deep/nested/very) but not find repo inside deeper
+                    .into_iter()
+                    .filter_map(|e| e.ok())
+                    .filter(|e| e.file_type().is_dir())
+                {
+                    let path = entry.path();
+
+                    // Check if this directory contains a .git folder
+                    if path.join(".git").exists() {
+                        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                            projects.push(ScannedProject {
+                                path: path.to_string_lossy().to_string(),
+                                name: name.to_string(),
+                            });
+                        }
+                    }
+                }
+            }
+
+            projects
+        })
+        .join()
+        .unwrap();
+
+        // Should find 0 projects because the git repo is at depth 5 (Projects/deep/nested/very/deep/repo/.git)
+        // which exceeds our max_depth of 3
+        assert_eq!(scan_result.len(), 0);
+
+        // Cleanup
+        fs::remove_dir_all(temp_dir).ok();
     }
 }

@@ -178,6 +178,11 @@ body {
   animation: fade-in 0.3s ease-out;
 }
 
+/* RoninLoader - Meditation pulse (礼 Rei - Loading as Ritual) */
+.ronin-loader {
+  animation: ronin-pulse 2s ease-in-out infinite;
+}
+
 /* Collapsible expand/collapse animations - 200ms ease-out per AC-2 */
 @keyframes collapsible-down {
   from {

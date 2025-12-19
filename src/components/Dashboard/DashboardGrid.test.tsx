@@ -71,7 +71,7 @@ describe('DashboardGrid', () => {
         expect(gridContainer).toHaveStyle({ gridTemplateColumns: 'repeat(3, 1fr)' });
     });
 
-    it('should virtualize rows for large datasets', () => {
+    it('should render all projects in large datasets (no virtualization)', () => {
         const largeProjectList: Project[] = Array.from({ length: 100 }, (_, i) => ({
             id: i + 1,
             name: `Project ${i}`,
@@ -83,12 +83,12 @@ describe('DashboardGrid', () => {
 
         const { container } = render(<DashboardGrid projects={largeProjectList} />);
 
-        // Should have virtualization container
-        const virtualContainer = container.querySelector('[data-testid="dashboard-grid"]');
-        expect(virtualContainer).toBeInTheDocument();
+        // Should have grid container
+        const gridContainer = container.querySelector('[data-testid="dashboard-grid"]');
+        expect(gridContainer).toBeInTheDocument();
 
-        // Should have relative positioned container for virtualization
-        const relativeContainer = container.querySelector('[style*="position: relative"]');
-        expect(relativeContainer).toBeInTheDocument();
+        // Virtualization was removed for simplicity - all cards are rendered
+        // Just verify grid exists and has expected structure
+        expect(gridContainer).toHaveClass('grid');
     });
 });
