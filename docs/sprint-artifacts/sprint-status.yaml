@@ -58,7 +58,7 @@ development_status:
   2-7-ronin-oath-celebration: done
   2-8-remove-untrack-project: done
   2-9-project-auto-detection-on-first-launch: done
-  epic-2-retrospective: optional
+  epic-2-retrospective: done
 
   epic-3: backlog
   3-1-openrouter-api-integration: backlog # check docs/openrouterdocs for API docs from OpenRouter when creating the story
