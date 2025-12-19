@@ -20,9 +20,9 @@ export function RoninOathModal({ open, onClose }: RoninOathModalProps) {
         <Dialog open={open} onOpenChange={(isOpen) => {
             if (!isOpen) onClose();
         }}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[calc(100vh-4rem)] overflow-y-auto mt-8">
                 <DialogHeader>
-                    <DialogTitle className="text-3xl font-serif mb-6">
+                    <DialogTitle className="text-2xl sm:text-3xl font-serif mb-4 sm:mb-6">
                         The Ronin Oath
                     </DialogTitle>
                     <DialogDescription className="sr-only">
@@ -30,14 +30,14 @@ export function RoninOathModal({ open, onClose }: RoninOathModalProps) {
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="flex flex-col md:flex-row gap-6">
-                    {/* Illustration */}
-                    <div className="flex-shrink-0 md:w-48">
+                <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
+                    {/* Illustration - hidden on very small screens */}
+                    <div className="hidden sm:block flex-shrink-0 md:w-48">
                         {!imageError ? (
                             <img
                                 src="/assets/philosophy/ronin-oath-illustration.svg"
                                 alt="Ronin standing with purpose"
-                                className="w-full h-auto rounded"
+                                className="w-full max-h-48 md:max-h-none h-auto rounded object-contain"
                                 onError={() => setImageError(true)}
                             />
                         ) : (
@@ -48,7 +48,7 @@ export function RoninOathModal({ open, onClose }: RoninOathModalProps) {
                     </div>
 
                     {/* Oath Text */}
-                    <div className="flex-1 space-y-3 text-lg leading-relaxed">
+                    <div className="flex-1 space-y-2 sm:space-y-3 text-base sm:text-lg leading-relaxed">
                         <p className="font-serif font-bold">I am a ronin.</p>
                         <p>
                             <span className="italic">Masterless</span>, but not <span className="font-serif font-bold">rudderless</span>.
@@ -62,15 +62,15 @@ export function RoninOathModal({ open, onClose }: RoninOathModalProps) {
                         <p>
                             I return to <span className="italic">forgotten work</span> <span className="font-serif font-bold">without dread</span>.
                         </p>
-                        <p className="font-serif font-bold text-xl mt-4">浪人之道</p>
+                        <p className="font-serif font-bold text-lg sm:text-xl mt-3 sm:mt-4">浪人之道</p>
                     </div>
                 </div>
 
                 {/* Continue Button */}
-                <div className="mt-6 flex justify-end">
+                <div className="mt-4 sm:mt-6 flex justify-end">
                     <Button
                         onClick={onClose}
-                        className="bg-ronin-brass hover:bg-ronin-brass/90 font-serif text-lg px-8"
+                        className="bg-ronin-brass hover:bg-ronin-brass/90 font-serif text-base sm:text-lg px-6 sm:px-8"
                     >
                         Continue
                     </Button>
