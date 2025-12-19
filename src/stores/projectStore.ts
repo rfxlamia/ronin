@@ -21,6 +21,7 @@ interface ProjectStore {
     setFilterStatus: (status: FilterStatus) => void;
     archiveProject: (id: number) => Promise<void>;
     restoreProject: (id: number) => Promise<void>;
+    removeProject: (id: number) => Promise<void>;
 }
 
 export const useProjectStore = create<ProjectStore>((set) => ({
@@ -80,6 +81,18 @@ export const useProjectStore = create<ProjectStore>((set) => ({
             }));
         } catch (error) {
             set({ error: `Failed to restore project: ${String(error)}` });
+        }
+    },
+
+    removeProject: async (id) => {
+        try {
+            await invoke('remove_project', { projectId: id });
+            // Update local state by filtering out the removed project
+            set((state) => ({
+                projects: state.projects.filter(p => p.id !== id),
+            }));
+        } catch (error) {
+            set({ error: `Failed to remove project: ${String(error)}` });
         }
     },
 }));

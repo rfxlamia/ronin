@@ -251,4 +251,62 @@ describe('ProjectCard', () => {
             expect(trigger).toHaveAttribute('aria-expanded', 'true');
         });
     });
+
+    describe('Remove Project Dialog', () => {
+        it('shows Remove option in dropdown menu', async () => {
+            const user = userEvent.setup();
+            render(<ProjectCard project={mockGitProject} />);
+
+            const menuButton = screen.getByRole('button', { name: /project menu/i });
+            await user.click(menuButton);
+
+            expect(screen.getByText(/remove/i)).toBeInTheDocument();
+        });
+
+        it('opens confirmation dialog when Remove is clicked', async () => {
+            const user = userEvent.setup();
+            render(<ProjectCard project={mockGitProject} />);
+
+            const menuButton = screen.getByRole('button', { name: /project menu/i });
+            await user.click(menuButton);
+
+            const removeOption = screen.getByText(/remove/i);
+            await user.click(removeOption);
+
+            // Dialog should be visible
+            expect(screen.getByText(/Remove Test Project from Ronin\?/i)).toBeInTheDocument();
+            expect(screen.getByText(/Your files won't be deleted/i)).toBeInTheDocument();
+        });
+
+        it('closes dialog when Cancel is clicked', async () => {
+            const user = userEvent.setup();
+            render(<ProjectCard project={mockGitProject} />);
+
+            // Open menu and click Remove
+            const menuButton = screen.getByRole('button', { name: /project menu/i });
+            await user.click(menuButton);
+            await user.click(screen.getByText(/remove/i));
+
+            // Click Cancel
+            const cancelButton = screen.getByRole('button', { name: /cancel/i });
+            await user.click(cancelButton);
+
+            // Dialog should be closed
+            expect(screen.queryByText(/Remove Test Project from Ronin\?/i)).not.toBeInTheDocument();
+        });
+
+        it('has destructive styling on Remove button in dialog', async () => {
+            const user = userEvent.setup();
+            render(<ProjectCard project={mockGitProject} />);
+
+            // Open menu and click Remove
+            const menuButton = screen.getByRole('button', { name: /project menu/i });
+            await user.click(menuButton);
+            await user.click(screen.getByText(/remove/i));
+
+            // Find the dialog's Remove button (not the menu item)
+            const dialogRemoveButton = screen.getByRole('button', { name: /^remove$/i });
+            expect(dialogRemoveButton).toHaveClass('font-serif');
+        });
+    });
 });

@@ -5,6 +5,7 @@ import { RoninLoader } from '@/components/RoninLoader';
 import { AppShell } from '@/components/AppShell';
 import { Dashboard } from '@/pages/Dashboard';
 import { Settings } from '@/pages/Settings';
+import { Toaster } from 'sonner';
 
 function App() {
   const [loadingComplete, setLoadingComplete] = useState(false);
@@ -20,6 +21,15 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme="system" storageKey="ronin-ui-theme">
+      <Toaster
+        richColors
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            fontFamily: "'Work Sans', sans-serif",
+          },
+        }}
+      />
       <BrowserRouter>
         <AppShell>
           <Routes>

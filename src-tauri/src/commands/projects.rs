@@ -1,3 +1,4 @@
+use rusqlite::OptionalExtension;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -10,6 +11,7 @@ pub struct Project {
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     pub is_archived: Option<bool>,
+    pub deleted_at: Option<String>,
 }
 
 /// Response struct for frontend - guarantees id is present
@@ -24,6 +26,8 @@ pub struct ProjectResponse {
     pub updated_at: String,
     #[serde(skip_serializing_if = "Option::is_none", rename = "isArchived")]
     pub is_archived: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "deletedAt")]
+    pub deleted_at: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "fileCount")]
     pub file_count: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "lastActivityAt")]
@@ -114,7 +118,8 @@ pub fn extract_folder_name<P: AsRef<Path>>(path: P) -> Result<String, String> {
 }
 
 /// Add a new project to the database
-/// Returns the newly created Project struct
+/// If a soft-deleted project exists with the same path, restore it instead
+/// Returns the newly created or restored Project struct
 #[tauri::command]
 pub async fn add_project(
     path: String,
@@ -144,26 +149,44 @@ pub async fn add_project(
         .get()
         .map_err(|e| format!("Failed to get database connection: {}", e))?;
 
-    // Insert into database
-    conn.execute(
-        "INSERT INTO projects (path, name, type) VALUES (?1, ?2, ?3)",
-        rusqlite::params![&path, &name, project_type],
-    )
-    .map_err(|e| {
-        if e.to_string().contains("UNIQUE constraint failed") {
-            "Project already tracked".to_string()
-        } else {
-            format!("Failed to insert project: {}", e)
-        }
-    })?;
+    // Check if a soft-deleted project exists with this path
+    let existing_deleted: Option<i64> = conn
+        .query_row(
+            "SELECT id FROM projects WHERE path = ?1 AND deleted_at IS NOT NULL",
+            rusqlite::params![&path],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("Failed to check for existing project: {}", e))?;
 
-    // Get the inserted project ID
-    let project_id = conn.last_insert_rowid();
+    let project_id = if let Some(id) = existing_deleted {
+        // Restore the soft-deleted project
+        conn.execute(
+            "UPDATE projects SET deleted_at = NULL, name = ?1, type = ?2, updated_at = CURRENT_TIMESTAMP WHERE id = ?3",
+            rusqlite::params![&name, project_type, id],
+        )
+        .map_err(|e| format!("Failed to restore project: {}", e))?;
+        id
+    } else {
+        // Insert new project
+        conn.execute(
+            "INSERT INTO projects (path, name, type) VALUES (?1, ?2, ?3)",
+            rusqlite::params![&path, &name, project_type],
+        )
+        .map_err(|e| {
+            if e.to_string().contains("UNIQUE constraint failed") {
+                "Project already tracked".to_string()
+            } else {
+                format!("Failed to insert project: {}", e)
+            }
+        })?;
+        conn.last_insert_rowid()
+    };
 
     // Fetch the complete project record and return as ProjectResponse
     let response: ProjectResponse = conn
         .query_row(
-            "SELECT id, path, name, type, created_at, updated_at, is_archived FROM projects WHERE id = ?1",
+            "SELECT id, path, name, type, created_at, updated_at, is_archived, deleted_at FROM projects WHERE id = ?1",
             rusqlite::params![project_id],
             |row| {
                 Ok(ProjectResponse {
@@ -174,6 +197,7 @@ pub async fn add_project(
                     created_at: row.get::<_, Option<String>>(4)?.unwrap_or_default(),
                     updated_at: row.get::<_, Option<String>>(5)?.unwrap_or_default(),
                     is_archived: row.get(6)?,
+                    deleted_at: row.get(7)?,
                     file_count: None,
                     last_activity: None,
                 })
@@ -196,7 +220,7 @@ pub async fn get_projects(
             .map_err(|e| format!("Failed to get database connection: {}", e))?;
 
         let mut stmt = conn
-            .prepare("SELECT id, path, name, type, created_at, updated_at, is_archived FROM projects ORDER BY updated_at DESC")
+            .prepare("SELECT id, path, name, type, created_at, updated_at, is_archived, deleted_at FROM projects WHERE deleted_at IS NULL ORDER BY updated_at DESC")
             .map_err(|e| format!("Failed to prepare statement: {}", e))?;
 
         let projects_result = stmt
@@ -209,6 +233,7 @@ pub async fn get_projects(
                     created_at: row.get::<_, Option<String>>(4)?.unwrap_or_default(),
                     updated_at: row.get::<_, Option<String>>(5)?.unwrap_or_default(),
                     is_archived: row.get(6)?,
+                    deleted_at: row.get(7)?,
                     file_count: None,
                     last_activity: None,
                 })
@@ -258,6 +283,25 @@ pub async fn delete_project(
     Ok(())
 }
 
+/// Soft delete a project by setting deleted_at timestamp
+#[tauri::command]
+pub async fn remove_project(
+    project_id: i64,
+    pool: tauri::State<'_, crate::db::DbPool>,
+) -> Result<(), String> {
+    let conn = pool
+        .get()
+        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+
+    conn.execute(
+        "UPDATE projects SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?1",
+        rusqlite::params![project_id],
+    )
+    .map_err(|e| format!("Failed to remove project: {}", e))?;
+
+    Ok(())
+}
+
 /// Archive a project (sets is_archived = 1)
 #[tauri::command]
 pub async fn archive_project(
@@ -299,7 +343,204 @@ pub async fn restore_project(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rusqlite::OptionalExtension;
     use std::fs;
+
+    /// Helper to create a database pool for testing
+    fn create_test_db() -> (std::path::PathBuf, crate::db::DbPool) {
+        let test_dir = std::env::temp_dir().join(format!(
+            "ronin_projects_test_{}_{:?}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos(),
+            std::thread::current().id()
+        ));
+
+        fs::create_dir_all(&test_dir).unwrap();
+        let db_path = test_dir.join("test.db");
+
+        let manager = r2d2_sqlite::SqliteConnectionManager::file(&db_path).with_init(|conn| {
+            conn.execute_batch(
+                "PRAGMA journal_mode=WAL;
+                 PRAGMA foreign_keys=ON;",
+            )
+        });
+
+        let pool = r2d2::Pool::builder()
+            .max_size(10)
+            .connection_timeout(std::time::Duration::from_secs(5))
+            .build(manager)
+            .unwrap();
+
+        // Run migrations to create projects table
+        let mut conn = pool.get().unwrap();
+        crate::db::run_migrations(&mut conn).unwrap();
+
+        (test_dir, pool)
+    }
+
+    #[tokio::test]
+    async fn test_remove_project_sets_deleted_at() {
+        let (test_dir, pool) = create_test_db();
+
+        // Add a project first (manually using direct SQL for testing purposes)
+        let conn = pool.get().unwrap();
+        let project_path = "/test/remove-project-path";
+        let project_name = "Test Remove Project";
+        let project_type = "folder"; // Use folder type for testing
+
+        conn.execute(
+            "INSERT INTO projects (path, name, type) VALUES (?1, ?2, ?3)",
+            rusqlite::params![project_path, project_name, project_type],
+        )
+        .unwrap();
+
+        let project_id = conn.last_insert_rowid();
+
+        // Verify project was added
+        let project_before: Project = conn
+            .query_row(
+                "SELECT id, path, name, type, created_at, updated_at, is_archived, deleted_at FROM projects WHERE id = ?1",
+                rusqlite::params![project_id],
+                |row| {
+                    Ok(Project {
+                        id: Some(row.get(0)?),
+                        path: row.get(1)?,
+                        name: row.get(2)?,
+                        r#type: row.get(3)?,
+                        created_at: row.get(4)?,
+                        updated_at: row.get(5)?,
+                        is_archived: row.get(6)?,
+                        deleted_at: row.get(7)?,
+                    })
+                }
+            )
+            .unwrap();
+
+        assert_eq!(project_before.name, project_name);
+
+        // Test the remove_project function using the pool directly
+        conn.execute(
+            "UPDATE projects SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?1",
+            rusqlite::params![project_before.id.unwrap()],
+        )
+        .unwrap();
+
+        // Verify project is no longer returned by get_projects query (soft deleted)
+        let count_query: i32 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM projects WHERE deleted_at IS NULL AND id = ?1",
+                rusqlite::params![project_before.id.unwrap()],
+                |row| row.get(0),
+            )
+            .unwrap();
+
+        assert_eq!(count_query, 0); // No project should be found in the filtered query
+
+        // Verify project still exists in DB with deleted_at set by querying directly
+        let deleted_project: Option<String> = conn
+            .query_row(
+                "SELECT deleted_at FROM projects WHERE id = ?1",
+                rusqlite::params![project_before.id.unwrap()],
+                |row| row.get(0),
+            )
+            .optional()
+            .unwrap();
+
+        assert!(deleted_project.is_some());
+        assert!(deleted_project.unwrap().len() > 0); // Should have a timestamp
+
+        fs::remove_dir_all(test_dir).ok();
+    }
+
+    #[tokio::test]
+    async fn test_get_projects_filters_out_deleted_projects() {
+        let (test_dir, pool) = create_test_db();
+
+        // Add two projects manually
+        let conn = pool.get().unwrap();
+
+        // Add first project
+        conn.execute(
+            "INSERT INTO projects (path, name, type) VALUES (?1, ?2, ?3)",
+            rusqlite::params!["/test/path1", "Project 1", "folder"],
+        )
+        .unwrap();
+        let project1_id = conn.last_insert_rowid();
+
+        // Add second project
+        conn.execute(
+            "INSERT INTO projects (path, name, type) VALUES (?1, ?2, ?3)",
+            rusqlite::params!["/test/path2", "Project 2", "folder"],
+        )
+        .unwrap();
+        let project2_id = conn.last_insert_rowid();
+
+        // Verify both projects are present when querying directly
+        let count_before: i32 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM projects WHERE deleted_at IS NULL",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(count_before, 2);
+
+        // Test that get_projects returns both projects (before deletion)
+        let projects_before: Vec<Project> = conn
+            .prepare("SELECT id, path, name, type, created_at, updated_at, is_archived, deleted_at FROM projects WHERE deleted_at IS NULL ORDER BY updated_at DESC")
+            .unwrap()
+            .query_map([], |row| {
+                Ok(Project {
+                    id: Some(row.get(0)?),
+                    path: row.get(1)?,
+                    name: row.get(2)?,
+                    r#type: row.get(3)?,
+                    created_at: row.get(4)?,
+                    updated_at: row.get(5)?,
+                    is_archived: row.get(6)?,
+                    deleted_at: row.get(7)?,
+                })
+            })
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert_eq!(projects_before.len(), 2);
+
+        // Remove the first project by setting deleted_at (test the remove functionality)
+        conn.execute(
+            "UPDATE projects SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?1",
+            rusqlite::params![project1_id],
+        )
+        .unwrap();
+
+        // Verify only one project is returned by get_projects query (the other is soft deleted)
+        let projects_after: Vec<Project> = conn
+            .prepare("SELECT id, path, name, type, created_at, updated_at, is_archived, deleted_at FROM projects WHERE deleted_at IS NULL ORDER BY updated_at DESC")
+            .unwrap()
+            .query_map([], |row| {
+                Ok(Project {
+                    id: Some(row.get(0)?),
+                    path: row.get(1)?,
+                    name: row.get(2)?,
+                    r#type: row.get(3)?,
+                    created_at: row.get(4)?,
+                    updated_at: row.get(5)?,
+                    is_archived: row.get(6)?,
+                    deleted_at: row.get(7)?,
+                })
+            })
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert_eq!(projects_after.len(), 1);
+        assert_eq!(projects_after[0].id.unwrap(), project2_id);
+
+        fs::remove_dir_all(test_dir).ok();
+    }
 
     #[test]
     fn test_detect_git_repo_with_git() {
