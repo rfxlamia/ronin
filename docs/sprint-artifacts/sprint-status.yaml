@@ -57,11 +57,11 @@ development_status:
   2-6-project-search-filter: done
   2-7-ronin-oath-celebration: done
   2-8-remove-untrack-project: done
-  2-9-project-auto-detection-on-first-launch: backlog
+  2-9-project-auto-detection-on-first-launch: done
   epic-2-retrospective: optional
 
   epic-3: backlog
-  3-1-openrouter-api-integration: backlog
+  3-1-openrouter-api-integration: backlog # check docs/openrouterdocs for API docs from OpenRouter when creating the story
   3-2-git-history-analysis: backlog
   3-3-contextpanel-component: backlog
   3-4-ai-context-generation: backlog

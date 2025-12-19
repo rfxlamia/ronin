@@ -1,6 +1,6 @@
 # Story 2.9: Project Auto-Detection on First Launch
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -51,6 +51,7 @@ so that **I don't have to manually add each project one by one**.
 - [x] **Testing**
   - [x] Unit test: `scan_projects` correctly finds git repos in mock structure
   - [x] Unit test: `scan_projects` respects depth limit
+  - [x] Unit test: Frontend `ProjectScanner` component tests (17 test cases)
   - [x] Manual test: Verify scan speed and accuracy on actual file system
   - [x] Manual test: Verify re-adding a previously "Removed" project restores it correctly
 
@@ -99,10 +100,71 @@ so that **I don't have to manually add each project one by one**.
 
 ### File List
 
+**Backend (Rust):**
 - `src-tauri/Cargo.toml` - Added `walkdir` and `dirs` dependencies
-- `src-tauri/src/commands/projects.rs` - Implemented `scan_projects` command with tests
-- `src/components/Dashboard/ProjectScanner.tsx` - Created new component for project scanning UI
+- `src-tauri/Cargo.lock` - Updated dependency lockfile
+- `src-tauri/src/commands/projects.rs` - Implemented `scan_projects` command with 4 unit tests
+- `src-tauri/src/lib.rs` - Registered `scan_projects` command
+
+**Frontend (React/TypeScript):**
+- `src/components/Dashboard/ProjectScanner.tsx` - New component for project scanning UI
+- `src/components/Dashboard/ProjectScanner.test.tsx` - 17 comprehensive test cases
 - `src/components/Dashboard/EmptyState.tsx` - Updated to include scanner functionality
-- `src/components/ui/loader.tsx` - Created RoninLoader component
-- `src/types/project.ts` - Defined Project interface
-- `src/components/Dashboard/ProjectScanner.test.tsx` - Added frontend tests
+- `src/components/ui/loader.tsx` - RoninLoader with meditation pulse animation (fixed spinner violation)
+- `src/components/ui/checkbox.tsx` - shadcn/ui Checkbox component
+- `src/index.css` - Added `.ronin-loader` class with meditation pulse animation
+
+**Dependencies:**
+- `package.json` - Updated dependencies
+- `package-lock.json` - Updated lockfile
+
+## Senior Developer Review (AI)
+
+**Date:** 2025-12-20  
+**Reviewer:** Adversarial Code Review Workflow
+
+### Issues Found & Fixed
+
+1. **🔴 CRITICAL - FIXED: RoninLoader used spinner animation**
+   - Original: `animate-spin` class (violates 礼 Rei philosophy)
+   - Fixed: Replaced with `ronin-loader` class using meditation pulse animation
+   - Files: `src/components/ui/loader.tsx`, `src/index.css`
+
+2. **🔴 CRITICAL - FIXED: Missing frontend tests**
+   - Original: `ProjectScanner.test.tsx` claimed but didn't exist
+   - Fixed: Created comprehensive test suite with 17 test cases
+   - File: `src/components/Dashboard/ProjectScanner.test.tsx`
+
+3. **🟡 MEDIUM - FIXED: Story file not tracked in git**
+   - Fixed: Added to git staging
+
+4. **🟡 MEDIUM - FIXED: Incomplete File List**
+   - Added missing files: `Cargo.lock`, `checkbox.tsx`, `index.css`, `lib.rs`, `package.json`, `package-lock.json`
+
+5. **🟢 LOW - NOTED: Unrelated modified files in git**
+   - `HealthBadge.tsx`, `projectHealth.ts/test.ts`, `health.ts` - changes from parallel development, not part of this story
+
+### Verification Status
+
+- ✅ Backend unit tests: 4 tests in `projects.rs`
+- ✅ Frontend unit tests: 17 tests in `ProjectScanner.test.tsx`
+- ✅ RoninLoader uses meditation pulse (no spinner)
+- ✅ All files tracked in git
+- ✅ File List accurate and complete
+
+### Final Verification & Retrospective Notes
+
+**Date:** 2025-12-20
+**Status:** Validated with User
+
+1. **Performance Observation:**
+   - Manual adding of projects is performant and responsive.
+   - **Issue:** Importing a large number of projects via the scanner feels "heavy" (UI lag). The exact project count threshold for this degradation is currently unknown and should be investigated in a future task.
+
+2. **UX Observation:**
+   - **Issue:** `RoninLoader` animation is often not visible during scanning because the scan completes too quickly (< 100ms for typical setups). This is technically a "good problem" (performance > 5s constraint met easily), but from a UX perspective, it might feel abrupt.
+
+3. **Regression Testing:**
+   - **Pass:** Full verification test suite executed successfully.
+   - Result: 14 test files passed, 124 tests passed. No regressions detected in existing functionality.
+

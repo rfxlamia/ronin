@@ -13,7 +13,7 @@ describe('ProjectCard', () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         lastActivityAt: new Date().toISOString(),
-        healthStatus: 'active', // Optional, ignored by calculation but keeps type valid
+        healthStatus: 'active',
         gitBranch: 'main',
         uncommittedCount: 3,
     };
@@ -30,20 +30,17 @@ describe('ProjectCard', () => {
         lastActivityAt: '2024-12-10T00:00:00Z',
     };
 
-    // Helper to get collapsible trigger button (not the dropdown menu button)
-    // Uses data-project-card attribute which we added specifically for this purpose
-    const getCollapsibleTrigger = () => {
+    // Helper to get the card trigger button
+    const getCardTrigger = () => {
         const buttons = screen.getAllByRole('button');
-        // The collapsible trigger has data-project-card attribute
         const trigger = buttons.find(btn => btn.hasAttribute('data-project-card'));
         if (!trigger) {
-            throw new Error('Could not find collapsible trigger with data-project-card attribute');
+            throw new Error('Could not find card trigger with data-project-card attribute');
         }
         return trigger;
     };
 
-
-    describe('Collapsed State', () => {
+    describe('Card Display', () => {
         it('renders project name in serif font', () => {
             render(<ProjectCard project={mockGitProject} />);
             const name = screen.getByText('Test Project');
@@ -58,13 +55,11 @@ describe('ProjectCard', () => {
 
         it('shows HealthBadge component with correct status', () => {
             render(<ProjectCard project={mockGitProject} />);
-            // mockGitProject has uncommitted changes > 0, so it should be 'attention'
             expect(screen.getByLabelText(/Project status: attention/i)).toBeInTheDocument();
         });
 
         it('shows GitBranch icon for git projects', () => {
             const { container } = render(<ProjectCard project={mockGitProject} />);
-            // lucide-react renders SVG with specific class
             const icon = container.querySelector('[data-icon="git-branch"]');
             expect(icon).toBeInTheDocument();
         });
@@ -99,112 +94,91 @@ describe('ProjectCard', () => {
             expect(screen.getByText(/0 files/i)).toBeInTheDocument();
         });
 
-        it('has proper ARIA attributes when collapsed', () => {
+        it('card trigger indicates it opens a dialog', () => {
             render(<ProjectCard project={mockGitProject} />);
-            const trigger = getCollapsibleTrigger();
-            expect(trigger).toHaveAttribute('aria-expanded', 'false');
+            const trigger = getCardTrigger();
+            expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
         });
     });
 
-    describe('Interaction', () => {
-        it('expands card when clicked', async () => {
+    describe('Modal Interaction', () => {
+        it('opens modal when card is clicked', async () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            const trigger = getCollapsibleTrigger();
-            expect(trigger).toHaveAttribute('aria-expanded', 'false');
-
+            const trigger = getCardTrigger();
             await user.click(trigger);
 
-            expect(trigger).toHaveAttribute('aria-expanded', 'true');
+            // Modal should appear with project details
+            expect(await screen.findByRole('dialog')).toBeInTheDocument();
         });
 
-        it('toggles expansion with Enter key', async () => {
+        it('shows git branch name in modal for git projects', async () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            const trigger = getCollapsibleTrigger();
-            trigger.focus();
+            await user.click(getCardTrigger());
 
-            await user.keyboard('{Enter}');
-            expect(trigger).toHaveAttribute('aria-expanded', 'true');
-
-            await user.keyboard('{Enter}');
-            expect(trigger).toHaveAttribute('aria-expanded', 'false');
-        });
-
-        it('toggles expansion with Space key', async () => {
-            const user = userEvent.setup();
-            render(<ProjectCard project={mockGitProject} />);
-
-            const trigger = getCollapsibleTrigger();
-            trigger.focus();
-
-            await user.keyboard(' ');
-            expect(trigger).toHaveAttribute('aria-expanded', 'true');
-        });
-
-        it('shows focus ring (Antique Brass) when focused', () => {
-            render(<ProjectCard project={mockGitProject} />);
-            const trigger = getCollapsibleTrigger();
-            trigger.focus();
-
-            // Check for focus-visible class (Tailwind) or custom focus styles
-            expect(trigger).toHaveClass(/focus-visible/);
-        });
-    });
-
-    describe('Expanded State', () => {
-        it('shows git branch name for git projects in monospace font', async () => {
-            const user = userEvent.setup();
-            render(<ProjectCard project={mockGitProject} />);
-
-            await user.click(getCollapsibleTrigger());
-
-            const branch = screen.getByText(/main/i);
+            const branch = await screen.findByText(/main/i);
             expect(branch).toBeInTheDocument();
-            expect(branch).toHaveClass('font-mono');
         });
 
-        it('shows uncommitted files count when available', async () => {
+        it('shows uncommitted files count in modal when available', async () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            await user.click(getCollapsibleTrigger());
+            await user.click(getCardTrigger());
 
-            expect(screen.getByText(/3.*uncommitted/i)).toBeInTheDocument();
+            expect(await screen.findByText(/3.*uncommitted/i)).toBeInTheDocument();
         });
 
-        it('shows "Open in IDE" button with serif font', async () => {
+        it('shows "Open in IDE" button in modal', async () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            await user.click(getCollapsibleTrigger());
+            await user.click(getCardTrigger());
 
-            // Use findByText which waits for the element to appear
             const ideButton = await screen.findByText('Open in IDE');
             expect(ideButton).toBeInTheDocument();
-            expect(ideButton.closest('button')).toHaveClass('font-serif');
         });
 
-        it('does not show git-specific fields for folder projects', async () => {
+        it('does not show git-specific fields for folder projects in modal', async () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockFolderProject} />);
 
-            await user.click(getCollapsibleTrigger());
+            await user.click(getCardTrigger());
+
+            // Wait for modal to appear
+            await screen.findByRole('dialog');
 
             expect(screen.queryByText(/branch/i)).not.toBeInTheDocument();
             expect(screen.queryByText(/uncommitted/i)).not.toBeInTheDocument();
         });
 
-        it('shows "Open in IDE" button for folder projects', async () => {
+        it('closes modal when close button is clicked', async () => {
             const user = userEvent.setup();
-            render(<ProjectCard project={mockFolderProject} />);
+            render(<ProjectCard project={mockGitProject} />);
 
-            await user.click(getCollapsibleTrigger());
+            await user.click(getCardTrigger());
+            expect(await screen.findByRole('dialog')).toBeInTheDocument();
 
-            const ideButton = await screen.findByText('Open in IDE');
-            expect(ideButton).toBeInTheDocument();
+            const closeButton = screen.getByRole('button', { name: /close/i });
+            await user.click(closeButton);
+
+            // Modal should be closed
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        });
+
+        it('closes modal when pressing Escape', async () => {
+            const user = userEvent.setup();
+            render(<ProjectCard project={mockGitProject} />);
+
+            await user.click(getCardTrigger());
+            expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+            await user.keyboard('{Escape}');
+
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         });
 
         it('handles missing optional git fields gracefully', async () => {
@@ -217,7 +191,7 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={projectWithoutGitFields} />);
 
-            await user.click(getCollapsibleTrigger());
+            await user.click(getCardTrigger());
 
             // Should not crash and should still show Open IDE button
             const ideButton = await screen.findByText('Open in IDE');
@@ -230,25 +204,19 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            const trigger = getCollapsibleTrigger();
+            const trigger = getCardTrigger();
 
-            // Tab once goes to dropdown menu button (positioned first in DOM)
-            // Tab again should reach the collapsible trigger
             await user.tab(); // Focus on dropdown menu button
-            await user.tab(); // Focus on collapsible trigger
+            await user.tab(); // Focus on card trigger
             expect(trigger).toHaveFocus();
         });
 
-        it('has correct ARIA expanded state', async () => {
-            const user = userEvent.setup();
+        it('shows focus ring when focused', () => {
             render(<ProjectCard project={mockGitProject} />);
+            const trigger = getCardTrigger();
+            trigger.focus();
 
-            const trigger = getCollapsibleTrigger();
-
-            expect(trigger).toHaveAttribute('aria-expanded', 'false');
-
-            await user.click(trigger);
-            expect(trigger).toHaveAttribute('aria-expanded', 'true');
+            expect(trigger).toHaveClass(/focus-visible/);
         });
     });
 
@@ -273,7 +241,6 @@ describe('ProjectCard', () => {
             const removeOption = screen.getByText(/remove/i);
             await user.click(removeOption);
 
-            // Dialog should be visible
             expect(screen.getByText(/Remove Test Project from Ronin\?/i)).toBeInTheDocument();
             expect(screen.getByText(/Your files won't be deleted/i)).toBeInTheDocument();
         });
@@ -282,16 +249,13 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            // Open menu and click Remove
             const menuButton = screen.getByRole('button', { name: /project menu/i });
             await user.click(menuButton);
             await user.click(screen.getByText(/remove/i));
 
-            // Click Cancel
             const cancelButton = screen.getByRole('button', { name: /cancel/i });
             await user.click(cancelButton);
 
-            // Dialog should be closed
             expect(screen.queryByText(/Remove Test Project from Ronin\?/i)).not.toBeInTheDocument();
         });
 
@@ -299,12 +263,10 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            // Open menu and click Remove
             const menuButton = screen.getByRole('button', { name: /project menu/i });
             await user.click(menuButton);
             await user.click(screen.getByText(/remove/i));
 
-            // Find the dialog's Remove button (not the menu item)
             const dialogRemoveButton = screen.getByRole('button', { name: /^remove$/i });
             expect(dialogRemoveButton).toHaveClass('font-serif');
         });

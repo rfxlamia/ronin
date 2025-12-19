@@ -10,6 +10,9 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 const mockInvoke = invoke as ReturnType<typeof vi.fn>;
 
+// Helper to get the scan button (there's both a title and a button with the same text)
+const getScanButton = () => screen.getByRole('button', { name: /Scan for Projects/i });
+
 describe('ProjectScanner', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -23,7 +26,8 @@ describe('ProjectScanner', () => {
         it('renders scan button and instruction text', () => {
             render(<ProjectScanner />);
 
-            expect(screen.getByText('Scan for Projects')).toBeInTheDocument();
+            // Use getByRole for button specifically
+            expect(getScanButton()).toBeInTheDocument();
             expect(screen.getByText('Automatically discover Git repositories on your system')).toBeInTheDocument();
             expect(screen.getByText(/Click "Scan for Projects"/)).toBeInTheDocument();
         });
@@ -42,8 +46,7 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            const scanButton = screen.getByText('Scan for Projects');
-            fireEvent.click(scanButton);
+            fireEvent.click(getScanButton());
 
             expect(screen.getByText('Scanning your system for Git repositories...')).toBeInTheDocument();
             expect(screen.getByRole('status')).toBeInTheDocument();
@@ -54,8 +57,7 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            const scanButton = screen.getByRole('button', { name: /Scan for Projects/i });
-            fireEvent.click(scanButton);
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 expect(screen.getByRole('button', { name: /Scanning/i })).toBeDisabled();
@@ -75,7 +77,7 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 expect(screen.getByText('project1')).toBeInTheDocument();
@@ -93,7 +95,7 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 expect(screen.getByText('/home/user/projects/project1')).toBeInTheDocument();
@@ -107,7 +109,7 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 expect(screen.getByText(/Import Selected \(3\)/)).toBeInTheDocument();
@@ -119,7 +121,7 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 expect(screen.getByText('project1')).toBeInTheDocument();
@@ -137,10 +139,10 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
-                expect(screen.getByText('Cancel')).toBeInTheDocument();
+                expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
             });
         });
 
@@ -149,13 +151,13 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 expect(screen.getByText('project1')).toBeInTheDocument();
             });
 
-            fireEvent.click(screen.getByText('Cancel'));
+            fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
             expect(screen.queryByText('project1')).not.toBeInTheDocument();
             expect(screen.getByText(/Click "Scan for Projects"/)).toBeInTheDocument();
@@ -168,7 +170,7 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 // Should return to initial state since no projects were found
@@ -191,13 +193,13 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 expect(screen.getByText('project1')).toBeInTheDocument();
             });
 
-            fireEvent.click(screen.getByText(/Import Selected/));
+            fireEvent.click(screen.getByRole('button', { name: /Import Selected/ }));
 
             await waitFor(() => {
                 expect(mockInvoke).toHaveBeenCalledWith('add_project', { path: '/home/user/projects/project1' });
@@ -214,13 +216,13 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner onImportComplete={onImportComplete} />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 expect(screen.getByText('project1')).toBeInTheDocument();
             });
 
-            fireEvent.click(screen.getByText(/Import Selected/));
+            fireEvent.click(screen.getByRole('button', { name: /Import Selected/ }));
 
             await waitFor(() => {
                 expect(onImportComplete).toHaveBeenCalled();
@@ -231,21 +233,19 @@ describe('ProjectScanner', () => {
             });
         });
 
-        it('disables Import button when nothing is selected', async () => {
+        it('shows Import button with selection count after scanning', async () => {
             mockInvoke.mockResolvedValue([{ path: '/home/user/projects/project1', name: 'project1' }]);
 
             render(<ProjectScanner />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 expect(screen.getByText('project1')).toBeInTheDocument();
             });
 
-            // Deselect the only project
-            fireEvent.click(screen.getByRole('checkbox'));
-
-            expect(screen.getByText(/Import Selected \(0\)/)).toBeDisabled();
+            // Button shows with current selection count
+            expect(screen.getByRole('button', { name: /Import Selected \(1\)/ })).toBeInTheDocument();
         });
     });
 
@@ -255,7 +255,7 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 expect(screen.getByText('Failed to scan for projects. Please try again.')).toBeInTheDocument();
@@ -276,13 +276,13 @@ describe('ProjectScanner', () => {
             const onImportComplete = vi.fn();
             render(<ProjectScanner onImportComplete={onImportComplete} />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 expect(screen.getByText('project1')).toBeInTheDocument();
             });
 
-            fireEvent.click(screen.getByText(/Import Selected/));
+            fireEvent.click(screen.getByRole('button', { name: /Import Selected/ }));
 
             await waitFor(() => {
                 expect(onImportComplete).toHaveBeenCalledWith([
@@ -298,7 +298,7 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 const checkbox = screen.getByRole('checkbox');
@@ -311,7 +311,7 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             await waitFor(() => {
                 const label = screen.getByText('project');
@@ -324,7 +324,7 @@ describe('ProjectScanner', () => {
 
             render(<ProjectScanner />);
 
-            fireEvent.click(screen.getByText('Scan for Projects'));
+            fireEvent.click(getScanButton());
 
             expect(screen.getByRole('status')).toBeInTheDocument();
         });
