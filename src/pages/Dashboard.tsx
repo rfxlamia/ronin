@@ -1,12 +1,14 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useProjectStore, useFilteredProjects } from '@/stores/projectStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import type { Project } from '@/types/project';
 import { EmptyState } from '@/components/Dashboard/EmptyState';
 import { DashboardHeader } from '@/components/Dashboard/DashboardHeader';
 import { DashboardGrid } from '@/components/Dashboard/DashboardGrid';
 import { ProjectCardSkeleton } from '@/components/Dashboard/ProjectCardSkeleton';
+import { RoninOathModal } from '@/components/RoninOathModal';
 
 export function Dashboard() {
     const projects = useProjectStore((state) => state.projects);
@@ -17,11 +19,21 @@ export function Dashboard() {
     const isLoading = useProjectStore((state) => state.isLoading);
     const { width } = useWindowSize();
 
+    const oathShown = useSettingsStore((state) => state.oathShown);
+    const checkOathStatus = useSettingsStore((state) => state.checkOathStatus);
+    const markOathShown = useSettingsStore((state) => state.markOathShown);
+    const [showOathModal, setShowOathModal] = useState(false);
+
     // Calculate number of skeleton cards based on window width
     const skeletonCount = useMemo(() => {
         const columns = width < 900 ? 1 : width < 1200 ? 2 : 3;
         return columns * 3; // 3 rows of skeletons
     }, [width]);
+
+    // Load oath status on mount
+    useEffect(() => {
+        checkOathStatus();
+    }, [checkOathStatus]);
 
     // Fetch projects from database on mount
     useEffect(() => {
@@ -38,6 +50,26 @@ export function Dashboard() {
 
         fetchProjects();
     }, [setProjects, setLoading, setError]);
+
+    // Oath modal trigger logic: Show modal after first project is added
+    useEffect(() => {
+        if (projects.length === 1 && !oathShown && !isLoading) {
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const delay = prefersReducedMotion ? 0 : 500;
+
+            const timer = setTimeout(() => {
+                setShowOathModal(true);
+            }, delay);
+
+            // Cleanup timer on unmount
+            return () => clearTimeout(timer);
+        }
+    }, [projects.length, oathShown, isLoading]);
+
+    const handleOathClose = async () => {
+        await markOathShown();
+        setShowOathModal(false);
+    };
 
     if (isLoading) {
         return (
@@ -79,6 +111,9 @@ export function Dashboard() {
                     )}
                 </>
             )}
+
+            {/* Ronin Oath Modal */}
+            <RoninOathModal open={showOathModal} onClose={handleOathClose} />
         </div>
     );
 }

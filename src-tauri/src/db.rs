@@ -63,7 +63,7 @@ fn ensure_parent_dir_exists(db_path: &PathBuf) -> Result<(), String> {
 }
 
 /// Run database migrations
-fn run_migrations(
+pub(crate) fn run_migrations(
     conn: &mut r2d2::PooledConnection<SqliteConnectionManager>,
 ) -> Result<(), String> {
     let migrations = Migrations::new(vec![M::up(
