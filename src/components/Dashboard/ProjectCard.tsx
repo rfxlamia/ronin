@@ -1,13 +1,20 @@
 import { useState } from 'react';
-import { GitBranch, Folder } from 'lucide-react';
+import { GitBranch, Folder, MoreVertical } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { HealthBadge } from './HealthBadge';
 import { calculateDaysSince, formatDaysSince } from '@/lib/utils/dateUtils';
 import { calculateProjectHealth } from '@/lib/logic/projectHealth';
 import type { Project } from '@/types/project';
 import { cn } from '@/lib/utils';
+import { useProjectStore } from '@/stores/projectStore';
 
 interface ProjectCardProps {
     project: Project;
@@ -16,10 +23,22 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project, onExpandChange }: ProjectCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
+    const archiveProject = useProjectStore((state) => state.archiveProject);
+    const restoreProject = useProjectStore((state) => state.restoreProject);
 
     const handleExpandChange = (open: boolean) => {
         setIsExpanded(open);
         onExpandChange?.();
+    };
+
+    const handleArchive = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        await archiveProject(project.id);
+    };
+
+    const handleRestore = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        await restoreProject(project.id);
     };
 
     const TypeIcon = project.type === 'git' ? GitBranch : Folder;
@@ -34,43 +53,70 @@ export function ProjectCard({ project, onExpandChange }: ProjectCardProps) {
     return (
         <Collapsible open={isExpanded} onOpenChange={handleExpandChange}>
             <Card className="overflow-hidden transition-shadow duration-200 hover:shadow-md">
-                <CollapsibleTrigger asChild>
-                    <button
-                        className={cn(
-                            'w-full text-left p-4 transition-all duration-200',
-                            'focus-visible:outline-none focus-visible:ring-2',
-                            'focus-visible:ring-[#CC785C] focus-visible:ring-offset-2',
-                            'rounded-lg'
-                        )}
-                        aria-expanded={isExpanded}
-                    >
-                        <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <TypeIcon
-                                        className="h-4 w-4 text-muted-foreground flex-shrink-0"
-                                        data-icon={project.type === 'git' ? 'git-branch' : 'folder'}
-                                    />
-                                    <h3 className="font-serif font-bold text-lg truncate">
-                                        {project.name}
-                                    </h3>
-                                </div>
+                <div className="relative">
+                    {/* Dropdown Menu - positioned absolutely to avoid nesting */}
+                    <div className="absolute top-4 right-4 z-10">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreVertical className="h-4 w-4" />
+                                    <span className="sr-only">Project menu</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                {project.isArchived ? (
+                                    <DropdownMenuItem onClick={handleRestore}>
+                                        Restore
+                                    </DropdownMenuItem>
+                                ) : (
+                                    <DropdownMenuItem onClick={handleArchive}>
+                                        Archive
+                                    </DropdownMenuItem>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
 
-                                <div className="flex items-center gap-3 flex-wrap">
-                                    <HealthBadge status={healthStatus} />
-                                    {project.type === 'folder' && project.fileCount !== undefined ? (
+                    {/* CollapsibleTrigger */}
+                    <CollapsibleTrigger asChild>
+                        <button
+                            data-project-card
+                            className={cn(
+                                'w-full text-left p-4 pr-14 transition-all duration-200',
+                                'focus-visible:outline-none focus-visible:ring-2',
+                                'focus-visible:ring-[#CC785C] focus-visible:ring-offset-2',
+                                'rounded-lg'
+                            )}
+                            aria-expanded={isExpanded}
+                        >
+                            <div className="flex items-start gap-4">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <TypeIcon
+                                            className="h-4 w-4 text-muted-foreground flex-shrink-0"
+                                            data-icon={project.type === 'git' ? 'git-branch' : 'folder'}
+                                        />
+                                        <h3 className="font-serif font-bold text-lg truncate">
+                                            {project.name}
+                                        </h3>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        <HealthBadge status={healthStatus} />
+                                        {project.type === 'folder' && project.fileCount !== undefined ? (
+                                            <span className="text-sm text-muted-foreground font-sans">
+                                                {project.fileCount} {project.fileCount === 1 ? 'file' : 'files'}
+                                            </span>
+                                        ) : null}
                                         <span className="text-sm text-muted-foreground font-sans">
-                                            {project.fileCount} {project.fileCount === 1 ? 'file' : 'files'}
+                                            {activityText}
                                         </span>
-                                    ) : null}
-                                    <span className="text-sm text-muted-foreground font-sans">
-                                        {activityText}
-                                    </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </button>
-                </CollapsibleTrigger>
+                        </button>
+                    </CollapsibleTrigger>
+                </div>
 
                 <CollapsibleContent>
                     <div className="px-4 pb-4 pt-2 border-t space-y-3">

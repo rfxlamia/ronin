@@ -16,6 +16,7 @@ export interface Project {
     healthStatus?: ProjectHealth;
     isStuck?: boolean; // Reserved for Epic 6
     fileCount?: number; // For folder projects
+    isArchived?: boolean; // For archive functionality
 }
 
 export const DEFAULT_DORMANCY_THRESHOLD = 14;
