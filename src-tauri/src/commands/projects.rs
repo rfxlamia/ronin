@@ -9,6 +9,7 @@ pub struct Project {
     pub r#type: String,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
+    pub is_archived: Option<bool>,
 }
 
 /// Response struct for frontend - guarantees id is present
@@ -21,6 +22,8 @@ pub struct ProjectResponse {
     pub r#type: String,
     pub created_at: String,
     pub updated_at: String,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "isArchived")]
+    pub is_archived: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "fileCount")]
     pub file_count: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "lastActivityAt")]
@@ -160,7 +163,7 @@ pub async fn add_project(
     // Fetch the complete project record and return as ProjectResponse
     let response: ProjectResponse = conn
         .query_row(
-            "SELECT id, path, name, type, created_at, updated_at FROM projects WHERE id = ?1",
+            "SELECT id, path, name, type, created_at, updated_at, is_archived FROM projects WHERE id = ?1",
             rusqlite::params![project_id],
             |row| {
                 Ok(ProjectResponse {
@@ -170,6 +173,7 @@ pub async fn add_project(
                     r#type: row.get(3)?,
                     created_at: row.get::<_, Option<String>>(4)?.unwrap_or_default(),
                     updated_at: row.get::<_, Option<String>>(5)?.unwrap_or_default(),
+                    is_archived: row.get(6)?,
                     file_count: None,
                     last_activity: None,
                 })
@@ -192,7 +196,7 @@ pub async fn get_projects(
             .map_err(|e| format!("Failed to get database connection: {}", e))?;
 
         let mut stmt = conn
-            .prepare("SELECT id, path, name, type, created_at, updated_at FROM projects ORDER BY updated_at DESC")
+            .prepare("SELECT id, path, name, type, created_at, updated_at, is_archived FROM projects ORDER BY updated_at DESC")
             .map_err(|e| format!("Failed to prepare statement: {}", e))?;
 
         let projects_result = stmt
@@ -204,6 +208,7 @@ pub async fn get_projects(
                     r#type: row.get(3)?,
                     created_at: row.get::<_, Option<String>>(4)?.unwrap_or_default(),
                     updated_at: row.get::<_, Option<String>>(5)?.unwrap_or_default(),
+                    is_archived: row.get(6)?,
                     file_count: None,
                     last_activity: None,
                 })
@@ -249,6 +254,44 @@ pub async fn delete_project(
         rusqlite::params![project_id],
     )
     .map_err(|e| format!("Failed to delete project: {}", e))?;
+
+    Ok(())
+}
+
+/// Archive a project (sets is_archived = 1)
+#[tauri::command]
+pub async fn archive_project(
+    project_id: i64,
+    pool: tauri::State<'_, crate::db::DbPool>,
+) -> Result<(), String> {
+    let conn = pool
+        .get()
+        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+
+    conn.execute(
+        "UPDATE projects SET is_archived = 1 WHERE id = ?1",
+        rusqlite::params![project_id],
+    )
+    .map_err(|e| format!("Failed to archive project: {}", e))?;
+
+    Ok(())
+}
+
+/// Restore an archived project (sets is_archived = 0)
+#[tauri::command]
+pub async fn restore_project(
+    project_id: i64,
+    pool: tauri::State<'_, crate::db::DbPool>,
+) -> Result<(), String> {
+    let conn = pool
+        .get()
+        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+
+    conn.execute(
+        "UPDATE projects SET is_archived = 0 WHERE id = ?1",
+        rusqlite::params![project_id],
+    )
+    .map_err(|e| format!("Failed to restore project: {}", e))?;
 
     Ok(())
 }

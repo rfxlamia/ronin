@@ -1,14 +1,16 @@
 import { useEffect, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { useProjectStore } from '@/stores/projectStore';
+import { useProjectStore, useFilteredProjects } from '@/stores/projectStore';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import type { Project } from '@/types/project';
 import { EmptyState } from '@/components/Dashboard/EmptyState';
+import { DashboardHeader } from '@/components/Dashboard/DashboardHeader';
 import { DashboardGrid } from '@/components/Dashboard/DashboardGrid';
 import { ProjectCardSkeleton } from '@/components/Dashboard/ProjectCardSkeleton';
 
 export function Dashboard() {
     const projects = useProjectStore((state) => state.projects);
+    const filteredProjects = useFilteredProjects(); // Use filtered projects from selector
     const setProjects = useProjectStore((state) => state.setProjects);
     const setLoading = useProjectStore((state) => state.setLoading);
     const setError = useProjectStore((state) => state.setError);
@@ -61,13 +63,20 @@ export function Dashboard() {
             ) : (
                 <>
                     <h2 className="text-3xl font-serif font-bold mb-4">Dashboard</h2>
-                    <p className="text-muted-foreground mb-6">
-                        Your projects ({projects.length})
-                    </p>
 
-                    <div className="flex-1 min-h-0">
-                        <DashboardGrid projects={projects} />
-                    </div>
+                    {/* Dashboard Header with search and filters */}
+                    <DashboardHeader />
+
+                    {/* Show message when search/filter yields no results */}
+                    {filteredProjects.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-12">
+                            No projects found matching your search or filter.
+                        </p>
+                    ) : (
+                        <div className="flex-1 min-h-0">
+                            <DashboardGrid projects={filteredProjects} />
+                        </div>
+                    )}
                 </>
             )}
         </div>

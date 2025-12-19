@@ -63,7 +63,9 @@ fn ensure_parent_dir_exists(db_path: &PathBuf) -> Result<(), String> {
 }
 
 /// Run database migrations
-fn run_migrations(conn: &mut r2d2::PooledConnection<SqliteConnectionManager>) -> Result<(), String> {
+fn run_migrations(
+    conn: &mut r2d2::PooledConnection<SqliteConnectionManager>,
+) -> Result<(), String> {
     let migrations = Migrations::new(vec![M::up(
         "CREATE TABLE projects (
             id INTEGER PRIMARY KEY,
@@ -90,6 +92,24 @@ fn run_migrations(conn: &mut r2d2::PooledConnection<SqliteConnectionManager>) ->
     migrations
         .to_latest(conn.deref_mut())
         .map_err(|e| format!("Failed to run migrations: {}", e))?;
+
+    // Post-migration schema updates (for columns added after initial migration)
+    // Check if is_archived column exists
+    let is_archived_exists: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('projects') WHERE name='is_archived'",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("Failed to check is_archived column: {}", e))?;
+
+    if is_archived_exists == 0 {
+        conn.execute(
+            "ALTER TABLE projects ADD COLUMN is_archived BOOLEAN DEFAULT 0",
+            [],
+        )
+        .map_err(|e| format!("Failed to add is_archived column: {}", e))?;
+    }
 
     Ok(())
 }
@@ -167,7 +187,11 @@ mod tests {
             .query_row("PRAGMA journal_mode;", [], |row| row.get(0))
             .unwrap();
 
-        assert_eq!(journal_mode.to_lowercase(), "wal", "WAL mode should be enabled");
+        assert_eq!(
+            journal_mode.to_lowercase(),
+            "wal",
+            "WAL mode should be enabled"
+        );
         fs::remove_dir_all(test_dir).ok();
     }
 
@@ -194,7 +218,11 @@ mod tests {
             let foreign_keys: i32 = conn
                 .query_row("PRAGMA foreign_keys;", [], |row| row.get(0))
                 .unwrap();
-            assert_eq!(foreign_keys, 1, "Foreign keys should be ON for connection {}", i);
+            assert_eq!(
+                foreign_keys, 1,
+                "Foreign keys should be ON for connection {}",
+                i
+            );
         }
 
         fs::remove_dir_all(test_dir).ok();
@@ -261,7 +289,10 @@ mod tests {
             )
             .unwrap();
 
-        assert_ne!(initial_updated_at, new_updated_at, "updated_at should change on update");
+        assert_ne!(
+            initial_updated_at, new_updated_at,
+            "updated_at should change on update"
+        );
         fs::remove_dir_all(test_dir).ok();
     }
 
@@ -306,8 +337,14 @@ mod tests {
 
         let result = ensure_parent_dir_exists(&db_path);
 
-        assert!(result.is_ok(), "Should successfully create parent directory");
-        assert!(db_path.parent().unwrap().exists(), "Parent directory should exist");
+        assert!(
+            result.is_ok(),
+            "Should successfully create parent directory"
+        );
+        assert!(
+            db_path.parent().unwrap().exists(),
+            "Parent directory should exist"
+        );
 
         fs::remove_dir_all(test_dir).ok();
     }
@@ -318,7 +355,10 @@ mod tests {
         let conn = pool.get().unwrap();
 
         let result = verify_integrity(&conn);
-        assert!(result.is_ok(), "Integrity check should pass on valid database");
+        assert!(
+            result.is_ok(),
+            "Integrity check should pass on valid database"
+        );
 
         fs::remove_dir_all(test_dir).ok();
     }

@@ -30,6 +30,19 @@ describe('ProjectCard', () => {
         lastActivityAt: '2024-12-10T00:00:00Z',
     };
 
+    // Helper to get collapsible trigger button (not the dropdown menu button)
+    // Uses data-project-card attribute which we added specifically for this purpose
+    const getCollapsibleTrigger = () => {
+        const buttons = screen.getAllByRole('button');
+        // The collapsible trigger has data-project-card attribute
+        const trigger = buttons.find(btn => btn.hasAttribute('data-project-card'));
+        if (!trigger) {
+            throw new Error('Could not find collapsible trigger with data-project-card attribute');
+        }
+        return trigger;
+    };
+
+
     describe('Collapsed State', () => {
         it('renders project name in serif font', () => {
             render(<ProjectCard project={mockGitProject} />);
@@ -88,7 +101,7 @@ describe('ProjectCard', () => {
 
         it('has proper ARIA attributes when collapsed', () => {
             render(<ProjectCard project={mockGitProject} />);
-            const trigger = screen.getByRole('button');
+            const trigger = getCollapsibleTrigger();
             expect(trigger).toHaveAttribute('aria-expanded', 'false');
         });
     });
@@ -98,7 +111,7 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            const trigger = screen.getByRole('button');
+            const trigger = getCollapsibleTrigger();
             expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
             await user.click(trigger);
@@ -110,7 +123,7 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            const trigger = screen.getByRole('button');
+            const trigger = getCollapsibleTrigger();
             trigger.focus();
 
             await user.keyboard('{Enter}');
@@ -124,7 +137,7 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            const trigger = screen.getByRole('button');
+            const trigger = getCollapsibleTrigger();
             trigger.focus();
 
             await user.keyboard(' ');
@@ -133,7 +146,7 @@ describe('ProjectCard', () => {
 
         it('shows focus ring (Antique Brass) when focused', () => {
             render(<ProjectCard project={mockGitProject} />);
-            const trigger = screen.getByRole('button');
+            const trigger = getCollapsibleTrigger();
             trigger.focus();
 
             // Check for focus-visible class (Tailwind) or custom focus styles
@@ -146,7 +159,7 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            await user.click(screen.getByRole('button'));
+            await user.click(getCollapsibleTrigger());
 
             const branch = screen.getByText(/main/i);
             expect(branch).toBeInTheDocument();
@@ -157,7 +170,7 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            await user.click(screen.getByRole('button'));
+            await user.click(getCollapsibleTrigger());
 
             expect(screen.getByText(/3.*uncommitted/i)).toBeInTheDocument();
         });
@@ -166,18 +179,19 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            await user.click(screen.getByRole('button'));
+            await user.click(getCollapsibleTrigger());
 
-            const button = screen.getByRole('button', { name: /Open in IDE/i });
-            expect(button).toBeInTheDocument();
-            expect(button).toHaveClass('font-serif');
+            // Use findByText which waits for the element to appear
+            const ideButton = await screen.findByText('Open in IDE');
+            expect(ideButton).toBeInTheDocument();
+            expect(ideButton.closest('button')).toHaveClass('font-serif');
         });
 
         it('does not show git-specific fields for folder projects', async () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockFolderProject} />);
 
-            await user.click(screen.getByRole('button'));
+            await user.click(getCollapsibleTrigger());
 
             expect(screen.queryByText(/branch/i)).not.toBeInTheDocument();
             expect(screen.queryByText(/uncommitted/i)).not.toBeInTheDocument();
@@ -187,9 +201,10 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockFolderProject} />);
 
-            await user.click(screen.getByRole('button'));
+            await user.click(getCollapsibleTrigger());
 
-            expect(screen.getByRole('button', { name: /Open in IDE/i })).toBeInTheDocument();
+            const ideButton = await screen.findByText('Open in IDE');
+            expect(ideButton).toBeInTheDocument();
         });
 
         it('handles missing optional git fields gracefully', async () => {
@@ -202,10 +217,11 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={projectWithoutGitFields} />);
 
-            await user.click(screen.getByRole('button'));
+            await user.click(getCollapsibleTrigger());
 
             // Should not crash and should still show Open IDE button
-            expect(screen.getByRole('button', { name: /Open in IDE/i })).toBeInTheDocument();
+            const ideButton = await screen.findByText('Open in IDE');
+            expect(ideButton).toBeInTheDocument();
         });
     });
 
@@ -214,9 +230,12 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            const trigger = screen.getByRole('button');
+            const trigger = getCollapsibleTrigger();
 
-            await user.tab();
+            // Tab once goes to dropdown menu button (positioned first in DOM)
+            // Tab again should reach the collapsible trigger
+            await user.tab(); // Focus on dropdown menu button
+            await user.tab(); // Focus on collapsible trigger
             expect(trigger).toHaveFocus();
         });
 
@@ -224,7 +243,7 @@ describe('ProjectCard', () => {
             const user = userEvent.setup();
             render(<ProjectCard project={mockGitProject} />);
 
-            const trigger = screen.getByRole('button');
+            const trigger = getCollapsibleTrigger();
 
             expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
