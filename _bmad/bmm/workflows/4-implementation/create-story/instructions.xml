@@ -185,6 +185,7 @@
     {project_context}, {filepath_manifest}</note>
 
     <!-- Analyze manifest if available -->
+    <action>Run 'node scripts/generate-manifest.cjs' to ensure filepath.md is up-to-date</action>
     <check if="filepath.md exists">
       <action>Load and analyze {project-root}/filepath.md</action>
       <action>Identify all existing components, stores, hooks, and types that might be relevant to this story</action>

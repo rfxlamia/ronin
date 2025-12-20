@@ -2,7 +2,7 @@
 
 **Auto-generated** list of key source files. Excludes: tests, migrations, workflow engine, build artifacts.
 
-## Files (76 total)
+## Files (85 total)
 
 - [`README.md`](file:///home/v/project/ronin/README.md)
 - [`docs/epics.md`](file:///home/v/project/ronin/docs/epics.md)
@@ -19,23 +19,31 @@
 - [`docs/sprint-artifacts/2-7-ronin-oath-celebration.md`](file:///home/v/project/ronin/docs/sprint-artifacts/2-7-ronin-oath-celebration.md)
 - [`docs/sprint-artifacts/2-8-remove-untrack-project.md`](file:///home/v/project/ronin/docs/sprint-artifacts/2-8-remove-untrack-project.md)
 - [`docs/sprint-artifacts/2-9-project-auto-detection-on-first-launch.md`](file:///home/v/project/ronin/docs/sprint-artifacts/2-9-project-auto-detection-on-first-launch.md)
+- [`docs/sprint-artifacts/3-1-openrouter-api-integration.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-1-openrouter-api-integration.md)
 - [`docs/sprint-artifacts/epic-1-retro-2025-12-18.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-1-retro-2025-12-18.md)
 - [`docs/sprint-artifacts/epic-2-retro-2025-12-20.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-2-retro-2025-12-20.md)
 - [`docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md`](file:///home/v/project/ronin/docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md)
 - [`docs/sprint-artifacts/validation-report-2-2.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-2.md)
 - [`docs/sprint-artifacts/validation-report-2-8.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-8.md)
 - [`docs/sprint-artifacts/validation-report-2-9.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-9.md)
+- [`docs/sprint-artifacts/validation-report-3-1-20251220.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-1-20251220.md)
 - [`package.json`](file:///home/v/project/ronin/package.json)
 - [`src-tauri/Cargo.toml`](file:///home/v/project/ronin/src-tauri/Cargo.toml)
 - [`src-tauri/build.rs`](file:///home/v/project/ronin/src-tauri/build.rs)
+- [`src-tauri/src/ai/mod.rs`](file:///home/v/project/ronin/src-tauri/src/ai/mod.rs)
+- [`src-tauri/src/ai/openrouter.rs`](file:///home/v/project/ronin/src-tauri/src/ai/openrouter.rs)
+- [`src-tauri/src/commands/ai.rs`](file:///home/v/project/ronin/src-tauri/src/commands/ai.rs)
+- [`src-tauri/src/commands/git.rs`](file:///home/v/project/ronin/src-tauri/src/commands/git.rs)
 - [`src-tauri/src/commands/mod.rs`](file:///home/v/project/ronin/src-tauri/src/commands/mod.rs)
 - [`src-tauri/src/commands/projects.rs`](file:///home/v/project/ronin/src-tauri/src/commands/projects.rs)
 - [`src-tauri/src/commands/settings.rs`](file:///home/v/project/ronin/src-tauri/src/commands/settings.rs)
 - [`src-tauri/src/db.rs`](file:///home/v/project/ronin/src-tauri/src/db.rs)
 - [`src-tauri/src/lib.rs`](file:///home/v/project/ronin/src-tauri/src/lib.rs)
 - [`src-tauri/src/main.rs`](file:///home/v/project/ronin/src-tauri/src/main.rs)
+- [`src-tauri/src/security.rs`](file:///home/v/project/ronin/src-tauri/src/security.rs)
 - [`src/App.tsx`](file:///home/v/project/ronin/src/App.tsx)
 - [`src/components/AppShell.tsx`](file:///home/v/project/ronin/src/components/AppShell.tsx)
+- [`src/components/ContextPanel.tsx`](file:///home/v/project/ronin/src/components/ContextPanel.tsx)
 - [`src/components/Dashboard/AddProjectButton.tsx`](file:///home/v/project/ronin/src/components/Dashboard/AddProjectButton.tsx)
 - [`src/components/Dashboard/DashboardGrid.tsx`](file:///home/v/project/ronin/src/components/Dashboard/DashboardGrid.tsx)
 - [`src/components/Dashboard/DashboardHeader.tsx`](file:///home/v/project/ronin/src/components/Dashboard/DashboardHeader.tsx)
@@ -62,6 +70,7 @@
 - [`src/components/ui/light-modal.tsx`](file:///home/v/project/ronin/src/components/ui/light-modal.tsx)
 - [`src/components/ui/loader.tsx`](file:///home/v/project/ronin/src/components/ui/loader.tsx)
 - [`src/components/ui/skeleton.tsx`](file:///home/v/project/ronin/src/components/ui/skeleton.tsx)
+- [`src/components/ui/streaming-text.tsx`](file:///home/v/project/ronin/src/components/ui/streaming-text.tsx)
 - [`src/components/ui/tabs.tsx`](file:///home/v/project/ronin/src/components/ui/tabs.tsx)
 - [`src/hooks/useWindowSize.ts`](file:///home/v/project/ronin/src/hooks/useWindowSize.ts)
 - [`src/lib/logic/projectHealth.ts`](file:///home/v/project/ronin/src/lib/logic/projectHealth.ts)
@@ -82,4 +91,4 @@
 - [`vitest.config.ts`](file:///home/v/project/ronin/vitest.config.ts)
 
 ---
-*Generated: 2025-12-20T03:18:24.539Z*
+*Generated: 2025-12-20T06:49:09.934Z*
