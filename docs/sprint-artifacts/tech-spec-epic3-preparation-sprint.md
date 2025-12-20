@@ -125,57 +125,65 @@ src-tauri/src/
   - Change `src/components/AppShell.tsx` position from relative to fixed/absolute
   - Ensure window controls always visible during scroll
   - Test with 30+ projects to verify fix
+  - **COMPLETED:** Fixed to `position: fixed` with `z-50`
   - Estimated: 0.5 day
 
-- [ ] **Task 1.2:** Investigate and fix project status calculation regression
+- [x] **Task 1.2:** Investigate and fix project status calculation regression
   - Debug `src/lib/logic/projectHealth.ts` calculation logic
   - Add comprehensive edge case tests
   - Fix git project dormancy detection (>1 week inactive showing as Active)
+  - **COMPLETED:** Backend now populates `lastActivityAt` for folder projects, added regression tests
   - Estimated: 1 day
 
 - [ ] **Task 1.3:** Investigate project card performance lag
   - Profile project card opening with browser dev tools
   - Identify if bottleneck is health calculation, file operations, or rendering
   - Implement performance optimizations (memoization, lazy loading, etc.)
+  - **NOTED:** 3-4x gap (scanned vs manual), both <100ms. Defer optimization until pre-launch.
   - Target: <500ms opening time
   - Estimated: 1 day
 
 #### Epic 3 Infrastructure Development
-- [ ] **Task 2.1:** API Key Management System
+- [x] **Task 2.1:** API Key Management System
   - Extend `src/stores/settingsStore.ts` with API key storage
   - Add Tauri command for secure key storage/retrieval
   - Create settings UI for API key input and validation
   - Test OpenRouter API connection validation
+  - **COMPLETED:** Using SQLite settings table, added UI with password toggle, validation
   - Estimated: 1-2 days
 
-- [ ] **Task 2.2:** Git Command Integration Foundation
+- [x] **Task 2.2:** Git Command Integration Foundation
   - Add `git2` crate to `src-tauri/Cargo.toml`
   - Create `src-tauri/src/commands/git.rs` with basic operations
   - Implement `get_git_history(path, limit)` command
   - Handle non-git projects gracefully
   - Add comprehensive error handling
+  - **COMPLETED:** git2 crate installed, get_git_history command working, 2 tests added
   - Estimated: 2 days
 
-- [ ] **Task 2.3:** Streaming UI Components
+- [x] **Task 2.3:** Streaming UI Components
   - Create `src/components/ui/streaming-text.tsx` component
   - Implement real-time text display with typing animation
   - Add loading states and error handling
   - Create `src/components/ContextPanel.tsx` foundation
+  - **COMPLETED:** Both components with 14 tests, ready for Epic 3
   - Estimated: 1-2 days
 
 #### CI/CD and Distribution
-- [ ] **Task 3.1:** GitHub Actions CI/CD Pipeline
+- [x] **Task 3.1:** GitHub Actions CI/CD Pipeline
   - Create `.github/workflows/ci.yml`
   - Run `npm test` and `cargo test` on every PR/push
   - Build verification for Linux target
   - Cache dependencies for faster builds
+  - **COMPLETED:** Workflow created with 3 jobs (test, build, lint)
   - Estimated: 0.5-1 day
 
-- [ ] **Task 3.2:** Distribution Pipeline Research
+- [x] **Task 3.2:** Distribution Pipeline Research
   - Research Tauri build/release process
   - Document .deb, .AppImage, Flatpak generation
   - Prepare release automation foundation
   - Update documentation with release process
+  - **COMPLETED:** Created docs/DISTRIBUTION.md with comprehensive guide
   - Estimated: 1-2 days
 
 #### Workflow Improvements
