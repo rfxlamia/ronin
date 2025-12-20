@@ -178,6 +178,29 @@ pub async fn get_git_status(path: String) -> Result<GitStatus, String> {
     })
 }
 
+/// Get ONLY the last commit date for health status (lightweight - no file scanning)
+/// This is much faster than get_git_context as it only gets the HEAD commit timestamp
+pub fn get_last_commit_date(path: &str) -> Option<String> {
+    let repo = match Repository::open(path) {
+        Ok(r) => r,
+        Err(_) => return None,
+    };
+
+    let head = match repo.head() {
+        Ok(h) => h,
+        Err(_) => return None,
+    };
+
+    let commit = match head.peel_to_commit() {
+        Ok(c) => c,
+        Err(_) => return None,
+    };
+
+    let time = commit.time();
+    chrono::DateTime::<chrono::Utc>::from_timestamp(time.seconds(), 0)
+        .map(|dt| dt.format("%Y-%m-%dT%H:%M:%SZ").to_string())
+}
+
 /// Get comprehensive git context (branch, status, and history)
 #[tauri::command]
 pub async fn get_git_context(path: String) -> Result<GitContext, String> {
