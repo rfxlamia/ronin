@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RoninOathModal } from '@/components/RoninOathModal';
+import { ModeToggle } from '@/components/mode-toggle';
 
 export function Settings() {
     const [showOath, setShowOath] = useState(false);
@@ -8,6 +9,18 @@ export function Settings() {
     return (
         <div className="p-8">
             <h2 className="text-3xl font-serif font-bold mb-6">Settings</h2>
+
+            {/* Appearance Section */}
+            <section className="mb-8">
+                <h3 className="text-xl font-serif font-bold mb-3">Appearance</h3>
+                <p className="text-muted-foreground mb-4">
+                    Choose your preferred color theme for Ronin.
+                </p>
+                <div className="flex items-center gap-3">
+                    <span className="text-sm font-sans">Theme:</span>
+                    <ModeToggle />
+                </div>
+            </section>
 
             {/* Philosophy Section */}
             <section className="mb-8">

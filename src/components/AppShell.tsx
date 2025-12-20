@@ -1,4 +1,3 @@
-import { ModeToggle } from './mode-toggle';
 import { WindowControls } from './WindowControls';
 import { Link, useLocation } from 'react-router-dom';
 import { ReactNode } from 'react';
@@ -15,10 +14,10 @@ export function AppShell({ children }: AppShellProps) {
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
-            {/* Custom Title Bar */}
+            {/* Custom Title Bar - Fixed Position */}
             <header
                 data-tauri-drag-region
-                className="flex items-center justify-between px-6 py-4 border-b border-border bg-card"
+                className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 border-b border-border bg-card"
             >
                 {/* Logo area */}
                 <h1 className="text-2xl font-serif font-bold text-foreground select-none pointer-events-none">
@@ -41,13 +40,12 @@ export function AppShell({ children }: AppShellProps) {
                             </Link>
                         </Button>
                     )}
-                    <ModeToggle />
                     <WindowControls />
                 </nav>
             </header>
 
-            {/* Main Content Area */}
-            <main className="flex-1 overflow-auto animate-fade-in">
+            {/* Main Content Area - Padding for fixed header */}
+            <main className="flex-1 overflow-auto animate-fade-in pt-[73px]">
                 {children}
             </main>
         </div>
