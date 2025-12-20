@@ -1,5 +1,7 @@
+mod ai;
 mod commands;
 mod db;
+mod security;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -27,7 +29,11 @@ pub fn run() {
             commands::projects::scan_projects,
             commands::settings::get_setting,
             commands::settings::update_setting,
-            commands::git::get_git_history
+            commands::git::get_git_history,
+            commands::ai::set_api_key,
+            commands::ai::get_api_key,
+            commands::ai::delete_api_key,
+            commands::ai::test_api_connection
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

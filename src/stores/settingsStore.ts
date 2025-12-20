@@ -30,7 +30,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     loadApiKey: async () => {
         set({ isLoadingKey: true });
         try {
-            const key = await invoke<string | null>('get_setting', { key: 'openrouter_api_key' });
+            const key = await invoke<string | null>('get_api_key');  // SECURE: Decrypts from database
             set({ apiKey: key, isLoadingKey: false });
         } catch (e) {
             console.error('Failed to load API key:', e);
@@ -43,7 +43,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
             if (!key || !key.startsWith('sk-or-v1-')) {
                 return false;
             }
-            await invoke('update_setting', { key: 'openrouter_api_key', value: key });
+            await invoke('set_api_key', { key });  // SECURE: Encrypts before storing
             set({ apiKey: key });
             return true;
         } catch (e) {
@@ -53,15 +53,21 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     },
     removeApiKey: async () => {
         try {
-            await invoke('update_setting', { key: 'openrouter_api_key', value: '' });
+            await invoke('delete_api_key');  // SECURE: Deletes encrypted key
             set({ apiKey: null });
         } catch (e) {
             console.error('Failed to remove API key:', e);
         }
     },
     testApiKey: async (key: string) => {
-        // TODO: Test connection to OpenRouter API
-        // For now, just validate format
-        return key.startsWith('sk-or-v1-') && key.length > 20;
+        try {
+            const isValid = await invoke<boolean>('test_api_connection', { apiKey: key });
+            return isValid;
+        } catch (e) {
+            // Re-throw with the error message from backend
+            const errorMsg = e instanceof Error ? e.message : String(e);
+            console.error('API connection test failed:', errorMsg);
+            throw new Error(errorMsg);
+        }
     }
 }));
