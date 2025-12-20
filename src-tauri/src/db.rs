@@ -3,7 +3,7 @@ use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::params;
 use rusqlite_migration::{Migrations, M};
 use std::ops::DerefMut;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 pub type DbPool = r2d2::Pool<SqliteConnectionManager>;
@@ -55,7 +55,7 @@ fn get_db_path() -> Result<PathBuf, String> {
 }
 
 /// Ensure the parent directory of the database file exists
-fn ensure_parent_dir_exists(db_path: &PathBuf) -> Result<(), String> {
+fn ensure_parent_dir_exists(db_path: &Path) -> Result<(), String> {
     if let Some(parent) = db_path.parent() {
         std::fs::create_dir_all(parent)
             .map_err(|e| format!("Failed to create database directory: {}", e))?;
@@ -122,11 +122,8 @@ pub(crate) fn run_migrations(
         .map_err(|e| format!("Failed to check deleted_at column: {}", e))?;
 
     if deleted_at_exists == 0 {
-        conn.execute(
-            "ALTER TABLE projects ADD COLUMN deleted_at DATETIME",
-            [],
-        )
-        .map_err(|e| format!("Failed to add deleted_at column: {}", e))?;
+        conn.execute("ALTER TABLE projects ADD COLUMN deleted_at DATETIME", [])
+            .map_err(|e| format!("Failed to add deleted_at column: {}", e))?;
     }
 
     // Check if ai_cache table exists

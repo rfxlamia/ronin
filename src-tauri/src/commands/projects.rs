@@ -97,13 +97,12 @@ pub fn scan_project_stats<P: AsRef<Path>>(path: P) -> (u32, Option<String>) {
     let last_activity = last_modified.and_then(|time| {
         time.duration_since(SystemTime::UNIX_EPOCH)
             .ok()
-            .map(|duration| {
+            .and_then(|duration| {
                 let secs = duration.as_secs();
                 // Simple ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ
                 chrono::DateTime::from_timestamp(secs as i64, 0)
                     .map(|dt| dt.format("%Y-%m-%dT%H:%M:%SZ").to_string())
             })
-            .flatten()
     });
 
     (file_count, last_activity)
@@ -461,7 +460,7 @@ mod tests {
             .unwrap();
 
         assert!(deleted_project.is_some());
-        assert!(deleted_project.unwrap().len() > 0); // Should have a timestamp
+        assert!(!deleted_project.unwrap().is_empty()); // Should have a timestamp
 
         fs::remove_dir_all(test_dir).ok();
     }

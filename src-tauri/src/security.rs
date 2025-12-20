@@ -5,11 +5,9 @@ use aes_gcm::{
     aead::{Aead, KeyInit},
     Aes256Gcm, Key, Nonce,
 };
-use base64::{engine::general_purpose, Engine as _};
 use rand::Rng;
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
 
 /// Get or create encryption key file
 pub fn get_or_create_key() -> Result<[u8; 32], String> {
