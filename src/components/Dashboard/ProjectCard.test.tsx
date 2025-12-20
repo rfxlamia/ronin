@@ -97,7 +97,7 @@ describe('ProjectCard', () => {
             render(<ProjectCard project={mockGitProject} />);
             const name = screen.getByText('Test Project');
             expect(name).toBeInTheDocument();
-            expect(name).toHaveClass('font-sans');
+            expect(name).toHaveClass('font-serif');
         });
     });
 
