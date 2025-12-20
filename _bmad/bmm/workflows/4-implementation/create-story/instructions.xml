@@ -16,6 +16,7 @@
   <critical>❓ SAVE QUESTIONS: If you think of questions or clarifications during analysis, save them for the end after the complete story is
     written</critical>
   <critical>🎯 ZERO USER INTERVENTION: Process should be fully automated except for initial epic/story selection or missing documents</critical>
+  <critical>📁 MANIFEST CHECK: You MUST read and analyze {project-root}/filepath.md if it exists to understand the current file structure and prevent duplicate implementations</critical>
 
   <step n="1" goal="Determine target story">
     <check if="{{story_path}} is provided by user or user provided the epic and story number such as 2-4 or 1.6 or epic 1 story 5">
@@ -181,7 +182,14 @@
     <invoke-protocol
       name="discover_inputs" />
     <note>Available content: {epics_content}, {prd_content}, {architecture_content}, {ux_content},
-    {project_context}</note>
+    {project_context}, {filepath_manifest}</note>
+
+    <!-- Analyze manifest if available -->
+    <check if="filepath.md exists">
+      <action>Load and analyze {project-root}/filepath.md</action>
+      <action>Identify all existing components, stores, hooks, and types that might be relevant to this story</action>
+      <action>Ensure NO NEW FILES are proposed that duplicate existing functionality listed in the manifest</action>
+    </check>
 
     <!-- Analyze epics file for story foundation -->
     <action>From {epics_content}, extract Epic {{epic_num}} complete context:</action> **EPIC ANALYSIS:** - Epic

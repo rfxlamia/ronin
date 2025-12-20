@@ -133,4 +133,33 @@ describe('calculateProjectHealth', () => {
         // If it falls back to updated_at, it should be dormant
         expect(calculateProjectHealth(project)).toBe('dormant');
     });
+
+    // Regression test: Epic 2 bug fix - git projects should be dormant when inactive >threshold
+    it('returns dormant for git project inactive for 15 days with no uncommitted changes', () => {
+        const fifteenDaysAgo = new Date();
+        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
+        const project = createProject({
+            type: 'git',
+            uncommittedCount: 0,
+            lastActivityAt: fifteenDaysAgo.toISOString(),
+        });
+
+        expect(calculateProjectHealth(project)).toBe('dormant');
+    });
+
+    // Regression test: uncommitted changes should take priority over dormancy
+    it('returns attention for git project inactive for 15 days WITH uncommitted changes (priority override)', () => {
+        const fifteenDaysAgo = new Date();
+        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
+        const project = createProject({
+            type: 'git',
+            uncommittedCount: 5,
+            lastActivityAt: fifteenDaysAgo.toISOString(),
+        });
+
+        // Even though inactive >14 days, uncommitted changes have higher priority
+        expect(calculateProjectHealth(project)).toBe('attention');
+    });
 });

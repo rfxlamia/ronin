@@ -246,7 +246,8 @@ pub async fn get_projects(
         projects_result
     }; // Connection is dropped here
 
-    // For folder projects, scan stats asynchronously
+    // Scan stats for folder projects only (for performance)
+    // Git projects will use git commit history once Task 2.2 (git integration) is complete
     for project in &mut projects {
         if project.r#type == "folder" {
             let path = project.path.clone();
