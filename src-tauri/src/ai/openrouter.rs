@@ -39,6 +39,7 @@ impl OpenRouterClient {
     }
 
     /// Get available model with fallback logic
+    #[allow(dead_code)]
     pub fn get_available_model() -> String {
         // Default model as specified in story
         "xiaomi/mimo-v2-flash:free".to_string()

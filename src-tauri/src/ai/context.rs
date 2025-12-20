@@ -58,17 +58,14 @@ pub fn build_git_context(git_context: &GitContext) -> String {
 
         context.push_str(&format!(
             "- {} by {} ({})\n  {}\n",
-            short_sha,
-            commit.author,
-            commit.date,
-            message
+            short_sha, commit.author, commit.date, message
         ));
 
         // Show files if not too many
         if !commit.files.is_empty() && commit.files.len() <= 3 {
             context.push_str("  Files: ");
             context.push_str(&commit.files.join(", "));
-            context.push_str("\n");
+            context.push('\n');
         } else if commit.files.len() > 3 {
             context.push_str(&format!("  Files: {} changed\n", commit.files.len()));
         }
@@ -160,10 +157,7 @@ mod tests {
             branch: "feature-branch".to_string(),
             status: GitStatus {
                 is_clean: false,
-                modified_files: vec![
-                    "src/main.rs".to_string(),
-                    "src/lib.rs".to_string(),
-                ],
+                modified_files: vec!["src/main.rs".to_string(), "src/lib.rs".to_string()],
             },
             commits: vec![],
         };

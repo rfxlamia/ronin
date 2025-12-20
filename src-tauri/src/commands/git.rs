@@ -228,19 +228,19 @@ mod tests {
 
         // Initialize git repo
         Command::new("git")
-            .args(&["init"])
+            .args(["init"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to init git repo");
 
         Command::new("git")
-            .args(&["config", "user.name", "Test User"])
+            .args(["config", "user.name", "Test User"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to set git user name");
 
         Command::new("git")
-            .args(&["config", "user.email", "test@example.com"])
+            .args(["config", "user.email", "test@example.com"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to set git user email");
@@ -250,13 +250,13 @@ mod tests {
         fs::write(&test_file_path, "test content").expect("Failed to write test file");
 
         Command::new("git")
-            .args(&["add", "test.txt"])
+            .args(["add", "test.txt"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to add test file");
 
         Command::new("git")
-            .args(&["commit", "-m", "Initial commit"])
+            .args(["commit", "-m", "Initial commit"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to commit test file");
@@ -266,13 +266,13 @@ mod tests {
         fs::write(&test_file_path2, "test content 2").expect("Failed to write test file 2");
 
         Command::new("git")
-            .args(&["add", "test2.txt"])
+            .args(["add", "test2.txt"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to add test file 2");
 
         Command::new("git")
-            .args(&["commit", "-m", "Second commit"])
+            .args(["commit", "-m", "Second commit"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to commit test file 2");
@@ -416,14 +416,14 @@ mod tests {
 
         // Create and checkout a new branch
         Command::new("git")
-            .args(&["checkout", "-b", "test-branch"])
+            .args(["checkout", "-b", "test-branch"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to create and checkout test branch");
 
         // Go back to main to have a known commit
         Command::new("git")
-            .args(&["checkout", "main"])
+            .args(["checkout", "main"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to checkout main");
@@ -433,20 +433,20 @@ mod tests {
         fs::write(&another_file, "another content").expect("Failed to write another file");
 
         Command::new("git")
-            .args(&["add", "another.txt"])
+            .args(["add", "another.txt"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to add another file");
 
         Command::new("git")
-            .args(&["commit", "-m", "Another commit"])
+            .args(["commit", "-m", "Another commit"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to commit another file");
 
         // Now checkout the first commit to create detached HEAD
         Command::new("git")
-            .args(&["checkout", "HEAD~1"])
+            .args(["checkout", "HEAD~1"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to checkout first commit");
@@ -466,19 +466,19 @@ mod tests {
 
         // Initialize git repo but don't make any commits
         Command::new("git")
-            .args(&["init"])
+            .args(["init"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to init git repo");
 
         Command::new("git")
-            .args(&["config", "user.name", "Test User"])
+            .args(["config", "user.name", "Test User"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to set git user name");
 
         Command::new("git")
-            .args(&["config", "user.email", "test@example.com"])
+            .args(["config", "user.email", "test@example.com"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to set git user email");
