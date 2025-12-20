@@ -3,6 +3,7 @@ import { RoninLoader } from './RoninLoader';
 import { Button } from '@/components/ui/button';
 import { GitBranch, Search, FileText, AlertTriangle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
 
 function Attribution({ data }: { data?: AttributionData }) {
     if (!data || !data.sources.length || (
@@ -61,11 +62,11 @@ export function ContextPanel({ state, text, attribution, error, onRetry, classNa
                     </div>
                     {text && (
                         <div
-                            className="text-sm font-mono text-foreground whitespace-pre-wrap animate-fade-in"
+                            className="text-sm prose prose-sm dark:prose-invert max-w-none animate-fade-in"
                             aria-live="polite"
                             aria-atomic="false"
                         >
-                            {text}
+                            <ReactMarkdown>{text}</ReactMarkdown>
                         </div>
                     )}
                 </div>
@@ -73,8 +74,8 @@ export function ContextPanel({ state, text, attribution, error, onRetry, classNa
 
             {state === 'complete' && (
                 <div className="animate-fade-in">
-                    <div className="text-sm font-mono text-foreground whitespace-pre-wrap">
-                        {text}
+                    <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown>{text}</ReactMarkdown>
                     </div>
                     <Attribution data={attribution} />
                 </div>

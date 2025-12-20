@@ -10,7 +10,37 @@ global.ResizeObserver = class ResizeObserver {
     disconnect() { }
 };
 
-// Mocks
+// Mock state that tests can control
+let mockContextState: 'idle' | 'streaming' | 'complete' | 'error' = 'idle';
+let mockContextText = '';
+let mockAttribution: { commits: number; sources: string[] } | null = null;
+
+// Helper to set mock state from tests
+export const setMockAiState = (
+    state: 'idle' | 'streaming' | 'complete' | 'error',
+    text = '',
+    attribution: { commits: number; sources: string[] } | null = null
+) => {
+    mockContextState = state;
+    mockContextText = text;
+    mockAttribution = attribution;
+};
+
+const mockGenerateContext = vi.fn();
+const mockRetry = vi.fn();
+
+vi.mock('@/hooks/useAiContext', () => ({
+    useAiContext: () => ({
+        contextState: mockContextState,
+        contextText: mockContextText,
+        attribution: mockAttribution,
+        error: null,
+        isCached: false,
+        generateContext: mockGenerateContext,
+        retry: mockRetry,
+    }),
+}));
+
 vi.mock('@/components/ContextPanel', () => ({
     ContextPanel: ({ state, text, attribution }: any) => (
         <div data-testid="context-panel" data-state={state}>
@@ -39,6 +69,10 @@ describe('ProjectCard', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.clearAllMocks();
+        // Reset mock AI context state
+        mockContextState = 'idle';
+        mockContextText = '';
+        mockAttribution = null;
     });
 
     afterEach(() => {
@@ -69,6 +103,9 @@ describe('ProjectCard', () => {
 
     describe('Expansion Interaction', () => {
         it('expands when clicked and shows streaming state', async () => {
+            // Set mock to streaming state
+            mockContextState = 'streaming';
+
             render(<ProjectCard project={mockGitProject} />);
 
             const trigger = screen.getByText('Test Project').closest('button');
@@ -76,12 +113,11 @@ describe('ProjectCard', () => {
 
             fireEvent.click(trigger);
 
-            // Advance timers past the 500ms initial delay
+            // Advance timers to allow collapsible to open
             await act(async () => {
-                await vi.advanceTimersByTimeAsync(600);
+                await vi.advanceTimersByTimeAsync(100);
             });
 
-            // Use getBy instead of findBy to avoid timeout issues with fake timers
             const panel = screen.getByTestId('context-panel');
             expect(panel).toBeInTheDocument();
             expect(panel).toHaveAttribute('data-state', 'streaming');
@@ -95,7 +131,7 @@ describe('ProjectCard', () => {
 
             fireEvent.click(trigger);
 
-            // Advance timers slightly to allow rendering
+            // Advance timers slightly to allow collapsible to open
             await act(async () => {
                 await vi.advanceTimersByTimeAsync(100);
             });
@@ -105,6 +141,11 @@ describe('ProjectCard', () => {
         });
 
         it('transitions to complete state after streaming finishes', async () => {
+            // Set mock to complete state with attribution
+            mockContextState = 'complete';
+            mockContextText = '## Context\nYou were working on auth.';
+            mockAttribution = { commits: 12, sources: ['git'] };
+
             render(<ProjectCard project={mockGitProject} />);
 
             const trigger = screen.getByText('Test Project').closest('button');
@@ -112,9 +153,9 @@ describe('ProjectCard', () => {
 
             fireEvent.click(trigger);
 
-            // Fast forward time (500ms start + 5 chunks * 200ms = 1500ms + buffer)
+            // Advance timers to allow collapsible to open
             await act(async () => {
-                await vi.advanceTimersByTimeAsync(2000);
+                await vi.advanceTimersByTimeAsync(100);
             });
 
             const panel = screen.getByTestId('context-panel');
@@ -123,6 +164,9 @@ describe('ProjectCard', () => {
         });
 
         it('expands via keyboard when pressing Enter on focused card', async () => {
+            // Set mock to streaming state for this test
+            mockContextState = 'streaming';
+
             render(<ProjectCard project={mockGitProject} />);
 
             const trigger = screen.getByRole('button', { name: /test project/i });
@@ -135,7 +179,7 @@ describe('ProjectCard', () => {
             fireEvent.click(trigger);
 
             await act(async () => {
-                await vi.advanceTimersByTimeAsync(600);
+                await vi.advanceTimersByTimeAsync(100);
             });
 
             const panel = screen.getByTestId('context-panel');
