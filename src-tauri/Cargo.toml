@@ -32,4 +32,10 @@ walkdir = "2"
 dirs = "5.0"
 chrono = "0.4"
 git2 = "0.18"
+reqwest = { version = "0.12", features = ["json", "stream", "rustls-tls"] }
+futures = "0.3"
+eventsource-stream = "0.2"
+aes-gcm = "0.10"
+base64 = "0.22"
+rand = "0.8"
 

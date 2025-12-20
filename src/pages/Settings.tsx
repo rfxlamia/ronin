@@ -11,6 +11,7 @@ export function Settings() {
     const [apiKeyInput, setApiKeyInput] = useState('');
     const [showApiKey, setShowApiKey] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+    const [errorMessage, setErrorMessage] = useState<string>('');
 
     const { apiKey, loadApiKey, saveApiKey, removeApiKey, testApiKey } = useSettingsStore();
 
@@ -26,21 +27,33 @@ export function Settings() {
 
     const handleSaveApiKey = async () => {
         setSaveStatus('saving');
-        const isValid = await testApiKey(apiKeyInput);
+        setErrorMessage('');
 
-        if (!isValid) {
-            setSaveStatus('error');
-            setTimeout(() => setSaveStatus('idle'), 3000);
-            return;
-        }
+        try {
+            const isValid = await testApiKey(apiKeyInput);
 
-        const success = await saveApiKey(apiKeyInput);
-        if (success) {
-            setSaveStatus('success');
-            setTimeout(() => setSaveStatus('idle'), 3000);
-        } else {
+            if (!isValid) {
+                setSaveStatus('error');
+                setErrorMessage('Invalid API key. Please check your key and try again.');
+                setTimeout(() => setSaveStatus('idle'), 3000);
+                return;
+            }
+
+            const success = await saveApiKey(apiKeyInput);
+            if (success) {
+                setSaveStatus('success');
+                setErrorMessage('');
+                setTimeout(() => setSaveStatus('idle'), 3000);
+            } else {
+                setSaveStatus('error');
+                setErrorMessage('Failed to save API key. Please try again.');
+                setTimeout(() => setSaveStatus('idle'), 3000);
+            }
+        } catch (error) {
             setSaveStatus('error');
-            setTimeout(() => setSaveStatus('idle'), 3000);
+            // Show the actual error message from backend
+            setErrorMessage(error instanceof Error ? error.message : String(error));
+            setTimeout(() => setSaveStatus('idle'), 5000); // Longer timeout for error messages
         }
     };
 
@@ -96,9 +109,9 @@ export function Settings() {
                             </Button>
                         )}
                     </div>
-                    {saveStatus === 'error' && (
+                    {saveStatus === 'error' && errorMessage && (
                         <p className="text-sm text-red-500">
-                            Invalid API key format. Must start with "sk-or-v1-"
+                            {errorMessage}
                         </p>
                     )}
                     {apiKey && (
