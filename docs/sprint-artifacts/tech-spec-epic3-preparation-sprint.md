@@ -121,7 +121,7 @@ src-tauri/src/
 ### Tasks
 
 #### Epic 2 Regression Fixes
-- [ ] **Task 1.1:** Fix AppShell position bug
+- [x] **Task 1.1:** Fix AppShell position bug
   - Change `src/components/AppShell.tsx` position from relative to fixed/absolute
   - Ensure window controls always visible during scroll
   - Test with 30+ projects to verify fix
@@ -179,20 +179,22 @@ src-tauri/src/
   - Estimated: 1-2 days
 
 #### Workflow Improvements
-- [ ] **Task 4.1:** Filepath.md Manifest System
+- [x] **Task 4.1:** Filepath.md Manifest System
   - Create script to generate `filepath.md` with all project files
   - Include `src/`, `src-tauri/`, `package.json`, key config files
   - Add absolute paths for easy reference
+  - **COMPLETED:** Optimized to 76 files (excludes tests, migrations, workflow engine)
   - Estimated: 0.5 day
 
-- [ ] **Task 4.2:** Update create-story Workflow
+- [x] **Task 4.2:** Update create-story Workflow
   - Modify create-story workflow to require filepath.md verification
   - Add hard gate: HALT if referenced file not in manifest
   - Test with Gemini to ensure consistency improvement
+  - **COMPLETED:** Added manifest checks to instructions.xml and workflow.md
   - Estimated: 0.5 day
 
 #### UX Improvements
-- [ ] **Task 5.1:** Move Dark Mode to Settings
+- [x] **Task 5.1:** Move Dark Mode to Settings
   - Remove dark mode toggle from `src/components/AppShell.tsx`
   - Add to `src/pages/Settings.tsx` with proper toggle component
   - Implement smooth theme transition animations

@@ -31,4 +31,5 @@ tauri-plugin-dialog = "2.4.2"
 walkdir = "2"
 dirs = "5.0"
 chrono = "0.4"
+git2 = "0.18"
 
