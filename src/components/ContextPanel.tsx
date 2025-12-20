@@ -6,8 +6,8 @@ import { cn } from '@/lib/utils';
 
 function Attribution({ data }: { data?: AttributionData }) {
     if (!data || !data.sources.length || (
-        (data.commits || 0) === 0 && 
-        (data.searches || 0) === 0 && 
+        (data.commits || 0) === 0 &&
+        (data.searches || 0) === 0 &&
         (data.devlogLines || 0) === 0
     )) {
         return (
@@ -21,7 +21,7 @@ function Attribution({ data }: { data?: AttributionData }) {
     return (
         <div className="flex items-center gap-3 text-xs text-muted-foreground mt-4 pt-2 border-t border-border">
             <span className="font-medium">Based on:</span>
-            
+
             <div className="flex items-center gap-3">
                 {data.sources.includes('git') && (
                     <div className="flex items-center gap-1" title="Git Commits">
@@ -29,14 +29,14 @@ function Attribution({ data }: { data?: AttributionData }) {
                         <span>{data.commits || 0}</span>
                     </div>
                 )}
-                
+
                 {data.sources.includes('behavior') && (
                     <div className="flex items-center gap-1" title="Behavioral Patterns">
                         <Search className="w-3 h-3" />
                         <span>{data.searches || 0}</span>
                     </div>
                 )}
-                
+
                 {data.sources.includes('devlog') && (
                     <div className="flex items-center gap-1" title="DEVLOG Entries">
                         <FileText className="w-3 h-3" />
@@ -52,7 +52,7 @@ export function ContextPanel({ state, text, attribution, error, onRetry, classNa
     if (state === 'idle') return null;
 
     return (
-        <div className={cn("p-4 bg-card", className)}>
+        <div className={cn("p-4 bg-card max-h-[400px] overflow-auto", className)}>
             {state === 'streaming' && (
                 <div className="space-y-3">
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -60,7 +60,11 @@ export function ContextPanel({ state, text, attribution, error, onRetry, classNa
                         <span className="text-sm animate-pulse">Analyzing your activity...</span>
                     </div>
                     {text && (
-                        <div className="text-sm font-mono text-foreground whitespace-pre-wrap animate-fade-in">
+                        <div
+                            className="text-sm font-mono text-foreground whitespace-pre-wrap animate-fade-in"
+                            aria-live="polite"
+                            aria-atomic="false"
+                        >
                             {text}
                         </div>
                     )}
@@ -85,9 +89,9 @@ export function ContextPanel({ state, text, attribution, error, onRetry, classNa
                         {error || "Something went wrong."}
                     </div>
                     {onRetry && (
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
+                        <Button
+                            variant="outline"
+                            size="sm"
                             onClick={onRetry}
                             className="font-serif gap-2"
                         >

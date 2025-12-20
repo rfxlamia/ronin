@@ -30,23 +30,23 @@ interface ProjectCardProps {
 
 // Mock Data
 const mockChunks = [
-  "Based on recent commits,",
-  " you were working on",
-  " the auth service refactor.",
-  " Last change was in",
-  " src/lib/auth.ts."
+    "Based on recent commits,",
+    " you were working on",
+    " the auth service refactor.",
+    " Last change was in",
+    " src/lib/auth.ts."
 ];
 
 const mockAttribution: AttributionData = {
-  commits: 12,
-  devlogLines: 0,
-  sources: ['git']
+    commits: 12,
+    devlogLines: 0,
+    sources: ['git']
 };
 
 export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [showRemoveDialog, setShowRemoveDialog] = useState(false);
-    
+
     // Context State
     const [contextState, setContextState] = useState<ContextPanelState>('idle');
     const [contextText, setContextText] = useState('');
@@ -75,12 +75,12 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
     const startStreaming = () => {
         setContextState('streaming');
         setContextText('');
-        
+
         // Clear any existing timeout
         if (streamTimeoutRef.current) clearTimeout(streamTimeoutRef.current);
-        
+
         let chunkIndex = 0;
-        
+
         // Initial delay for "analyzing..." pulse before text starts
         streamTimeoutRef.current = setTimeout(() => {
             const streamNext = () => {
@@ -106,6 +106,30 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
         }
     };
 
+    // Ref for click-outside detection
+    const cardRef = useRef<HTMLDivElement>(null);
+
+    // Click outside to close
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleClickOutside = (event: MouseEvent) => {
+            if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
+                handleOpenChange(false);
+            }
+        };
+
+        // Delay adding listener to avoid immediate close from the same click
+        const timeoutId = setTimeout(() => {
+            document.addEventListener('mousedown', handleClickOutside);
+        }, 0);
+
+        return () => {
+            clearTimeout(timeoutId);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen]);
+
     // Cleanup on unmount
     useEffect(() => {
         return () => {
@@ -122,120 +146,127 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
 
     return (
         <>
-            <Card
-                className={cn(
-                    "overflow-hidden transition-all duration-200",
-                    "hover:shadow-md hover:border-[#CC785C]/50",
-                    // Active state scaling handled by Collapsible? 
-                    // Keeping simple hover effect.
-                )}
-            >
-                <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
-                    <div className="relative">
-                        {/* Dropdown Menu - positioned absolutely */}
-                        <div className="absolute top-4 right-4 z-10">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <MoreVertical className="h-4 w-4" />
-                                        <span className="sr-only">Project menu</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    {!project.isArchived && (
-                                        <>
-                                            <DropdownMenuItem onClick={handleArchive}>
-                                                Archive
+            <div ref={cardRef} className="relative">
+                <Card
+                    className={cn(
+                        "transition-all duration-200",
+                        "hover:shadow-md hover:border-[#CC785C]/50",
+                        isOpen && "z-20 shadow-lg rounded-b-none border-b-0"
+                    )}
+                >
+                    <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
+                        <div className="relative">
+                            {/* Dropdown Menu - positioned absolutely */}
+                            <div className="absolute top-4 right-4 z-10">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <MoreVertical className="h-4 w-4" />
+                                            <span className="sr-only">Project menu</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        {!project.isArchived && (
+                                            <>
+                                                <DropdownMenuItem onClick={handleArchive}>
+                                                    Archive
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setShowRemoveDialog(true);
+                                                    }}
+                                                    className="text-destructive focus:text-destructive focus:bg-destructive/10 hover:bg-destructive hover:text-white [&>svg]:hover:text-white"
+                                                >
+                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                    Remove
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
+                                        {project.isArchived && (
+                                            <DropdownMenuItem onClick={handleRestore}>
+                                                Restore
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setShowRemoveDialog(true);
-                                                }}
-                                                className="text-destructive focus:text-destructive focus:bg-destructive/10 hover:bg-destructive hover:text-white [&>svg]:hover:text-white"
-                                            >
-                                                <Trash2 className="h-4 w-4 mr-2" />
-                                                Remove
-                                            </DropdownMenuItem>
-                                        </>
-                                    )}
-                                    {project.isArchived && (
-                                        <DropdownMenuItem onClick={handleRestore}>
-                                            Restore
-                                        </DropdownMenuItem>
-                                    )}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
 
-                        {/* Collapsible Trigger (Card Header) */}
-                        <CollapsibleTrigger asChild>
-                            <button
-                                data-project-card
-                                className={cn(
-                                    'w-full text-left p-4 pr-14 transition-all duration-200',
-                                    'focus-visible:outline-none focus-visible:ring-2',
-                                    'focus-visible:ring-[#CC785C] focus-visible:ring-offset-2',
-                                    // Remove rounded-lg as it's full width of card now? 
-                                    // Or keep it but inside Card it might look weird if background changes.
-                                    // Assuming transparent bg for button.
-                                )}
-                            >
-                                <div className="flex items-start gap-4">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <TypeIcon
-                                                className="h-4 w-4 text-muted-foreground flex-shrink-0"
-                                                data-icon={project.type === 'git' ? 'git-branch' : 'folder'}
-                                            />
-                                            <h3 className="font-serif font-bold text-lg truncate">
-                                                {project.name}
-                                            </h3>
-                                        </div>
+                            {/* Collapsible Trigger (Card Header) */}
+                            <CollapsibleTrigger asChild>
+                                <button
+                                    data-project-card
+                                    className={cn(
+                                        'w-full text-left p-4 pr-14 transition-all duration-200',
+                                        'focus-visible:outline-none focus-visible:ring-2',
+                                        'focus-visible:ring-[#CC785C] focus-visible:ring-offset-2',
+                                        // Remove rounded-lg as it's full width of card now? 
+                                        // Or keep it but inside Card it might look weird if background changes.
+                                        // Assuming transparent bg for button.
+                                    )}
+                                >
+                                    <div className="flex items-start gap-4">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <TypeIcon
+                                                    className="h-4 w-4 text-muted-foreground flex-shrink-0"
+                                                    data-icon={project.type === 'git' ? 'git-branch' : 'folder'}
+                                                />
+                                                <h3 className="font-serif font-bold text-lg truncate">
+                                                    {project.name}
+                                                </h3>
+                                            </div>
 
-                                        <div className="flex items-center gap-3 flex-wrap">
-                                            <HealthBadge status={healthStatus} />
-                                            {project.type === 'folder' && project.fileCount !== undefined ? (
+                                            <div className="flex items-center gap-3 flex-wrap">
+                                                <HealthBadge status={healthStatus} />
+                                                {project.type === 'folder' && project.fileCount !== undefined ? (
+                                                    <span className="text-sm text-muted-foreground font-sans">
+                                                        {project.fileCount} {project.fileCount === 1 ? 'file' : 'files'}
+                                                    </span>
+                                                ) : null}
                                                 <span className="text-sm text-muted-foreground font-sans">
-                                                    {project.fileCount} {project.fileCount === 1 ? 'file' : 'files'}
+                                                    {activityText}
                                                 </span>
-                                            ) : null}
-                                            <span className="text-sm text-muted-foreground font-sans">
-                                                {activityText}
-                                            </span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </button>
-                        </CollapsibleTrigger>
-                    </div>
-
-                    {/* Collapsible Content */}
-                    <CollapsibleContent className="data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up overflow-hidden">
-                        <div className="border-t border-border bg-muted/20 p-4 space-y-4">
-                            <ContextPanel 
-                                state={contextState}
-                                text={contextText}
-                                attribution={contextState === 'complete' ? mockAttribution : undefined}
-                                onRetry={startStreaming}
-                            />
-                            
-                            <Button 
-                                className="w-full font-serif" 
-                                disabled
-                                title="IDE integration coming soon"
-                            >
-                                Open in IDE
-                            </Button>
+                                </button>
+                            </CollapsibleTrigger>
                         </div>
-                    </CollapsibleContent>
-                </Collapsible>
-            </Card>
+
+                        {/* Collapsible Content - Overlay Mode */}
+                        <CollapsibleContent
+                            className={cn(
+                                "absolute left-0 right-0 top-full -mt-px",
+                                "z-30 bg-card border border-t-0 border-border rounded-b-lg shadow-xl",
+                                "data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out"
+                            )}
+                        >
+                            <div className="bg-muted/20 p-4 space-y-4">
+                                <ContextPanel
+                                    state={contextState}
+                                    text={contextText}
+                                    attribution={contextState === 'complete' ? mockAttribution : undefined}
+                                    onRetry={startStreaming}
+                                />
+
+                                <Button
+                                    className="w-full font-serif"
+                                    disabled
+                                    title="IDE integration coming soon"
+                                >
+                                    Open in IDE
+                                </Button>
+                            </div>
+                        </CollapsibleContent>
+                    </Collapsible>
+                </Card>
+            </div>
 
             {/* Remove Confirmation Dialog */}
             {showRemoveDialog && (

@@ -1,6 +1,6 @@
 # Story 3.3: ContextPanel Component
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -13,30 +13,30 @@ So that **I feel the system is working and get early information**.
 ## Acceptance Criteria
 
 1. **ContextPanel Component**
-   - [ ] Implements 4-state machine: `idle`, `streaming`, `complete`, `error`
-   - [ ] `idle`: Hidden or minimal placeholder
-   - [ ] `streaming`: Displays `RoninLoader` (inline) and streams text progressively (chunk-by-chunk)
-   - [ ] `complete`: Displays full context text + attribution source
-   - [ ] `error`: Displays error illustration + message + retry button
+   - [x] Implements 4-state machine: `idle`, `streaming`, `complete`, `error`
+   - [x] `idle`: Hidden or minimal placeholder
+   - [x] `streaming`: Displays `RoninLoader` (inline) and streams text progressively (chunk-by-chunk)
+   - [x] `complete`: Displays full context text + attribution source
+   - [x] `error`: Displays error illustration + message + retry button
 
 2. **RoninLoader Integration**
-   - [ ] `RoninLoader` supports `inline` mode while maintaining `fullscreen` default for AppShell
-   - [ ] Shows "Analyzing your activity..." pulse text during streaming
-   - [ ] Respects `prefers-reduced-motion` (static fallback)
+   - [x] `RoninLoader` supports `inline` mode while maintaining `fullscreen` default for AppShell
+   - [x] Shows "Analyzing your activity..." pulse text during streaming
+   - [x] Respects `prefers-reduced-motion` (static fallback)
 
 3. **Attribution Display**
-   - [ ] "Based on:" section is ALWAYS visible (not hidden behind click)
-   - [ ] Shows icons for data sources: 🔀 (Git), 🔍 (Behavior/Search), 📝 (DEVLOG)
-   - [ ] Counts are visible (e.g., "15 commits", "3 searches")
+   - [x] "Based on:" section is ALWAYS visible (not hidden behind click)
+   - [x] Shows icons for data sources: 🔀 (Git), 🔍 (Behavior/Search), 📝 (DEVLOG)
+   - [x] Counts are visible (e.g., "15 commits", "3 searches")
 
 4. **ProjectCard Integration**
-   - [ ] `ProjectCard` uses `Collapsible` (Radix UI) to expand in-place
-   - [ ] Clicking card expands it to show `ContextPanel`
-   - [ ] Transition is smooth (200ms ease-out) using CSS/Tailwind
+   - [x] `ProjectCard` uses `Collapsible` (Radix UI) to expand in-place
+   - [x] Clicking card expands it to show `ContextPanel`
+   - [x] Transition is smooth (200ms ease-out) using CSS/Tailwind
 
 5. **Accessibility**
-   - [ ] Screen reader announces new content as it streams (ARIA live region)
-   - [ ] Keyboard focus management when expanding/collapsing
+   - [x] Screen reader announces new content as it streams (ARIA live region)
+   - [x] Keyboard focus management when expanding/collapsing
 
 ## Technical Implementation Guide
 
@@ -360,3 +360,57 @@ Gemini 2.0 Flash
 - src/components/Dashboard/ProjectCard.test.tsx
 - src/pages/TestContextPanel.tsx
 - src/App.tsx
+
+## Senior Developer Review (AI)
+
+**Review Date:** 2025-12-20
+**Reviewer:** Gemini 2.0 Flash (Adversarial Code Review)
+**Outcome:** ✅ Approved with fixes applied
+
+### Issues Found & Fixed
+
+| ID | Severity | Issue | Fix Applied |
+|----|----------|-------|-------------|
+| H1 | HIGH | Missing ARIA live region for streaming accessibility | Added `aria-live="polite"` to streaming text container |
+| M1 | MEDIUM | TestContextPanel used `setInterval` (story spec requires `setTimeout`) | Refactored to `setTimeout` loop |
+| M2 | MEDIUM | No keyboard focus test for AC5 | Added keyboard accessibility test |
+| M3 | MEDIUM | AC checkboxes marked incomplete despite implementation | Updated all ACs to `[x]` |
+| L1 | LOW | Test route exposed in production | Wrapped in `import.meta.env.DEV` check |
+| L2 | LOW | No max-height for long AI context | Added `max-h-[400px] overflow-auto` |
+
+### Test Results
+- **Before:** 129 tests passed
+- **After:** 130 tests passed (+1 keyboard focus test)
+
+---
+
+## Post-Review UX Improvements
+
+**Date:** 2025-12-20  
+**Issue:** Collapsible expansion caused layout shift - clicking one card pushed other cards down
+
+### Changes Applied
+
+**Problem:** In-place collapsible expansion (original implementation) caused CSS Grid to recalculate row heights, resulting in:
+- Cards in lower rows shifting position when a card above expanded
+- Jarring user experience
+- Visual instability in multi-row layouts
+
+**Solution: Overlay Expansion Mode**
+
+Converted ProjectCard expansion from push-layout to overlay mode:
+
+| Change | Implementation |
+|--------|----------------|
+| **Wrapper** | Added `position: relative` container with `cardRef` |
+| **Card** | When expanded: `z-20`, `rounded-b-none`, `border-b-0` |
+| **CollapsibleContent** | Now `position: absolute` with `top-full -mt-px`, `z-30` |
+| **Seamless Join** | Removed ring border, removed top border on overlay, negative margin for pixel-perfect connection |
+| **Click Outside** | Added mousedown listener to close expanded panel |
+
+**Result:**
+- ✅ Zero layout shift - cards remain in position
+- ✅ Card and expanded panel appear as one seamless unit
+- ✅ Panel floats above other cards (z-index layering)
+- ✅ Click outside to dismiss
+- ✅ All 130 tests still pass

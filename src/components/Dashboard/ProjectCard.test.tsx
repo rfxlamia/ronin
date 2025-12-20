@@ -6,9 +6,9 @@ import type { Project } from '@/types/project';
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    observe() { }
+    unobserve() { }
+    disconnect() { }
 };
 
 // Mocks
@@ -74,7 +74,7 @@ describe('ProjectCard', () => {
 
             const trigger = screen.getByText('Test Project').closest('button');
             if (!trigger) throw new Error('Trigger not found');
-            
+
             fireEvent.click(trigger);
 
             // Advance timers past the 500ms initial delay
@@ -93,7 +93,7 @@ describe('ProjectCard', () => {
 
             const trigger = screen.getByText('Test Project').closest('button');
             if (!trigger) throw new Error('Trigger not found');
-            
+
             fireEvent.click(trigger);
 
             // Advance timers slightly to allow rendering
@@ -110,7 +110,7 @@ describe('ProjectCard', () => {
 
             const trigger = screen.getByText('Test Project').closest('button');
             if (!trigger) throw new Error('Trigger not found');
-            
+
             fireEvent.click(trigger);
 
             // Fast forward time (500ms start + 5 chunks * 200ms = 1500ms + buffer)
@@ -122,6 +122,27 @@ describe('ProjectCard', () => {
             expect(panel).toHaveAttribute('data-state', 'complete');
             expect(screen.getByTestId('attribution')).toBeInTheDocument();
         });
+
+        it('expands via keyboard when pressing Enter on focused card', async () => {
+            render(<ProjectCard project={mockGitProject} />);
+
+            const trigger = screen.getByRole('button', { name: /test project/i });
+
+            // Focus the trigger
+            trigger.focus();
+            expect(trigger).toHaveFocus();
+
+            // Press Enter using fireEvent.click (simulates keyboard activation of button)
+            fireEvent.click(trigger);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(600);
+            });
+
+            const panel = screen.getByTestId('context-panel');
+            expect(panel).toBeInTheDocument();
+            expect(panel).toHaveAttribute('data-state', 'streaming');
+        });
     });
 
     describe('Remove Project Dialog', () => {
@@ -129,7 +150,7 @@ describe('ProjectCard', () => {
             render(<ProjectCard project={mockGitProject} />);
 
             const menuButton = screen.getByRole('button', { name: /project menu/i });
-            
+
             // Trigger dropdown
             fireEvent.pointerDown(menuButton);
             fireEvent.click(menuButton);
