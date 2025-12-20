@@ -201,11 +201,7 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
                                 <ContextPanel
                                     state={contextState}
                                     text={contextText}
-                                    attribution={contextState === 'complete' && attribution ? {
-                                        commits: attribution.commits,
-                                        devlogLines: 0,
-                                        sources: attribution.sources as ('git' | 'devlog' | 'behavior')[]
-                                    } : undefined}
+                                    attribution={contextState === 'complete' && attribution ? attribution : undefined}
                                     onRetry={retry}
                                     error={error || undefined}
                                 />

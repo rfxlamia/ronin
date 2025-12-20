@@ -13,13 +13,13 @@ global.ResizeObserver = class ResizeObserver {
 // Mock state that tests can control
 let mockContextState: 'idle' | 'streaming' | 'complete' | 'error' = 'idle';
 let mockContextText = '';
-let mockAttribution: { commits: number; sources: string[] } | null = null;
+let mockAttribution: { commits: number; files: number; sources: string[] } | null = null;
 
 // Helper to set mock state from tests
 export const setMockAiState = (
     state: 'idle' | 'streaming' | 'complete' | 'error',
     text = '',
-    attribution: { commits: number; sources: string[] } | null = null
+    attribution: { commits: number; files: number; sources: string[] } | null = null
 ) => {
     mockContextState = state;
     mockContextText = text;
@@ -144,7 +144,7 @@ describe('ProjectCard', () => {
             // Set mock to complete state with attribution
             mockContextState = 'complete';
             mockContextText = '## Context\nYou were working on auth.';
-            mockAttribution = { commits: 12, sources: ['git'] };
+            mockAttribution = { commits: 12, files: 2, sources: ['git'] };
 
             render(<ProjectCard project={mockGitProject} />);
 

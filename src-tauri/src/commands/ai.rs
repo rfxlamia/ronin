@@ -1,6 +1,6 @@
 /// AI-related Tauri commands for OpenRouter API integration
 use crate::ai::context::{build_git_context, build_system_prompt, validate_payload_size};
-use crate::ai::openrouter::{Message, OpenRouterClient};
+use crate::ai::openrouter::{Attribution, Message, OpenRouterClient};
 use crate::commands::git::get_git_context;
 use crate::security::{decrypt_api_key, encrypt_api_key};
 use base64::{engine::general_purpose, Engine as _};
@@ -196,6 +196,15 @@ pub async fn generate_context(
         }
     };
 
+    // Build attribution data from git context
+    let commit_count = git_context.commits.len();
+    let file_count = git_context.status.modified_files.len();
+    let attribution = Attribution {
+        commits: commit_count,
+        files: file_count,
+        sources: vec!["git".to_string()],
+    };
+
     // Create OpenRouter client and stream
     let client = OpenRouterClient::new(api_key);
     let messages = vec![
@@ -210,21 +219,28 @@ pub async fn generate_context(
     ];
 
     // Stream the response
-    match client.chat_stream(messages, window.clone()).await {
+    match client
+        .chat_stream(messages, window.clone(), attribution.clone())
+        .await
+    {
         Ok(_) => {
-            // Cache successful response
-            let full_context = ""; // Will be accumulated in streaming
+            // Cache attribution data for offline reference
+            // Note: Context text accumulates on the frontend via ai-chunk events.
+            // The full text is not reconstructed here; this is by design.
+            // Future enhancement: accumulate text in chat_stream and return it.
             let attribution_json = serde_json::json!({
-                "commits": git_context.commits.len(),
+                "commits": commit_count,
+                "files": file_count,
                 "sources": ["git"]
             })
             .to_string();
 
             let timestamp = chrono::Utc::now().timestamp();
 
+            // Store empty context_text - offline mode will show "Context not cached" instead
             conn.execute(
                 "INSERT OR REPLACE INTO ai_cache (project_id, context_text, attribution_json, generated_at) VALUES (?1, ?2, ?3, ?4)",
-                rusqlite::params![project_id, full_context, attribution_json, timestamp],
+                rusqlite::params![project_id, "", attribution_json, timestamp],
             )
             .map_err(|e| format!("Cache write failed: {}", e))?;
 

@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import type { AttributionData } from '@/types/context';
 
 export type ContextState = 'idle' | 'streaming' | 'complete' | 'error';
 
-export interface Attribution {
-  commits: number;
-  sources: string[];
-}
+// Re-export for backward compatibility
+export type Attribution = AttributionData;
 
 export interface AiContextData {
   contextState: ContextState;
