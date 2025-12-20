@@ -2,7 +2,7 @@
 
 **Auto-generated** list of key source files. Excludes: tests, migrations, workflow engine, build artifacts.
 
-## Files (85 total)
+## Files (87 total)
 
 - [`README.md`](file:///home/v/project/ronin/README.md)
 - [`docs/epics.md`](file:///home/v/project/ronin/docs/epics.md)
@@ -20,12 +20,14 @@
 - [`docs/sprint-artifacts/2-8-remove-untrack-project.md`](file:///home/v/project/ronin/docs/sprint-artifacts/2-8-remove-untrack-project.md)
 - [`docs/sprint-artifacts/2-9-project-auto-detection-on-first-launch.md`](file:///home/v/project/ronin/docs/sprint-artifacts/2-9-project-auto-detection-on-first-launch.md)
 - [`docs/sprint-artifacts/3-1-openrouter-api-integration.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-1-openrouter-api-integration.md)
+- [`docs/sprint-artifacts/3-2-git-history-analysis.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-2-git-history-analysis.md)
 - [`docs/sprint-artifacts/epic-1-retro-2025-12-18.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-1-retro-2025-12-18.md)
 - [`docs/sprint-artifacts/epic-2-retro-2025-12-20.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-2-retro-2025-12-20.md)
 - [`docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md`](file:///home/v/project/ronin/docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md)
 - [`docs/sprint-artifacts/validation-report-2-2.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-2.md)
 - [`docs/sprint-artifacts/validation-report-2-8.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-8.md)
 - [`docs/sprint-artifacts/validation-report-2-9.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-9.md)
+- [`docs/sprint-artifacts/validation-report-20251220-140839.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-20251220-140839.md)
 - [`docs/sprint-artifacts/validation-report-3-1-20251220.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-1-20251220.md)
 - [`package.json`](file:///home/v/project/ronin/package.json)
 - [`src-tauri/Cargo.toml`](file:///home/v/project/ronin/src-tauri/Cargo.toml)
@@ -91,4 +93,4 @@
 - [`vitest.config.ts`](file:///home/v/project/ronin/vitest.config.ts)
 
 ---
-*Generated: 2025-12-20T06:49:09.934Z*
+*Generated: 2025-12-20T09:30:04.820Z*
