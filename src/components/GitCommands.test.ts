@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { invoke } from '@tauri-apps/api';
+import { invoke } from '@tauri-apps/api/core';
 
 // Mock the invoke function to test that the correct commands are called
-vi.mock('@tauri-apps/api', async () => {
-  const actual = await vi.importActual('@tauri-apps/api');
+vi.mock('@tauri-apps/api/core', async () => {
+  const actual = await vi.importActual('@tauri-apps/api/core');
   return {
     ...actual,
     invoke: vi.fn(),

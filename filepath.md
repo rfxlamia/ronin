@@ -2,7 +2,7 @@
 
 **Auto-generated** list of key source files. Excludes: tests, migrations, workflow engine, build artifacts.
 
-## Files (87 total)
+## Files (91 total)
 
 - [`README.md`](file:///home/v/project/ronin/README.md)
 - [`docs/epics.md`](file:///home/v/project/ronin/docs/epics.md)
@@ -21,6 +21,7 @@
 - [`docs/sprint-artifacts/2-9-project-auto-detection-on-first-launch.md`](file:///home/v/project/ronin/docs/sprint-artifacts/2-9-project-auto-detection-on-first-launch.md)
 - [`docs/sprint-artifacts/3-1-openrouter-api-integration.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-1-openrouter-api-integration.md)
 - [`docs/sprint-artifacts/3-2-git-history-analysis.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-2-git-history-analysis.md)
+- [`docs/sprint-artifacts/3-3-contextpanel-component.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-3-contextpanel-component.md)
 - [`docs/sprint-artifacts/epic-1-retro-2025-12-18.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-1-retro-2025-12-18.md)
 - [`docs/sprint-artifacts/epic-2-retro-2025-12-20.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-2-retro-2025-12-20.md)
 - [`docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md`](file:///home/v/project/ronin/docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md)
@@ -29,6 +30,7 @@
 - [`docs/sprint-artifacts/validation-report-2-9.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-9.md)
 - [`docs/sprint-artifacts/validation-report-20251220-140839.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-20251220-140839.md)
 - [`docs/sprint-artifacts/validation-report-3-1-20251220.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-1-20251220.md)
+- [`docs/sprint-artifacts/validation-report-3-3-20251220-165907.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-3-20251220-165907.md)
 - [`package.json`](file:///home/v/project/ronin/package.json)
 - [`src-tauri/Cargo.toml`](file:///home/v/project/ronin/src-tauri/Cargo.toml)
 - [`src-tauri/build.rs`](file:///home/v/project/ronin/src-tauri/build.rs)
@@ -81,8 +83,10 @@
 - [`src/main.tsx`](file:///home/v/project/ronin/src/main.tsx)
 - [`src/pages/Dashboard.tsx`](file:///home/v/project/ronin/src/pages/Dashboard.tsx)
 - [`src/pages/Settings.tsx`](file:///home/v/project/ronin/src/pages/Settings.tsx)
+- [`src/pages/TestContextPanel.tsx`](file:///home/v/project/ronin/src/pages/TestContextPanel.tsx)
 - [`src/stores/projectStore.ts`](file:///home/v/project/ronin/src/stores/projectStore.ts)
 - [`src/stores/settingsStore.ts`](file:///home/v/project/ronin/src/stores/settingsStore.ts)
+- [`src/types/context.ts`](file:///home/v/project/ronin/src/types/context.ts)
 - [`src/types/health.ts`](file:///home/v/project/ronin/src/types/health.ts)
 - [`src/types/project.ts`](file:///home/v/project/ronin/src/types/project.ts)
 - [`src/vite-env.d.ts`](file:///home/v/project/ronin/src/vite-env.d.ts)
@@ -93,4 +97,4 @@
 - [`vitest.config.ts`](file:///home/v/project/ronin/vitest.config.ts)
 
 ---
-*Generated: 2025-12-20T09:30:04.820Z*
+*Generated: 2025-12-20T13:13:17.779Z*
