@@ -48,7 +48,7 @@ development_status:
   1-4-create-app-shell: done
   epic-1-retrospective: done
 
-  epic-2: in-progress
+  epic-2: done
   2-1-empty-state-add-project-wizard: done
   2-2-projectcard-component: done
   2-3-health-indicators-status: done
