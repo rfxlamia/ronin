@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ContextPanelProps, AttributionData } from '@/types/context';
 import { RoninLoader } from './RoninLoader';
 import { Button } from '@/components/ui/button';
@@ -118,8 +118,14 @@ export function ContextPanel({ state, text, attribution, error, onRetry, classNa
     }
 
     // Streaming and complete states share the same DOM structure to prevent remounting
+    // Memoize markdown rendering to prevent re-parsing on state changes
+    const markdownContent = useMemo(() => {
+        if (!text) return null;
+        return <ReactMarkdown>{text}</ReactMarkdown>;
+    }, [text]);
+
     return (
-        <div className={cn("p-4 bg-card max-h-[400px] overflow-auto", className)}>
+        <div className={cn("p-4 bg-card max-h-[400px] overflow-auto will-change-scroll", className)}>
             {/* Loader - only visible during streaming */}
             {state === 'streaming' && (
                 <div className="flex items-center gap-2 text-muted-foreground mb-3">
@@ -135,7 +141,7 @@ export function ContextPanel({ state, text, attribution, error, onRetry, classNa
                     aria-live="polite"
                     aria-atomic="false"
                 >
-                    <ReactMarkdown>{text}</ReactMarkdown>
+                    {markdownContent}
                 </div>
             )}
 
