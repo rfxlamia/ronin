@@ -64,11 +64,18 @@ export function useAiContext(projectId: number | null) {
 
     const unlistenPromises = Promise.all([
       listen('ai-chunk', (event: { payload: { text: string } }) => {
-        setState((prev) => ({
-          ...prev,
-          contextState: 'streaming',
-          contextText: prev.contextText + event.payload.text,
-        }));
+        setState((prev) => {
+          // CRITICAL: Ignore chunks that arrive after complete or error
+          // This prevents race condition where late chunks cause blinking
+          if (prev.contextState !== 'streaming') {
+            return prev;
+          }
+          return {
+            ...prev,
+            contextState: 'streaming',
+            contextText: prev.contextText + event.payload.text,
+          };
+        });
       }),
 
       listen(
