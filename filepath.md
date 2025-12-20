@@ -2,7 +2,7 @@
 
 **Auto-generated** list of key source files. Excludes: tests, migrations, workflow engine, build artifacts.
 
-## Files (91 total)
+## Files (95 total)
 
 - [`README.md`](file:///home/v/project/ronin/README.md)
 - [`docs/epics.md`](file:///home/v/project/ronin/docs/epics.md)
@@ -22,6 +22,7 @@
 - [`docs/sprint-artifacts/3-1-openrouter-api-integration.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-1-openrouter-api-integration.md)
 - [`docs/sprint-artifacts/3-2-git-history-analysis.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-2-git-history-analysis.md)
 - [`docs/sprint-artifacts/3-3-contextpanel-component.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-3-contextpanel-component.md)
+- [`docs/sprint-artifacts/3-4-ai-context-generation.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-4-ai-context-generation.md)
 - [`docs/sprint-artifacts/epic-1-retro-2025-12-18.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-1-retro-2025-12-18.md)
 - [`docs/sprint-artifacts/epic-2-retro-2025-12-20.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-2-retro-2025-12-20.md)
 - [`docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md`](file:///home/v/project/ronin/docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md)
@@ -31,9 +32,11 @@
 - [`docs/sprint-artifacts/validation-report-20251220-140839.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-20251220-140839.md)
 - [`docs/sprint-artifacts/validation-report-3-1-20251220.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-1-20251220.md)
 - [`docs/sprint-artifacts/validation-report-3-3-20251220-165907.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-3-20251220-165907.md)
+- [`docs/sprint-artifacts/validation-report-3-4-2025-12-20_20-26-41.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-4-2025-12-20_20-26-41.md)
 - [`package.json`](file:///home/v/project/ronin/package.json)
 - [`src-tauri/Cargo.toml`](file:///home/v/project/ronin/src-tauri/Cargo.toml)
 - [`src-tauri/build.rs`](file:///home/v/project/ronin/src-tauri/build.rs)
+- [`src-tauri/src/ai/context.rs`](file:///home/v/project/ronin/src-tauri/src/ai/context.rs)
 - [`src-tauri/src/ai/mod.rs`](file:///home/v/project/ronin/src-tauri/src/ai/mod.rs)
 - [`src-tauri/src/ai/openrouter.rs`](file:///home/v/project/ronin/src-tauri/src/ai/openrouter.rs)
 - [`src-tauri/src/commands/ai.rs`](file:///home/v/project/ronin/src-tauri/src/commands/ai.rs)
@@ -76,6 +79,7 @@
 - [`src/components/ui/skeleton.tsx`](file:///home/v/project/ronin/src/components/ui/skeleton.tsx)
 - [`src/components/ui/streaming-text.tsx`](file:///home/v/project/ronin/src/components/ui/streaming-text.tsx)
 - [`src/components/ui/tabs.tsx`](file:///home/v/project/ronin/src/components/ui/tabs.tsx)
+- [`src/hooks/useAiContext.ts`](file:///home/v/project/ronin/src/hooks/useAiContext.ts)
 - [`src/hooks/useWindowSize.ts`](file:///home/v/project/ronin/src/hooks/useWindowSize.ts)
 - [`src/lib/logic/projectHealth.ts`](file:///home/v/project/ronin/src/lib/logic/projectHealth.ts)
 - [`src/lib/utils.ts`](file:///home/v/project/ronin/src/lib/utils.ts)
@@ -97,4 +101,4 @@
 - [`vitest.config.ts`](file:///home/v/project/ronin/vitest.config.ts)
 
 ---
-*Generated: 2025-12-20T13:13:17.779Z*
+*Generated: 2025-12-20T20:33:10.851Z*
