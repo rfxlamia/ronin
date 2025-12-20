@@ -65,7 +65,7 @@ development_status:
   3-2-git-history-analysis: done
   3-3-contextpanel-component: done
   3-4-ai-context-generation: done
-  3-5-ai-attribution-display: backlog
+  3-5-ai-attribution-display: ready-for-dev
   3-6-error-states-offline-mode: backlog
   3-7-devlog-analysis-for-ai-context: backlog
   epic-3-retrospective: optional
