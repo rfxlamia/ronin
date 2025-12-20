@@ -62,7 +62,7 @@ development_status:
 
   epic-3: in-progress
   3-1-openrouter-api-integration: done
-  3-2-git-history-analysis: ready-for-dev
+  3-2-git-history-analysis: done
   3-3-contextpanel-component: backlog
   3-4-ai-context-generation: backlog
   3-5-ai-attribution-display: backlog
