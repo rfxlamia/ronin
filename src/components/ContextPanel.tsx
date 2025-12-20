@@ -1,76 +1,102 @@
-import { StreamingText } from './ui/streaming-text';
+import { ContextPanelProps, AttributionData } from '@/types/context';
+import { RoninLoader } from './RoninLoader';
+import { Button } from '@/components/ui/button';
+import { GitBranch, Search, FileText, AlertTriangle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface ContextPanelProps {
-    isOpen: boolean;
-    onClose: () => void;
-    title?: string;
-    children?: React.ReactNode;
-    className?: string;
-}
-
-/**
- * ContextPanel component - foundation for Epic 3 AI consulting
- * Will be extended with git history, project context, and AI responses
- */
-export function ContextPanel({
-    isOpen,
-    onClose,
-    title = 'Context',
-    children,
-    className
-}: ContextPanelProps) {
-    if (!isOpen) return null;
+function Attribution({ data }: { data?: AttributionData }) {
+    if (!data || !data.sources.length || (
+        (data.commits || 0) === 0 && 
+        (data.searches || 0) === 0 && 
+        (data.devlogLines || 0) === 0
+    )) {
+        return (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-4 pt-2 border-t border-border">
+                <span className="font-medium">Based on:</span>
+                <span>Git history only</span>
+            </div>
+        );
+    }
 
     return (
-        <div className="fixed inset-0 z-50 flex">
-            {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/50"
-                onClick={onClose}
-            />
-
-            {/* Panel */}
-            <div
-                className={cn(
-                    'ml-auto w-full max-w-2xl bg-card border-l shadow-xl',
-                    'flex flex-col h-full relative',
-                    'animate-in slide-in-from-right duration-300',
-                    className
+        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-4 pt-2 border-t border-border">
+            <span className="font-medium">Based on:</span>
+            
+            <div className="flex items-center gap-3">
+                {data.sources.includes('git') && (
+                    <div className="flex items-center gap-1" title="Git Commits">
+                        <GitBranch className="w-3 h-3" />
+                        <span>{data.commits || 0}</span>
+                    </div>
                 )}
-            >
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b">
-                    <h2 className="text-xl font-serif font-bold">{title}</h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-muted rounded-sm transition-colors"
-                        aria-label="Close panel"
-                    >
-                        <svg
-                            className="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
-                    </button>
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 overflow-auto p-6">
-                    {children}
-                </div>
+                
+                {data.sources.includes('behavior') && (
+                    <div className="flex items-center gap-1" title="Behavioral Patterns">
+                        <Search className="w-3 h-3" />
+                        <span>{data.searches || 0}</span>
+                    </div>
+                )}
+                
+                {data.sources.includes('devlog') && (
+                    <div className="flex items-center gap-1" title="DEVLOG Entries">
+                        <FileText className="w-3 h-3" />
+                        <span>{data.devlogLines || 0}</span>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
 
-// Export both components
-export { StreamingText };
+export function ContextPanel({ state, text, attribution, error, onRetry, className }: ContextPanelProps) {
+    if (state === 'idle') return null;
+
+    return (
+        <div className={cn("p-4 bg-card", className)}>
+            {state === 'streaming' && (
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <RoninLoader variant="inline" />
+                        <span className="text-sm animate-pulse">Analyzing your activity...</span>
+                    </div>
+                    {text && (
+                        <div className="text-sm font-mono text-foreground whitespace-pre-wrap animate-fade-in">
+                            {text}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {state === 'complete' && (
+                <div className="animate-fade-in">
+                    <div className="text-sm font-mono text-foreground whitespace-pre-wrap">
+                        {text}
+                    </div>
+                    <Attribution data={attribution} />
+                </div>
+            )}
+
+            {state === 'error' && (
+                <div className="flex flex-col items-center gap-3 py-2 text-center animate-fade-in">
+                    <div className="p-2 rounded-full bg-destructive/10 text-destructive">
+                        <AlertTriangle className="w-6 h-6" />
+                    </div>
+                    <div className="text-sm text-foreground">
+                        {error || "Something went wrong."}
+                    </div>
+                    {onRetry && (
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={onRetry}
+                            className="font-serif gap-2"
+                        >
+                            <RefreshCw className="w-3 h-3" />
+                            Retry
+                        </Button>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}

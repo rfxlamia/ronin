@@ -2,110 +2,86 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ContextPanel } from './ContextPanel';
+import { AttributionData } from '@/types/context';
+
+// Mock RoninLoader to avoid animation issues in tests
+vi.mock('./RoninLoader', () => ({
+    RoninLoader: ({ variant }: { variant: string }) => (
+        <div data-testid="ronin-loader" data-variant={variant}>
+            RoninLoader
+        </div>
+    ),
+}));
 
 describe('ContextPanel', () => {
-    it('does not render when closed', () => {
-        const { container } = render(
-            <ContextPanel isOpen={false} onClose={vi.fn()}>
-                <p>Content</p>
-            </ContextPanel>
-        );
+    const mockAttribution: AttributionData = {
+        commits: 15,
+        searches: 3,
+        devlogLines: 0,
+        sources: ['git', 'behavior'],
+    };
 
-        expect(container.firstChild).toBeNull();
+    it('renders nothing in idle state', () => {
+        const { container } = render(<ContextPanel state="idle" text="" />);
+        expect(container).toBeEmptyDOMElement();
     });
 
-    it('renders when open', () => {
+    it('renders loader and text in streaming state', () => {
+        render(<ContextPanel state="streaming" text="Analyzing..." />);
+        
+        expect(screen.getByTestId('ronin-loader')).toBeInTheDocument();
+        expect(screen.getByTestId('ronin-loader')).toHaveAttribute('data-variant', 'inline');
+        expect(screen.getByText('Analyzing...')).toBeInTheDocument();
+        expect(screen.getByText(/analyzing your activity/i)).toBeInTheDocument(); // Pulse text
+    });
+
+    it('renders text and attribution in complete state', () => {
         render(
-            <ContextPanel isOpen={true} onClose={vi.fn()}>
-                <p>Content</p>
-            </ContextPanel>
+            <ContextPanel 
+                state="complete" 
+                text="Final context." 
+                attribution={mockAttribution} 
+            />
         );
 
-        expect(screen.getByText('Content')).toBeInTheDocument();
+        expect(screen.queryByTestId('ronin-loader')).not.toBeInTheDocument();
+        expect(screen.getByText('Final context.')).toBeInTheDocument();
+        
+        // Attribution check
+        expect(screen.getByText(/Based on:/)).toBeInTheDocument();
+        expect(screen.getByText('15')).toBeInTheDocument(); // commits
+        expect(screen.getByText('3')).toBeInTheDocument(); // searches
     });
 
-    it('displays custom title', () => {
+    it('renders error message and retry button in error state', async () => {
+        const onRetry = vi.fn();
         render(
-            <ContextPanel isOpen={true} onClose={vi.fn()} title="Custom Title">
-                <p>Content</p>
-            </ContextPanel>
+            <ContextPanel 
+                state="error" 
+                text="" 
+                error="Network failure" 
+                onRetry={onRetry} 
+            />
         );
 
-        expect(screen.getByText('Custom Title')).toBeInTheDocument();
+        expect(screen.getByText('Network failure')).toBeInTheDocument();
+        const retryBtn = screen.getByRole('button', { name: /retry/i });
+        expect(retryBtn).toBeInTheDocument();
+
+        await userEvent.click(retryBtn);
+        expect(onRetry).toHaveBeenCalled();
     });
 
-    it('displays default title when not provided', () => {
+    it('handles empty attribution data gracefully', () => {
         render(
-            <ContextPanel isOpen={true} onClose={vi.fn()}>
-                <p>Content</p>
-            </ContextPanel>
+            <ContextPanel 
+                state="complete" 
+                text="Context." 
+                attribution={{ sources: [] }} 
+            />
         );
 
-        expect(screen.getByText('Context')).toBeInTheDocument();
-    });
-
-    it('calls onClose when close button clicked', async () => {
-        const user = userEvent.setup();
-        const onClose = vi.fn();
-
-        render(
-            <ContextPanel isOpen={true} onClose={onClose}>
-                <p>Content</p>
-            </ContextPanel>
-        );
-
-        const closeButton = screen.getByLabelText('Close panel');
-        await user.click(closeButton);
-
-        expect(onClose).toHaveBeenCalled();
-    });
-
-    it('calls onClose when backdrop clicked', async () => {
-        const user = userEvent.setup();
-        const onClose = vi.fn();
-
-        const { container } = render(
-            <ContextPanel isOpen={true} onClose={onClose}>
-                <p>Content</p>
-            </ContextPanel>
-        );
-
-        const backdrop = container.querySelector('.bg-black\\/50');
-        expect(backdrop).toBeInTheDocument();
-
-        if (backdrop) {
-            await user.click(backdrop);
-            expect(onClose).toHaveBeenCalled();
-        }
-    });
-
-    it('renders children content', () => {
-        render(
-            <ContextPanel isOpen={true} onClose={vi.fn()}>
-                <div data-testid="custom-content">
-                    <h3>Title</h3>
-                    <p>Paragraph</p>
-                </div>
-            </ContextPanel>
-        );
-
-        expect(screen.getByTestId('custom-content')).toBeInTheDocument();
-        expect(screen.getByText('Title')).toBeInTheDocument();
-        expect(screen.getByText('Paragraph')).toBeInTheDocument();
-    });
-
-    it('applies custom className', () => {
-        const { container } = render(
-            <ContextPanel
-                isOpen={true}
-                onClose={vi.fn()}
-                className="custom-panel"
-            >
-                <p>Content</p>
-            </ContextPanel>
-        );
-
-        const panel = container.querySelector('.custom-panel');
-        expect(panel).toBeInTheDocument();
+        expect(screen.getByText('Based on:')).toBeInTheDocument();
+        expect(screen.getByText('Git history only')).toBeInTheDocument();
     });
 });
