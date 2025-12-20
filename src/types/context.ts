@@ -1,10 +1,11 @@
 export type ContextPanelState = 'idle' | 'streaming' | 'complete' | 'error';
 
 export interface AttributionData {
-  commits?: number;
+  commits: number;
+  files: number;
   devlogLines?: number;
   searches?: number;
-  sources: ('git' | 'devlog' | 'behavior')[];
+  sources: string[]; // Currently: 'git'. Future: 'devlog', 'behavior'
 }
 
 export interface ContextPanelProps {

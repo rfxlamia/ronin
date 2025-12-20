@@ -4,6 +4,14 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tauri::Emitter;
 
+/// Attribution data for AI context
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Attribution {
+    pub commits: usize,
+    pub files: usize,
+    pub sources: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
     pub role: String,
@@ -41,6 +49,7 @@ impl OpenRouterClient {
         &self,
         messages: Vec<Message>,
         window: tauri::Window,
+        attribution: Attribution,
     ) -> Result<(), String> {
         let models = vec![
             "xiaomi/mimo-v2-flash:free",
@@ -164,16 +173,13 @@ impl OpenRouterClient {
                         }
                     }
 
-                    // Emit completion
+                    // Emit completion with actual attribution data
                     window
                         .emit(
                             "ai-complete",
                             serde_json::json!({
                                 "text": full_text,
-                                "attribution": {
-                                    "commits": 0,
-                                    "sources": ["git"]
-                                }
+                                "attribution": attribution
                             }),
                         )
                         .map_err(|e| e.to_string())?;
@@ -210,5 +216,45 @@ mod tests {
     fn test_default_model() {
         let model = OpenRouterClient::get_available_model();
         assert_eq!(model, "xiaomi/mimo-v2-flash:free");
+    }
+
+    #[test]
+    fn test_attribution_serialization() {
+        let attribution = Attribution {
+            commits: 15,
+            files: 3,
+            sources: vec!["git".to_string()],
+        };
+
+        let json = serde_json::to_string(&attribution).expect("Should serialize");
+        assert!(json.contains("\"commits\":15"));
+        assert!(json.contains("\"files\":3"));
+        assert!(json.contains("\"sources\":[\"git\"]"));
+    }
+
+    #[test]
+    fn test_attribution_deserialization() {
+        let json = r#"{"commits":10,"files":5,"sources":["git","devlog"]}"#;
+        let attribution: Attribution = serde_json::from_str(json).expect("Should deserialize");
+
+        assert_eq!(attribution.commits, 10);
+        assert_eq!(attribution.files, 5);
+        assert_eq!(attribution.sources, vec!["git", "devlog"]);
+    }
+
+    #[test]
+    fn test_attribution_empty_sources() {
+        let attribution = Attribution {
+            commits: 0,
+            files: 0,
+            sources: vec![],
+        };
+
+        let json = serde_json::to_string(&attribution).expect("Should serialize");
+        let parsed: Attribution = serde_json::from_str(&json).expect("Should deserialize");
+
+        assert_eq!(parsed.commits, 0);
+        assert_eq!(parsed.files, 0);
+        assert!(parsed.sources.is_empty());
     }
 }

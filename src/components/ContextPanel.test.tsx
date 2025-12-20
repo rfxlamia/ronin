@@ -16,9 +16,10 @@ vi.mock('./RoninLoader', () => ({
 describe('ContextPanel', () => {
     const mockAttribution: AttributionData = {
         commits: 15,
-        searches: 3,
+        files: 3,
+        searches: 0,
         devlogLines: 0,
-        sources: ['git', 'behavior'],
+        sources: ['git'],
     };
 
     it('renders nothing in idle state', () => {
@@ -50,7 +51,7 @@ describe('ContextPanel', () => {
         // Attribution check
         expect(screen.getByText(/Based on:/)).toBeInTheDocument();
         expect(screen.getByText('15')).toBeInTheDocument(); // commits
-        expect(screen.getByText('3')).toBeInTheDocument(); // searches
+        expect(screen.getByText('3')).toBeInTheDocument(); // files
     });
 
     it('renders error message and retry button in error state', async () => {
@@ -77,11 +78,46 @@ describe('ContextPanel', () => {
             <ContextPanel 
                 state="complete" 
                 text="Context." 
-                attribution={{ sources: [] }} 
+                attribution={{ commits: 0, files: 0, sources: [] }} 
             />
         );
 
         expect(screen.getByText('Based on:')).toBeInTheDocument();
-        expect(screen.getByText('Git history only')).toBeInTheDocument();
+        expect(screen.getByText('No data available')).toBeInTheDocument();
+    });
+
+    it('handles empty repository (0 commits, 0 files)', () => {
+        render(
+            <ContextPanel 
+                state="complete" 
+                text="Context." 
+                attribution={{ commits: 0, files: 0, sources: ['git'] }} 
+            />
+        );
+
+        expect(screen.getByText('Based on:')).toBeInTheDocument();
+        expect(screen.getByText('Empty repository')).toBeInTheDocument();
+    });
+
+    it('shows expandable attribution bar with keyboard accessibility', async () => {
+        render(
+            <ContextPanel 
+                state="complete" 
+                text="Context." 
+                attribution={mockAttribution} 
+            />
+        );
+
+        // Find the collapsible trigger
+        const trigger = screen.getByRole('button', { name: /based on/i });
+        expect(trigger).toBeInTheDocument();
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+        // Click to expand
+        await userEvent.click(trigger);
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+        // Should show detailed view
+        expect(screen.getByText(/Git History/i)).toBeInTheDocument();
     });
 });

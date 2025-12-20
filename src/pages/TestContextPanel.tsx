@@ -10,8 +10,9 @@ export function TestContextPanel() {
 
     const mockAttribution: AttributionData = {
         commits: 15,
-        searches: 3,
-        sources: ['git', 'behavior']
+        files: 3,
+        searches: 0,
+        sources: ['git']
     };
 
     const handleStream = () => {
