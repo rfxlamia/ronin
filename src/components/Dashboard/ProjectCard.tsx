@@ -167,7 +167,7 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
                                                     className="h-4 w-4 text-muted-foreground flex-shrink-0"
                                                     data-icon={project.type === 'git' ? 'git-branch' : 'folder'}
                                                 />
-                                                <h3 className="font-serif font-bold text-lg truncate">
+                                                <h3 className="font-sans font-bold text-lg truncate">
                                                     {project.name}
                                                 </h3>
                                             </div>
