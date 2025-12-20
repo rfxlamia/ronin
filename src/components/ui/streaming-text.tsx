@@ -22,7 +22,7 @@ export function StreamingText({
 }: StreamingTextProps) {
     const [displayedText, setDisplayedText] = useState('');
     const [currentIndex, setCurrentIndex] = useState(0);
-    const timeoutRef = useRef<NodeJS.Timeout>();
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Reset when text changes
     useEffect(() => {
