@@ -143,7 +143,7 @@ describe('Blinking Root Cause Analysis', () => {
     it('should never have empty text after chunks have been received', async () => {
         const textHistory: string[] = [];
 
-        const { result } = renderHook(() => {
+        renderHook(() => {
             const ctx = useAiContext(1);
             // Track every text value
             textHistory.push(ctx.contextText);
