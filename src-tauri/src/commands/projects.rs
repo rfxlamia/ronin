@@ -249,7 +249,21 @@ pub async fn get_projects(
     // Scan stats for folder projects only (for performance)
     // Git projects will use git commit history once Task 2.2 (git integration) is complete
     for project in &mut projects {
-        if project.r#type == "folder" {
+        if project.r#type == "git" {
+            // Get last commit date for Git projects
+            let path = project.path.clone();
+            match crate::commands::git::get_git_context(path).await {
+                Ok(git_context) => {
+                    // Use the date from the most recent commit
+                    if let Some(last_commit) = git_context.commits.first() {
+                        project.last_activity = Some(last_commit.date.clone());
+                    }
+                }
+                Err(_) => {
+                    // If git fails, last_activity remains None (will fallback to updated_at)
+                }
+            }
+        } else if project.r#type == "folder" {
             let path = project.path.clone();
 
             // Use spawn_blocking to prevent blocking the async runtime

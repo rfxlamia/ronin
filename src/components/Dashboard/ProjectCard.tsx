@@ -18,39 +18,24 @@ import { ContextPanel } from '@/components/ContextPanel';
 import { calculateDaysSince, formatDaysSince } from '@/lib/utils/dateUtils';
 import { calculateProjectHealth } from '@/lib/logic/projectHealth';
 import type { Project } from '@/types/project';
-import type { ContextPanelState, AttributionData } from '@/types/context';
 import { cn } from '@/lib/utils';
 import { useProjectStore } from '@/stores/projectStore';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { useAiContext } from '@/hooks/useAiContext';
 
 interface ProjectCardProps {
     project: Project;
 }
 
-// Mock Data
-const mockChunks = [
-    "Based on recent commits,",
-    " you were working on",
-    " the auth service refactor.",
-    " Last change was in",
-    " src/lib/auth.ts."
-];
-
-const mockAttribution: AttributionData = {
-    commits: 12,
-    devlogLines: 0,
-    sources: ['git']
-};
-
 export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [showRemoveDialog, setShowRemoveDialog] = useState(false);
 
-    // Context State
-    const [contextState, setContextState] = useState<ContextPanelState>('idle');
-    const [contextText, setContextText] = useState('');
-    const streamTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    // Use AI Context Hook
+    const { contextState, contextText, attribution, error, retry } = useAiContext(
+        isOpen ? project.id : null
+    );
 
     const archiveProject = useProjectStore((state) => state.archiveProject);
     const restoreProject = useProjectStore((state) => state.restoreProject);
@@ -72,38 +57,10 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
         toast.success('Project removed from tracking');
     };
 
-    const startStreaming = () => {
-        setContextState('streaming');
-        setContextText('');
-
-        // Clear any existing timeout
-        if (streamTimeoutRef.current) clearTimeout(streamTimeoutRef.current);
-
-        let chunkIndex = 0;
-
-        // Initial delay for "analyzing..." pulse before text starts
-        streamTimeoutRef.current = setTimeout(() => {
-            const streamNext = () => {
-                if (chunkIndex < mockChunks.length) {
-                    setContextText(prev => prev + mockChunks[chunkIndex]);
-                    chunkIndex++;
-                    streamTimeoutRef.current = setTimeout(streamNext, 200);
-                } else {
-                    setContextState('complete');
-                }
-            };
-            streamNext();
-        }, 500);
-    };
-
     const handleOpenChange = (open: boolean) => {
         setIsOpen(open);
-        if (open) {
-            startStreaming();
-        } else {
-            if (streamTimeoutRef.current) clearTimeout(streamTimeoutRef.current);
-            setContextState('idle');
-        }
+        // AI context generation is automatically triggered by useAiContext
+        // when isOpen changes from false to true
     };
 
     // Ref for click-outside detection
@@ -129,13 +86,6 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [isOpen]);
-
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            if (streamTimeoutRef.current) clearTimeout(streamTimeoutRef.current);
-        };
-    }, []);
 
     const TypeIcon = project.type === 'git' ? GitBranch : Folder;
     const daysSinceActivity = calculateDaysSince(
@@ -251,8 +201,13 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
                                 <ContextPanel
                                     state={contextState}
                                     text={contextText}
-                                    attribution={contextState === 'complete' ? mockAttribution : undefined}
-                                    onRetry={startStreaming}
+                                    attribution={contextState === 'complete' && attribution ? {
+                                        commits: attribution.commits,
+                                        devlogLines: 0,
+                                        sources: attribution.sources as ('git' | 'devlog' | 'behavior')[]
+                                    } : undefined}
+                                    onRetry={retry}
+                                    error={error || undefined}
                                 />
 
                                 <Button

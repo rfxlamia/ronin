@@ -35,6 +35,7 @@ pub fn init_db() -> Result<DbPool, String> {
 
     run_migrations(&mut conn)?;
     verify_integrity(&conn)?;
+    evict_old_cache(&conn)?;
 
     Ok(pool)
 }
@@ -127,6 +128,42 @@ pub(crate) fn run_migrations(
         )
         .map_err(|e| format!("Failed to add deleted_at column: {}", e))?;
     }
+
+    // Check if ai_cache table exists
+    let ai_cache_exists: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='ai_cache'",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("Failed to check ai_cache table: {}", e))?;
+
+    if ai_cache_exists == 0 {
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS ai_cache (
+                project_id INTEGER PRIMARY KEY,
+                context_text TEXT NOT NULL,
+                attribution_json TEXT NOT NULL,
+                generated_at INTEGER NOT NULL,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+            )",
+            [],
+        )
+        .map_err(|e| format!("Failed to create ai_cache table: {}", e))?;
+    }
+
+    Ok(())
+}
+
+/// Evict cached AI contexts older than 7 days
+fn evict_old_cache(conn: &r2d2::PooledConnection<SqliteConnectionManager>) -> Result<(), String> {
+    let seven_days_ago = chrono::Utc::now().timestamp() - (7 * 24 * 60 * 60);
+
+    conn.execute(
+        "DELETE FROM ai_cache WHERE generated_at < ?1",
+        rusqlite::params![seven_days_ago],
+    )
+    .map_err(|e| format!("Cache eviction failed: {}", e))?;
 
     Ok(())
 }

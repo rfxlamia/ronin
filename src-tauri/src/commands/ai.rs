@@ -1,7 +1,11 @@
 /// AI-related Tauri commands for OpenRouter API integration
+use crate::ai::context::{build_git_context, build_system_prompt, validate_payload_size};
+use crate::ai::openrouter::{Message, OpenRouterClient};
+use crate::commands::git::get_git_context;
 use crate::security::{decrypt_api_key, encrypt_api_key};
 use base64::{engine::general_purpose, Engine as _};
 use rusqlite::OptionalExtension;
+use tauri::Emitter;
 
 /// Set (encrypt and store) API key
 #[tauri::command]
@@ -120,6 +124,136 @@ pub async fn test_api_connection(api_key: String) -> Result<bool, String> {
             "Connection failed with status {}. Please check your network or try again.",
             code
         )),
+    }
+}
+
+/// Generate AI context for a project
+#[tauri::command]
+pub async fn generate_context(
+    project_id: i64,
+    window: tauri::Window,
+    pool: tauri::State<'_, crate::db::DbPool>,
+) -> Result<(), String> {
+    // Get project path
+    let conn = pool
+        .get()
+        .map_err(|e| format!("Database connection failed: {}", e))?;
+
+    let project_path: String = conn
+        .query_row(
+            "SELECT path FROM projects WHERE id = ?1",
+            rusqlite::params![project_id],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("Project not found: {}", e))?;
+
+    // Get Git context
+    let git_context = match get_git_context(project_path.clone()).await {
+        Ok(ctx) => ctx,
+        Err(e) => {
+            window
+                .emit(
+                    "ai-error",
+                    serde_json::json!({
+                        "message": "Couldn't access git repository"
+                    }),
+                )
+                .map_err(|e| e.to_string())?;
+            return Err(format!("Git context error: {}", e));
+        }
+    };
+
+    // Build context strings
+    let git_context_str = build_git_context(&git_context);
+    let system_prompt = build_system_prompt(&git_context_str);
+
+    // Validate payload size
+    if let Err(e) = validate_payload_size(&system_prompt) {
+        window
+            .emit(
+                "ai-error",
+                serde_json::json!({
+                    "message": "Context too large to process"
+                }),
+            )
+            .map_err(|e| e.to_string())?;
+        return Err(e);
+    }
+
+    // Get API key
+    let api_key = match get_api_key(pool.clone()).await? {
+        Some(key) => key,
+        None => {
+            window
+                .emit(
+                    "ai-error",
+                    serde_json::json!({
+                        "message": "API key not configured"
+                    }),
+                )
+                .map_err(|e| e.to_string())?;
+            return Err("API key not set".to_string());
+        }
+    };
+
+    // Create OpenRouter client and stream
+    let client = OpenRouterClient::new(api_key);
+    let messages = vec![
+        Message {
+            role: "system".to_string(),
+            content: system_prompt,
+        },
+        Message {
+            role: "user".to_string(),
+            content: "Provide context about where I was in this project".to_string(),
+        },
+    ];
+
+    // Stream the response
+    match client.chat_stream(messages, window.clone()).await {
+        Ok(_) => {
+            // Cache successful response
+            let full_context = ""; // Will be accumulated in streaming
+            let attribution_json = serde_json::json!({
+                "commits": git_context.commits.len(),
+                "sources": ["git"]
+            })
+            .to_string();
+
+            let timestamp = chrono::Utc::now().timestamp();
+
+            conn.execute(
+                "INSERT OR REPLACE INTO ai_cache (project_id, context_text, attribution_json, generated_at) VALUES (?1, ?2, ?3, ?4)",
+                rusqlite::params![project_id, full_context, attribution_json, timestamp],
+            )
+            .map_err(|e| format!("Cache write failed: {}", e))?;
+
+            Ok(())
+        }
+        Err(e) => {
+            // Try to load from cache on error (offline fallback)
+            let cached: Result<(String, String), _> = conn.query_row(
+                "SELECT context_text, attribution_json FROM ai_cache WHERE project_id = ?1",
+                rusqlite::params![project_id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            );
+
+            if let Ok((text, attr)) = cached {
+                window
+                    .emit(
+                        "ai-complete",
+                        serde_json::json!({
+                            "text": text,
+                            "attribution": serde_json::from_str::<serde_json::Value>(&attr).unwrap_or(serde_json::json!({})),
+                            "cached": true
+                        }),
+                    )
+                    .map_err(|e| e.to_string())?;
+                Ok(())
+            } else {
+                Err(e)
+            }
+        }
     }
 }
 
