@@ -26,7 +26,8 @@ pub fn run() {
             commands::projects::restore_project,
             commands::projects::scan_projects,
             commands::settings::get_setting,
-            commands::settings::update_setting
+            commands::settings::update_setting,
+            commands::git::get_git_history
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
