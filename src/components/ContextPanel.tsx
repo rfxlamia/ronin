@@ -90,36 +90,10 @@ function Attribution({ data }: { data?: AttributionData }) {
 export function ContextPanel({ state, text, attribution, error, onRetry, className }: ContextPanelProps) {
     if (state === 'idle') return null;
 
-    return (
-        <div className={cn("p-4 bg-card max-h-[400px] overflow-auto", className)}>
-            {state === 'streaming' && (
-                <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <RoninLoader variant="inline" />
-                        <span className="text-sm animate-pulse">Analyzing your activity...</span>
-                    </div>
-                    {text && (
-                        <div
-                            className="text-sm prose prose-sm dark:prose-invert max-w-none"
-                            aria-live="polite"
-                            aria-atomic="false"
-                        >
-                            <ReactMarkdown>{text}</ReactMarkdown>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {state === 'complete' && (
-                <div>
-                    <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown>{text}</ReactMarkdown>
-                    </div>
-                    <Attribution data={attribution} />
-                </div>
-            )}
-
-            {state === 'error' && (
+    // Show error state
+    if (state === 'error') {
+        return (
+            <div className={cn("p-4 bg-card max-h-[400px] overflow-auto", className)}>
                 <div className="flex flex-col items-center gap-3 py-2 text-center">
                     <div className="p-2 rounded-full bg-destructive/10 text-destructive">
                         <AlertTriangle className="w-6 h-6" />
@@ -139,7 +113,34 @@ export function ContextPanel({ state, text, attribution, error, onRetry, classNa
                         </Button>
                     )}
                 </div>
+            </div>
+        );
+    }
+
+    // Streaming and complete states share the same DOM structure to prevent remounting
+    return (
+        <div className={cn("p-4 bg-card max-h-[400px] overflow-auto", className)}>
+            {/* Loader - only visible during streaming */}
+            {state === 'streaming' && (
+                <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                    <RoninLoader variant="inline" />
+                    <span className="text-sm animate-pulse">Analyzing your activity...</span>
+                </div>
             )}
+
+            {/* Content - stable container, no remount on state change */}
+            {text && (
+                <div
+                    className="text-sm prose prose-sm dark:prose-invert max-w-none"
+                    aria-live="polite"
+                    aria-atomic="false"
+                >
+                    <ReactMarkdown>{text}</ReactMarkdown>
+                </div>
+            )}
+
+            {/* Attribution - only visible when complete */}
+            {state === 'complete' && <Attribution data={attribution} />}
         </div>
     );
 }

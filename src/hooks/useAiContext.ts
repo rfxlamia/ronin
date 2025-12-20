@@ -83,7 +83,9 @@ export function useAiContext(projectId: number | null) {
           setState((prev) => ({
             ...prev,
             contextState: 'complete',
-            contextText: event.payload.text || prev.contextText,
+            // Keep the accumulated streamed text; only use payload text for cached responses
+            // or if no text was accumulated (edge case)
+            contextText: prev.contextText || event.payload.text || '',
             attribution: event.payload.attribution,
             isCached: event.payload.cached || false,
             error: null,
