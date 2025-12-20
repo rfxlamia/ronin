@@ -18,22 +18,24 @@ export function TestContextPanel() {
         setState('streaming');
         setText('');
         const chunks = ["This is ", "a test ", "stream ", "of AI ", "context."];
-        let i = 0;
-        const interval = setInterval(() => {
-            if (i < chunks.length) {
-                setText(prev => prev + chunks[i]);
-                i++;
+        let chunkIndex = 0;
+
+        const streamNext = () => {
+            if (chunkIndex < chunks.length) {
+                setText(prev => prev + chunks[chunkIndex]);
+                chunkIndex++;
+                setTimeout(streamNext, 200);
             } else {
-                clearInterval(interval);
                 setState('complete');
             }
-        }, 200);
+        };
+        setTimeout(streamNext, 200);
     };
 
     return (
         <div className="p-8 space-y-8">
             <h1 className="text-2xl font-serif">ContextPanel Harness</h1>
-            
+
             <div className="flex gap-4">
                 <Button onClick={() => { setState('idle'); setText(''); }}>Idle</Button>
                 <Button onClick={handleStream}>Trigger Stream</Button>
@@ -43,8 +45,8 @@ export function TestContextPanel() {
 
             <div className="border border-border rounded-lg p-4 max-w-md bg-muted/20">
                 <h3 className="mb-4 font-mono text-sm text-muted-foreground">Component Container</h3>
-                <ContextPanel 
-                    state={state} 
+                <ContextPanel
+                    state={state}
                     text={text}
                     attribution={state === 'complete' ? mockAttribution : undefined}
                     error={error}

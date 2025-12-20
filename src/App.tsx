@@ -36,7 +36,9 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/test/context-panel" element={<TestContextPanel />} />
+            {import.meta.env.DEV && (
+              <Route path="/test/context-panel" element={<TestContextPanel />} />
+            )}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AppShell>
