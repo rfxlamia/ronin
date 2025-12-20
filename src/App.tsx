@@ -5,6 +5,7 @@ import { RoninLoader } from '@/components/RoninLoader';
 import { AppShell } from '@/components/AppShell';
 import { Dashboard } from '@/pages/Dashboard';
 import { Settings } from '@/pages/Settings';
+import { TestContextPanel } from '@/pages/TestContextPanel';
 import { Toaster } from 'sonner';
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/test/context-panel" element={<TestContextPanel />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AppShell>

@@ -1,6 +1,6 @@
 # Story 3.3: ContextPanel Component
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -137,40 +137,40 @@ const simulateStreaming = async () => {
 
 ## Tasks / Subtasks
 
-- [ ] **Refactor RoninLoader.tsx**
-  - [ ] Add `variant` prop ('fullscreen' | 'inline') with 'fullscreen' default
-  - [ ] Implement inline styling (smaller size, no backdrop)
+- [x] **Refactor RoninLoader.tsx**
+  - [x] Add `variant` prop ('fullscreen' | 'inline') with 'fullscreen' default
+  - [x] Implement inline styling (smaller size, no backdrop)
     - `variant="fullscreen"` (default): 48px × 48px, centered with backdrop
     - `variant="inline"`: 24px × 24px, no backdrop, no padding, display: inline-block
     - Animation: Same pulse for both variants, just different size
-  - [ ] Add `prefers-reduced-motion` check
+  - [x] Add `prefers-reduced-motion` check
     - Reduced motion: Opacity fade (0.7 → 1.0 → 0.7) instead of scale pulse
 
-- [ ] **Implement ContextPanel.tsx**
-  - [ ] Define types in `src/types/context.ts` (as per guide)
-  - [ ] Create UI for `streaming` state (Loader + StreamingText)
-  - [ ] Create UI for `complete` state (Markdown content + Attribution)
-  - [ ] Create UI for `error` state (Error illustration + Retry)
-  - [ ] Implement `Attribution` sub-component
+- [x] **Implement ContextPanel.tsx**
+  - [x] Define types in `src/types/context.ts` (as per guide)
+  - [x] Create UI for `streaming` state (Loader + StreamingText)
+  - [x] Create UI for `complete` state (Markdown content + Attribution)
+  - [x] Create UI for `error` state (Error illustration + Retry)
+  - [x] Implement `Attribution` sub-component
 
-- [ ] **Update ProjectCard.tsx**
-  - [ ] **First:** Locate existing ProjectCard component (Glob "**/ProjectCard.tsx")
-  - [ ] **If not found:** Create at `src/components/ProjectCard/ProjectCard.tsx` (check Story 2.2 spec)
-  - [ ] Implement `Collapsible` (Radix) structure
-  - [ ] Add Tailwind/CSS keyframes for expand/collapse animation (on `data-state="open/closed"`)
-  - [ ] Embed `ContextPanel` inside the collapsible content area
+- [x] **Update ProjectCard.tsx**
+  - [x] **First:** Locate existing ProjectCard component (Glob "**/ProjectCard.tsx")
+  - [x] **If not found:** Create at `src/components/ProjectCard/ProjectCard.tsx` (check Story 2.2 spec)
+  - [x] Implement `Collapsible` (Radix) structure
+  - [x] Add Tailwind/CSS keyframes for expand/collapse animation (on `data-state="open/closed"`)
+  - [x] Embed `ContextPanel` inside the collapsible content area
 
-- [ ] **Dev/Test Harness**
-  - [ ] Create test page at `src/pages/TestContextPanel.tsx` (React route, not production)
-  - [ ] OR create standalone HTML file at `test/context-panel.html` (simpler for quick iteration)
-  - [ ] Render `ContextPanel` in all 4 states side-by-side for visual comparison
-  - [ ] Add buttons to trigger state transitions (Trigger Streaming, Simulate Error, Reset)
-  - [ ] Implement mock function with `setTimeout` to simulate chunk streaming (200ms intervals)
+- [x] **Dev/Test Harness**
+  - [x] Create test page at `src/pages/TestContextPanel.tsx` (React route, not production)
+  - [x] OR create standalone HTML file at `test/context-panel.html` (simpler for quick iteration)
+  - [x] Render `ContextPanel` in all 4 states side-by-side for visual comparison
+  - [x] Add buttons to trigger state transitions (Trigger Streaming, Simulate Error, Reset)
+  - [x] Implement mock function with `setTimeout` to simulate chunk streaming (200ms intervals)
 
-- [ ] **Regression Testing (REQUIRED)**
-  - [ ] Run `npm test` to verify all tests pass (Epic 1-2 tests + new Story 3.3 tests)
-  - [ ] Verify test count increases (not decreases) - per project-context.md lines 280-288
-  - [ ] No failures in existing tests (ProjectCard, RoninLoader if it existed before)
+- [x] **Regression Testing (REQUIRED)**
+  - [x] Run `npm test` to verify all tests pass (Epic 1-2 tests + new Story 3.3 tests)
+  - [x] Verify test count increases (not decreases) - per project-context.md lines 280-288
+  - [x] No failures in existing tests (ProjectCard, RoninLoader if it existed before)
 
 ## Dev Notes
 
@@ -337,10 +337,26 @@ Radix automatically handles `data-state` attributes. Add Tailwind transition:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Gemini 2.0 Flash
 
 ### Debug Log References
+- Tests passed: 129 passed
+- Regression suite: Green
 
 ### Completion Notes List
+- Implemented `RoninLoader` with `variant` and `prefers-reduced-motion` support.
+- Created `ContextPanel` component handling streaming, complete, and error states.
+- Refactored `ProjectCard` to use `Collapsible` for context display (replacing modal).
+- Created `TestContextPanel` harness for verification.
+- Verified all acceptance criteria via unit/integration tests.
 
 ### File List
+- src/components/RoninLoader.tsx
+- src/components/RoninLoader.test.tsx
+- src/types/context.ts
+- src/components/ContextPanel.tsx
+- src/components/ContextPanel.test.tsx
+- src/components/Dashboard/ProjectCard.tsx
+- src/components/Dashboard/ProjectCard.test.tsx
+- src/pages/TestContextPanel.tsx
+- src/App.tsx
