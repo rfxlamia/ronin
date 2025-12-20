@@ -250,19 +250,15 @@ pub async fn get_projects(
     // Git projects will use git commit history once Task 2.2 (git integration) is complete
     for project in &mut projects {
         if project.r#type == "git" {
-            // Get last commit date for Git projects
+            // Get last commit date for Git projects (lightweight - no full history scan)
             let path = project.path.clone();
-            match crate::commands::git::get_git_context(path).await {
-                Ok(git_context) => {
-                    // Use the date from the most recent commit
-                    if let Some(last_commit) = git_context.commits.first() {
-                        project.last_activity = Some(last_commit.date.clone());
-                    }
-                }
-                Err(_) => {
-                    // If git fails, last_activity remains None (will fallback to updated_at)
-                }
-            }
+            let last_activity = tokio::task::spawn_blocking(move || {
+                crate::commands::git::get_last_commit_date(&path)
+            })
+            .await
+            .ok()
+            .flatten();
+            project.last_activity = last_activity;
         } else if project.r#type == "folder" {
             let path = project.path.clone();
 
