@@ -71,7 +71,7 @@ development_status:
   epic-3-retrospective: done
 
   epic-4: in-progress
-  4-1-devlog-editor-component: ready-for-dev
+  4-1-devlog-editor-component: done
   4-2-file-sync-with-repository: backlog
   4-3-devlog-history-view: backlog
   epic-4-retrospective: optional

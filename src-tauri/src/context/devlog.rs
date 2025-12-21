@@ -29,7 +29,7 @@ pub struct DevlogContent {
 }
 
 /// Standard locations to check for DEVLOG.md
-const DEVLOG_LOCATIONS: &[&str] = &["DEVLOG.md", "docs/DEVLOG.md", ".devlog/DEVLOG.md"];
+pub const DEVLOG_LOCATIONS: &[&str] = &["DEVLOG.md", "docs/DEVLOG.md", ".devlog/DEVLOG.md"];
 
 /// Read DEVLOG.md from a project directory
 ///

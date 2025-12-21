@@ -1,6 +1,6 @@
 # Story 4.1: DEVLOG Editor Component
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -148,36 +148,38 @@ async fn write_devlog(project_path: String, content: String) -> Result<(), Strin
 
 ## Tasks / Subtasks
 
-- [ ] **Setup & Scaffold**
-    - [ ] Install CodeMirror 6 dependencies.
-    - [ ] Create `src/components/devlog/` directory.
+- [x] **Setup & Scaffold**
+    - [x] Install CodeMirror 6 dependencies.
+    - [x] Create `src/components/devlog/` directory.
 
-- [ ] **Backend Implementation**
-    - [ ] Create `src-tauri/src/commands/devlog.rs`.
-    - [ ] Implement `get_devlog_content` (reuse path logic from 3.7).
-    - [ ] Implement `append_devlog` (handle timestamping backend-side).
-    - [ ] Implement `write_devlog` (overwrite).
-    - [ ] Register commands in `src-tauri/src/lib.rs`.
+- [x] **Backend Implementation**
+    - [x] Create `src-tauri/src/commands/devlog.rs`.
+    - [x] Implement `get_devlog_content` (reuse path logic from 3.7).
+    - [x] Implement `append_devlog` (handle timestamping backend-side).
+    - [x] Implement `write_devlog` (overwrite).
+    - [x] Implement `get_devlog_mtime` for conflict detection.
+    - [x] Register commands in `src-tauri/src/lib.rs`.
 
-- [ ] **Frontend State (Zustand)**
-    - [ ] Create `useDevlogStore` with open/close actions and project selection logic.
+- [x] **Frontend State (Zustand)**
+    - [x] Create `useDevlogStore` with open/close actions and project selection logic.
 
-- [ ] **UI Components**
-    - [ ] Implement `DevlogButton` (FAB) - Fixed position, check for Toaster overlap.
-    - [ ] Implement `MarkdownEditor` - CodeMirror setup with custom keymaps.
-    - [ ] Implement `DevlogModal` - Dialog structure, header with Project Select & Edit Mode toggle.
-    - [ ] Create `useHotkeys` hook for `Ctrl+Shift+D` handling.
+- [x] **UI Components**
+    - [x] Implement `DevlogButton` (FAB) - Fixed position, check for Toaster overlap.
+    - [x] Implement `MarkdownEditor` - CodeMirror setup with custom keymaps.
+    - [x] Implement `DevlogModal` - Dialog structure, header with Project Select & Edit Mode toggle.
+    - [x] Implement `ConflictDialog` - File conflict resolution UI.
+    - [x] Create `useHotkeys` hook for `Ctrl+Shift+D` handling.
 
-- [ ] **Global Integration**
-    - [ ] Mount `<DevlogButton />` and `<DevlogModal />` in `src/App.tsx`.
-    - [ ] Move Toaster to `position="top-right"` in App.tsx (line 27).
-    - [ ] Verify Z-index layering:
+- [x] **Global Integration**
+    - [x] Mount `<DevlogButton />` and `<DevlogModal />` in `src/App.tsx`.
+    - [x] Move Toaster to `position="top-right"` in App.tsx.
+    - [x] Verify Z-index layering:
         - Modal backdrop: `z-index: 100`
         - Modal content: `z-index: 101`
         - FAB button: `z-index: 50`
         - Toaster: `z-index: 60`
-    - [ ] Test: Open modal → FAB behind backdrop, Toaster behind modal
-    - [ ] Test: Close modal → FAB visible and clickable
+    - [x] Test: Open modal → FAB behind backdrop, Toaster behind modal
+    - [x] Test: Close modal → FAB visible and clickable
 
 ## Dev Notes
 
@@ -252,10 +254,50 @@ const state = EditorState.create({
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Sonnet 4 (Codebuff)
 
 ### Debug Log References
 
+- Fixed unused imports in Rust (OpenOptions, Write)
+- Fixed unused imports in TypeScript (useCallback, metaMatch)
+- Installed missing @radix-ui/react-label dependency
+
 ### Completion Notes List
 
+- Implemented complete DEVLOG editor with CodeMirror 6 for markdown editing
+- Created global FAB button with Ctrl+Shift+D hotkey support
+- Implemented append mode (default) with auto-timestamping and edit mode for full file editing
+- Added file conflict detection using mtime comparison before saves
+- Created conflict resolution dialog with Reload/Keep Mine/Merge (disabled) options
+- Implemented 30-second auto-save with debouncing
+- All tests pass (184 tests), Rust and TypeScript compile without warnings
+
 ### File List
+
+**New Files:**
+- `src-tauri/src/commands/devlog.rs` - Backend commands for DEVLOG operations
+- `src/hooks/useHotkeys.ts` - Global keyboard shortcut hook
+- `src/hooks/useHotkeys.test.ts` - Tests for useHotkeys
+- `src/stores/devlogStore.ts` - Zustand store for DEVLOG editor state
+- `src/stores/devlogStore.test.ts` - Tests for devlogStore
+- `src/components/devlog/DevlogButton.tsx` - FAB button component
+- `src/components/devlog/DevlogButton.test.tsx` - Tests for DevlogButton
+- `src/components/devlog/MarkdownEditor.tsx` - CodeMirror 6 wrapper
+- `src/components/devlog/MarkdownEditor.test.tsx` - Tests for MarkdownEditor
+- `src/components/devlog/ConflictDialog.tsx` - File conflict resolution dialog
+- `src/components/devlog/ConflictDialog.test.tsx` - Tests for ConflictDialog
+- `src/components/devlog/DevlogModal.tsx` - Main modal component
+- `src/components/devlog/DevlogModal.test.tsx` - Tests for DevlogModal
+- `src/components/devlog/index.ts` - Barrel exports
+- `src/components/ui/label.tsx` - Label component for forms
+- `src/components/ui/select.tsx` - Select dropdown component (shadcn)
+- `src/components/ui/switch.tsx` - Toggle switch component (shadcn)
+
+**Modified Files:**
+- `src-tauri/src/commands/mod.rs` - Added devlog module export
+- `src-tauri/src/lib.rs` - Registered devlog commands
+- `src-tauri/src/context/devlog.rs` - Made DEVLOG_LOCATIONS public
+- `src/App.tsx` - Mounted DevlogButton/Modal, moved Toaster to top-right
+- `package.json` - Added CodeMirror dependencies
+- `package-lock.json` - Updated lock file with new dependencies
+

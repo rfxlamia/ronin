@@ -6,6 +6,8 @@ import { AppShell } from '@/components/AppShell';
 import { Dashboard } from '@/pages/Dashboard';
 import { Settings } from '@/pages/Settings';
 import { TestContextPanel } from '@/pages/TestContextPanel';
+import { DevlogButton } from '@/components/devlog/DevlogButton';
+import { DevlogModal } from '@/components/devlog/DevlogModal';
 import { Toaster } from 'sonner';
 
 function App() {
@@ -24,13 +26,15 @@ function App() {
     <ThemeProvider defaultTheme="system" storageKey="ronin-ui-theme">
       <Toaster
         richColors
-        position="bottom-right"
+        position="top-right"
         toastOptions={{
           style: {
             fontFamily: "'Work Sans', sans-serif",
           },
         }}
       />
+      <DevlogButton />
+      <DevlogModal />
       <BrowserRouter>
         <AppShell>
           <Routes>
