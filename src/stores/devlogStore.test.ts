@@ -100,31 +100,31 @@ describe('devlogStore', () => {
     setConflictDialogOpen(false);
     expect(useDevlogStore.getState().conflictDialogOpen).toBe(false);
     expect(useDevlogStore.getState().conflictDetected).toBe(true); // Still true (paused state)
-    
+
     setConflictDetected(false);
     expect(useDevlogStore.getState().conflictDetected).toBe(false);
   });
-  
+
   it('should set last known mtime', () => {
-      const { setLastKnownMtime } = useDevlogStore.getState();
-      setLastKnownMtime(12345);
-      expect(useDevlogStore.getState().lastKnownMtime).toBe(12345);
+    const { setLastKnownMtime } = useDevlogStore.getState();
+    setLastKnownMtime(12345);
+    expect(useDevlogStore.getState().lastKnownMtime).toBe(12345);
   });
 
   it('should set last saved timestamp', () => {
-      const { setLastSaved } = useDevlogStore.getState();
-      const now = Date.now();
-      setLastSaved(now);
-      expect(useDevlogStore.getState().lastSavedTimestamp).toBe(now);
+    const { setLastSaved } = useDevlogStore.getState();
+    const now = Date.now();
+    setLastSaved(now);
+    expect(useDevlogStore.getState().lastSavedTimestamp).toBe(now);
   });
-  
+
   it('should set external file info', () => {
-      const { setExternalFileInfo } = useDevlogStore.getState();
-      setExternalFileInfo({ lineCount: 50 });
-      expect(useDevlogStore.getState().externalFileInfo).toEqual({ lineCount: 50 });
-      
-      setExternalFileInfo(null);
-      expect(useDevlogStore.getState().externalFileInfo).toBeNull();
+    const { setExternalFileInfo } = useDevlogStore.getState();
+    setExternalFileInfo({ lineCount: 50 });
+    expect(useDevlogStore.getState().externalFileInfo).toEqual({ lineCount: 50 });
+
+    setExternalFileInfo(null);
+    expect(useDevlogStore.getState().externalFileInfo).toBeNull();
   });
 
   it('should reset to initial state', () => {

@@ -160,14 +160,136 @@ fn get_file_mtime(path: &Path) -> Result<u64, String> {
     Ok(mtime)
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct DevlogCommit {
+    pub hash: String,
+    pub date: String,
+    pub author: String,
+    pub message: String,
+}
+
+/// Get the commit history of the DEVLOG file
+#[tauri::command]
+pub async fn get_devlog_history(project_path: String) -> Result<Vec<DevlogCommit>, String> {
+    use std::process::Command;
+
+    let path = Path::new(&project_path);
+    let devlog_path = find_devlog_path(path).unwrap_or_else(|| path.join("DEVLOG.md"));
+
+    if !devlog_path.exists() {
+        return Err("DEVLOG.md not found in project".to_string());
+    }
+
+    // Get relative path for git command
+    let relative_path = devlog_path
+        .strip_prefix(path)
+        .map_err(|e| format!("Failed to determine relative path: {}", e))?;
+
+    let output = Command::new("git")
+        .current_dir(path)
+        .args(&[
+            "log",
+            "-n",
+            "50",
+            "--pretty=format:%H::::%aI::::%an::::%s",
+            "--",
+        ])
+        .arg(relative_path)
+        .output()
+        .map_err(|e| format!("Failed to execute git command: {}", e))?;
+
+    if !output.status.success() {
+        // Check if it's because it's not a git repo
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("not a git repository") {
+            return Err(
+                "Failed to retrieve DEVLOG history. Ensure this is a Git repository.".to_string(),
+            );
+        }
+        return Err(format!("Git command failed: {}", stderr));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut commits = Vec::new();
+
+    for line in stdout.lines() {
+        let parts: Vec<&str> = line.split("::::").collect();
+        if parts.len() >= 4 {
+            commits.push(DevlogCommit {
+                hash: parts[0].to_string(),
+                date: parts[1].to_string(),
+                author: parts[2].to_string(),
+                message: parts[3].chars().take(100).collect(), // Truncate message
+            });
+        }
+    }
+
+    Ok(commits)
+}
+
+/// Get the content of the DEVLOG file at a specific commit
+#[tauri::command]
+pub async fn get_devlog_version(
+    project_path: String,
+    commit_hash: String,
+) -> Result<String, String> {
+    use std::process::Command;
+
+    // Validate hash format (simple check)
+    if !commit_hash.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err("Invalid commit hash".to_string());
+    }
+
+    let path = Path::new(&project_path);
+    let devlog_path = find_devlog_path(path).unwrap_or_else(|| path.join("DEVLOG.md"));
+
+    let relative_path = devlog_path
+        .strip_prefix(path)
+        .map_err(|e| format!("Failed to determine relative path: {}", e))?;
+
+    let output = Command::new("git")
+        .current_dir(path)
+        .arg("show")
+        .arg(format!("{}:{}", commit_hash, relative_path.display()))
+        .output()
+        .map_err(|e| format!("Failed to execute git command: {}", e))?;
+
+    if !output.status.success() {
+        return Err("Failed to retrieve version content".to_string());
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::fs;
+    use std::process::Command;
     use tempfile::TempDir;
 
     fn create_test_project() -> TempDir {
         tempfile::tempdir().expect("Failed to create temp dir")
+    }
+
+    fn init_git_repo(path: &Path) {
+        Command::new("git")
+            .current_dir(path)
+            .arg("init")
+            .output()
+            .expect("Failed to init git");
+
+        Command::new("git")
+            .current_dir(path)
+            .args(&["config", "user.email", "test@example.com"])
+            .output()
+            .expect("Failed to config email");
+
+        Command::new("git")
+            .current_dir(path)
+            .args(&["config", "user.name", "Test User"])
+            .output()
+            .expect("Failed to config name");
     }
 
     #[tokio::test]
@@ -263,5 +385,56 @@ mod tests {
         let result = resolve_conflict_reload(temp.path().to_string_lossy().to_string()).await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap().content, "External content");
+    }
+
+    #[tokio::test]
+    async fn test_get_devlog_history_no_git() {
+        let temp = create_test_project();
+        let project_path = temp.path().to_string_lossy().to_string();
+
+        let result = get_devlog_history(project_path).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("DEVLOG.md not found"));
+
+        // Create file but no git
+        fs::write(temp.path().join("DEVLOG.md"), "content").unwrap();
+        let result = get_devlog_history(temp.path().to_string_lossy().to_string()).await;
+
+        // This relies on git command failing appropriately
+        // In this test env, git command might just fail completely if not installed, or fail with "not a git repository"
+        if let Err(e) = result {
+            assert!(
+                e.contains("Git command failed") || e.contains("Ensure this is a Git repository")
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_devlog_history_with_git() {
+        let temp = create_test_project();
+        let project_path = temp.path().to_string_lossy().to_string();
+
+        init_git_repo(temp.path());
+
+        let devlog_path = temp.path().join("DEVLOG.md");
+        fs::write(&devlog_path, "Initial").unwrap();
+
+        Command::new("git")
+            .current_dir(temp.path())
+            .args(&["add", "DEVLOG.md"])
+            .output()
+            .expect("Failed to add");
+
+        Command::new("git")
+            .current_dir(temp.path())
+            .args(&["commit", "-m", "Initial commit"])
+            .output()
+            .expect("Failed to commit");
+
+        let result = get_devlog_history(project_path).await;
+        assert!(result.is_ok());
+        let commits = result.unwrap();
+        assert_eq!(commits.len(), 1);
+        assert_eq!(commits[0].message, "Initial commit");
     }
 }

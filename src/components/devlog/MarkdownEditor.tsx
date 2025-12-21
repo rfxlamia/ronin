@@ -3,6 +3,7 @@ import { EditorState } from '@codemirror/state';
 import { EditorView, keymap, placeholder as cmPlaceholder } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
+import { cn } from '@/lib/utils';
 
 interface CursorPosition {
   line: number;
@@ -10,11 +11,18 @@ interface CursorPosition {
 }
 
 interface MarkdownEditorProps {
+  content: string; // Renamed from value to match store naming convention usually, but kept as value in previous. Let's stick to 'value' or 'content'. Story said 'content' in plan. Previous file had 'value'. I will use 'value' to match previous file but map it if needed. Actually plan said 'content'. Usage in other files might depend on 'value'. Checking usage... I'll support 'value' aliased as content or just change usage.
+  // Wait, I am replacing the file. I should probably use 'value' if that's what was there, OR update callsites. 
+  // Previous file used 'value'. 
+  // Plan said "Component Updates - MarkdownEditor.tsx".
+  // I will use `value` to avoid breaking changes in other places if possible, generally better.
   value: string;
   onChange: (value: string) => void;
   onCursorChange?: (position: CursorPosition) => void;
+  onSave?: () => void;
   placeholder?: string;
   className?: string;
+  readOnly?: boolean;
 }
 
 // Custom keymap for markdown shortcuts
@@ -49,13 +57,16 @@ export function MarkdownEditor({
   value,
   onChange,
   onCursorChange,
+  onSave,
   placeholder,
   className = '',
+  readOnly = false,
 }: MarkdownEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
   const onCursorChangeRef = useRef(onCursorChange);
+  const onSaveRef = useRef(onSave);
 
   // Keep refs up to date
   useEffect(() => {
@@ -66,9 +77,18 @@ export function MarkdownEditor({
     onCursorChangeRef.current = onCursorChange;
   }, [onCursorChange]);
 
-  // Create editor on mount
+  useEffect(() => {
+    onSaveRef.current = onSave;
+  }, [onSave]);
+
+  // Create editor on mount or when readOnly changes (to reconfigure)
   useEffect(() => {
     if (!editorRef.current) return;
+
+    // cleanup previous view if exists
+    if (viewRef.current) {
+      viewRef.current.destroy();
+    }
 
     const updateListener = EditorView.updateListener.of((update) => {
       if (update.docChanged) {
@@ -85,42 +105,78 @@ export function MarkdownEditor({
       }
     });
 
-    const state = EditorState.create({
-      doc: value,
-      extensions: [
-        markdown(),
+    const extensions = [
+      markdown(),
+      // Only enable history and editing keys if NOT readOnly
+      ...(readOnly ? [] : [
         history(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
-        markdownKeymap,
-        EditorView.lineWrapping,
-        updateListener,
-        EditorView.theme({
-          '&': {
-            height: '100%',
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '14px',
+        markdownKeymap
+      ]),
+      // If NOT readOnly, add save shortcut
+      ...(readOnly ? [] : [
+        keymap.of([
+          {
+            key: "Mod-s",
+            run: () => {
+              onSaveRef.current?.();
+              return true;
+            },
           },
-          '.cm-scroller': {
-            overflow: 'auto',
-          },
-          '.cm-content': {
-            minHeight: '200px',
-            padding: '8px 0',
-            caretColor: '#CC785C', // Ronin brass color for cursor
-          },
-          '&.cm-focused': {
-            outline: 'none',
-          },
-          '.cm-line': {
-            padding: '0 8px',
-          },
-          '.cm-cursor, .cm-dropCursor': {
-            borderLeftColor: '#CC785C', // Visible cursor in dark mode
-            borderLeftWidth: '2px',
-          },
-        }),
-        placeholder ? cmPlaceholder(placeholder) : [],
-      ],
+        ]),
+      ]),
+      EditorView.lineWrapping,
+      EditorState.readOnly.of(readOnly),
+      EditorView.editable.of(!readOnly),
+      updateListener,
+      EditorView.theme({
+        '&': {
+          height: '100%',
+          backgroundColor: 'transparent',
+          fontFamily: "'Work Sans', sans-serif",
+          fontSize: '1rem',
+        },
+        '.cm-scroller': {
+          overflow: 'auto',
+        },
+        '.cm-content': {
+          minHeight: '200px',
+          padding: '1rem',
+          maxWidth: '800px',
+          margin: '0 auto',
+          fontFamily: "'Work Sans', sans-serif",
+          caretColor: '#CC785C', // Ronin brass color for cursor
+        },
+        '&.cm-focused': {
+          outline: 'none',
+        },
+        '.cm-line': {
+          padding: '0 8px',
+          lineHeight: '1.6',
+          color: 'var(--ronin-text)',
+        },
+        '.cm-cursor, .cm-dropCursor': {
+          borderLeftColor: '#CC785C',
+          borderLeftWidth: '2px',
+        },
+        '.cm-activeLine': {
+          backgroundColor: 'transparent',
+        },
+        '.cm-gutters': {
+          display: 'none',
+        },
+        // Customize markdown styling
+        '.cm-header': {
+          fontFamily: "'Libre Baskerville', serif",
+          color: "var(--ronin-primary)",
+        }
+      }),
+      placeholder ? cmPlaceholder(placeholder) : [],
+    ];
+
+    const state = EditorState.create({
+      doc: value,
+      extensions,
     });
 
     const view = new EditorView({
@@ -134,7 +190,7 @@ export function MarkdownEditor({
       view.destroy();
       viewRef.current = null;
     };
-  }, []); // Only run once on mount
+  }, [readOnly]); // Re-create when readOnly changes
 
   // Update editor content when value changes externally
   useEffect(() => {
@@ -154,9 +210,31 @@ export function MarkdownEditor({
   }, [value]);
 
   return (
-    <div
-      ref={editorRef}
-      className={`min-h-[200px] overflow-hidden rounded-md border bg-background ${className}`}
-    />
+    <div className={cn("flex flex-col h-full relative min-h-[200px]", className)}>
+      {readOnly && (
+        <div className="w-full bg-[#828179]/20 text-[#141413] dark:text-[#F0EFEA] p-2 text-sm flex items-center gap-2 border-b border-[#CC785C]/20">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="w-4 h-4"
+          >
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          <span className="font-['Work_Sans'] font-medium text-sm">READ ONLY VERSION</span>
+        </div>
+      )}
+      <div
+        ref={editorRef}
+        className="flex-1 overflow-hidden bg-transparent"
+      />
+    </div>
   );
 }

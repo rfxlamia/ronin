@@ -54,10 +54,12 @@ describe('DevlogModal', () => {
     const mockDetectConflict = vi.fn();
     const mockSetLastSaved = vi.fn();
     const mockSetExternalFileInfo = vi.fn();
+    const mockSetViewMode = vi.fn(); // Added mock for setViewMode
 
     const createMockDevlogState = (overrides = {}) => ({
         isOpen: true,
         mode: 'append' as const,
+        viewMode: 'edit' as const, // Added viewMode
         activeProjectId: 1,
         activeProjectPath: '/path/to/project',
         content: '',
@@ -71,6 +73,7 @@ describe('DevlogModal', () => {
         cursorPosition: { line: 1, column: 1 },
         close: mockClose,
         setMode: mockSetMode,
+        setViewMode: mockSetViewMode, // Added setViewMode
         setActiveProject: mockSetActiveProject,
         setContent: mockSetContent,
         setLastKnownMtime: mockSetLastKnownMtime,
