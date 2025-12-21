@@ -212,25 +212,25 @@ src-tauri/src/
 ### Acceptance Criteria
 
 #### Performance & Regression Fixes
-- [ ] **AC 1.1:** Given user scrolls dashboard with 30+ projects, When scrolling to bottom, Then window controls remain visible and accessible
-- [ ] **AC 1.2:** Given git repository inactive >1 week, When health status calculated, Then project shows "Dormant" status (not Active)
-- [ ] **AC 1.3:** Given user clicks project card (scanned or manual), When card opens, Then opening time is <1 second (target <500ms)
+- [x] **AC 1.1:** Given user scrolls dashboard with 30+ projects, When scrolling to bottom, Then window controls remain visible and accessible
+- [x] **AC 1.2:** Given git repository inactive >1 week, When health status calculated, Then project shows "Dormant" status (not Active)
+- [x] **AC 1.3:** Given user clicks project card (scanned or manual), When card opens, Then opening time is <1 second (target <500ms)
 
 #### Epic 3 Infrastructure
-- [ ] **AC 2.1:** Given user enters OpenRouter API key in settings, When key is saved, Then key is stored securely and connection validated
-- [ ] **AC 2.2:** Given git repository project, When git history requested, Then last 20 commits returned with author, date, message
-- [ ] **AC 2.3:** Given streaming text component, When text is streamed, Then displays with typing animation and handles errors gracefully
+- [x] **AC 2.1:** Given user enters OpenRouter API key in settings, When key is saved, Then key is stored securely and connection validated
+- [x] **AC 2.2:** Given git repository project, When git history requested, Then last 20 commits returned with author, date, message
+- [x] **AC 2.3:** Given streaming text component, When text is streamed, Then displays with typing animation and handles errors gracefully
 
 #### CI/CD & Distribution
-- [ ] **AC 3.1:** Given code pushed to repository, When GitHub Actions runs, Then all tests pass and build succeeds
-- [ ] **AC 3.2:** Given release process documentation, When followed, Then .deb and .AppImage files generated successfully
+- [x] **AC 3.1:** Given code pushed to repository, When GitHub Actions runs, Then all tests pass and build succeeds
+- [x] **AC 3.2:** Given release process documentation, When followed, Then .deb and .AppImage files generated successfully
 
 #### Workflow Improvements
-- [ ] **AC 4.1:** Given filepath.md exists, When create-story references file, Then file path verified against manifest
-- [ ] **AC 4.2:** Given create-story workflow, When non-existent file referenced, Then workflow halts with clear error message
+- [x] **AC 4.1:** Given filepath.md exists, When create-story references file, Then file path verified against manifest
+- [x] **AC 4.2:** Given create-story workflow, When non-existent file referenced, Then workflow halts with clear error message
 
 #### UX Improvements
-- [ ] **AC 5.1:** Given user accesses dark mode toggle, When in Settings page, Then toggle works with smooth transition animation
+- [x] **AC 5.1:** Given user accesses dark mode toggle, When in Settings page, Then toggle works with smooth transition animation
 
 ## Additional Context
 

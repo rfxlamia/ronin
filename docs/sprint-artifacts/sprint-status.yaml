@@ -60,7 +60,7 @@ development_status:
   2-9-project-auto-detection-on-first-launch: done
   epic-2-retrospective: done
 
-  epic-3: in-progress
+  epic-3: done
   3-1-openrouter-api-integration: done
   3-2-git-history-analysis: done
   3-3-contextpanel-component: done
@@ -68,7 +68,7 @@ development_status:
   3-5-ai-attribution-display: done
   3-6-error-states-offline-mode: done
   3-7-devlog-analysis-for-ai-context: done
-  epic-3-retrospective: optional
+  epic-3-retrospective: done
 
   epic-4: backlog
   4-1-devlog-editor-component: backlog
