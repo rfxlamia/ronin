@@ -235,6 +235,20 @@ body {
   padding: 1rem;
 }
 
+/* ===== ERROR STATE PLACEHOLDERS (Story 3.6) ===== */
+/* These classes mark where illustrations will be added in Epic 2 asset generation */
+.ronin-error-offline {
+  /* Meditating Ronin - offline/network failure */
+}
+
+.ronin-error-api {
+  /* Sharpening Blade - API/server error */
+}
+
+.ronin-error-ratelimit {
+  /* Resting Ronin - rate limit countdown */
+}
+
 /* Respect prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
 

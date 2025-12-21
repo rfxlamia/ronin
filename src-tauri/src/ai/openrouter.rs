@@ -46,12 +46,13 @@ impl OpenRouterClient {
     }
 
     /// Stream chat completion from OpenRouter with event emission
+    /// Returns the full accumulated text on success for caching
     pub async fn chat_stream(
         &self,
         messages: Vec<Message>,
         window: tauri::Window,
         attribution: Attribution,
-    ) -> Result<(), String> {
+    ) -> Result<String, String> {
         let models = vec![
             "xiaomi/mimo-v2-flash:free",
             "z-ai/glm-4.5-air:free",
@@ -88,31 +89,43 @@ impl OpenRouterClient {
                     }
 
                     if status == 429 {
+                        // Parse Retry-After header for accurate countdown
+                        let retry_after = resp
+                            .headers()
+                            .get("retry-after")
+                            .and_then(|v| v.to_str().ok())
+                            .and_then(|s| s.parse::<u64>().ok())
+                            .unwrap_or(30);
+
+                        let error_msg = format!("RATELIMIT:{}:AI resting", retry_after);
                         window
                             .emit(
                                 "ai-error",
                                 serde_json::json!({
-                                    "message": "AI resting. Try again in 30s"
+                                    "message": error_msg.clone()
                                 }),
                             )
                             .map_err(|e| e.to_string())?;
-                        return Err("Rate limit exceeded".to_string());
+                        return Err(error_msg);
                     }
 
                     if status == 401 {
+                        let error_msg = "APIERROR:401:API key invalid. Check settings.".to_string();
                         window
                             .emit(
                                 "ai-error",
                                 serde_json::json!({
-                                    "message": "API key invalid. Check settings."
+                                    "message": error_msg.clone()
                                 }),
                             )
                             .map_err(|e| e.to_string())?;
-                        return Err("Unauthorized".to_string());
+                        return Err(error_msg);
                     }
 
                     if !status.is_success() {
-                        last_error = format!("HTTP {}", status);
+                        // Map 5xx/4xx status codes to APIERROR prefix
+                        let error_msg = format!("APIERROR:{}:Server error", status.as_u16());
+                        last_error = error_msg;
                         continue;
                     }
 
@@ -185,21 +198,26 @@ impl OpenRouterClient {
                         )
                         .map_err(|e| e.to_string())?;
 
-                    return Ok(());
+                    return Ok(full_text);
                 }
                 Err(e) => {
-                    last_error = e.to_string();
+                    // Detect network/connection errors
+                    if e.is_connect() || e.is_timeout() {
+                        last_error = "OFFLINE:No network connection".to_string();
+                    } else {
+                        last_error = format!("APIERROR:0:{}", e);
+                    }
                     continue;
                 }
             }
         }
 
-        // All models failed
+        // All models failed - emit the classified error
         window.emit("ai-error", serde_json::json!({
-            "message": "OpenRouter free models unavailable. Please check your API key or try later."
+            "message": last_error.clone()
         })).map_err(|e| e.to_string())?;
 
-        Err(format!("All models failed. Last error: {}", last_error))
+        Err(last_error)
     }
 }
 
@@ -257,5 +275,44 @@ mod tests {
         assert_eq!(parsed.commits, 0);
         assert_eq!(parsed.files, 0);
         assert!(parsed.sources.is_empty());
+    }
+
+    // Error classification tests
+    #[test]
+    fn test_offline_error_format() {
+        let error = "OFFLINE:No network connection";
+        assert!(error.starts_with("OFFLINE:"));
+        let message = error.strip_prefix("OFFLINE:").unwrap();
+        assert_eq!(message, "No network connection");
+    }
+
+    #[test]
+    fn test_ratelimit_error_format() {
+        let error = "RATELIMIT:30:AI resting";
+        assert!(error.starts_with("RATELIMIT:"));
+        let parts: Vec<&str> = error.splitn(3, ':').collect();
+        assert_eq!(parts.len(), 3);
+        assert_eq!(parts[0], "RATELIMIT");
+        assert_eq!(parts[1].parse::<u64>().unwrap(), 30);
+        assert_eq!(parts[2], "AI resting");
+    }
+
+    #[test]
+    fn test_apierror_format() {
+        let error = "APIERROR:500:Server error";
+        assert!(error.starts_with("APIERROR:"));
+        let parts: Vec<&str> = error.splitn(3, ':').collect();
+        assert_eq!(parts.len(), 3);
+        assert_eq!(parts[0], "APIERROR");
+        assert_eq!(parts[1].parse::<u16>().unwrap(), 500);
+        assert_eq!(parts[2], "Server error");
+    }
+
+    #[test]
+    fn test_apierror_401_format() {
+        let error = "APIERROR:401:API key invalid. Check settings.";
+        assert!(error.starts_with("APIERROR:"));
+        let parts: Vec<&str> = error.splitn(3, ':').collect();
+        assert_eq!(parts[1].parse::<u16>().unwrap(), 401);
     }
 }
