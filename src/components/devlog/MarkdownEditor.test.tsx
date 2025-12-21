@@ -20,7 +20,7 @@ describe('MarkdownEditor', () => {
         );
 
         // The editor renders a container div with specific classes
-        const container = document.querySelector('.min-h-\\[200px\\]');
+        const container = document.querySelector('.min-h-0');
         expect(container).toBeInTheDocument();
     });
 

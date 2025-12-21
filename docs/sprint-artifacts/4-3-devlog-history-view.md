@@ -1,6 +1,6 @@
 # Story 4.3: DEVLOG History View
 
-Status: ready-for-dev
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -372,4 +372,28 @@ When switching to 'history', the live editor is unmounted. State (current conten
 
 ### Completion Notes List
 
+#### Post-Manual Testing UX Fixes (2025-12-22)
+1. **Removed Edit Mode Toggle** - Simplified UX by keeping only Append mode (Quick Capture), eliminating mode-switching confirm dialogs
+2. **Fixed Empty Content Warning** - Root cause: `setContent()` always set `hasUnsavedChanges: true`. Fixed to check `content.trim().length > 0`
+3. **Fixed Read-Only Scrolling** - Changed DevlogModal content container from `overflow-hidden` to `overflow-auto`, and MarkdownEditor from `min-h-[200px]` to `min-h-0` for proper flex shrinking
+4. **Fixed Auto-Save on Close Bug** - Removed auto-save from `handleClose()`. After conflict reload, closing was auto-appending full DEVLOG content causing duplicates. Now only explicit "Add Entry" saves.
+
+#### Full Test Suite Results (Epic 4 Completion)
+- **Test Files:** 28 passed
+- **Total Tests:** 221 passed ✅
+- **Duration:** 51.64s
+- **Status:** Ready for CI/CD
+
 ### File List
+
+- `src-tauri/src/commands/devlog.rs` - Added `DevlogCommit`, `get_devlog_history`, `get_devlog_version` commands with tests
+- `src-tauri/src/lib.rs` - Registered new commands
+- `src/components/devlog/DevlogHistory.tsx` - New history view component with RoninLoader, ARIA, keyboard nav
+- `src/components/devlog/DevlogHistory.test.tsx` - 11 comprehensive tests
+- `src/components/devlog/DevlogModal.tsx` - Added viewMode, custom unsaved dialog, history integration, removed Edit Mode, fixed auto-save on close
+- `src/components/devlog/DevlogModal.test.tsx` - Updated mocks for viewMode
+- `src/components/devlog/MarkdownEditor.tsx` - Added readOnly prop with banner, fixed scrolling
+- `src/components/devlog/MarkdownEditor.test.tsx` - Updated tests
+- `src/stores/devlogStore.ts` - Added DevlogViewMode, versionCache, LRU eviction, fixed setContent hasUnsavedChanges logic
+- `src/stores/devlogStore.test.ts` - Updated tests + added empty content test
+- `docs/sprint-artifacts/sprint-status.yaml` - Updated

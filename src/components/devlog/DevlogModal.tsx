@@ -8,14 +8,24 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+
+
 import { Button } from '@/components/ui/button';
 import { MarkdownEditor } from './MarkdownEditor';
 import { ConflictDialog } from './ConflictDialog';
@@ -72,6 +82,7 @@ export function DevlogModal() {
 
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [lastKeystrokeTime, setLastKeystrokeTime] = useState(Date.now());
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const externalFileInfo = useDevlogStore((s) => s.externalFileInfo);
 
   // Wrapper for content change to track keystrokes
@@ -224,28 +235,31 @@ export function DevlogModal() {
 
   // Handle mode switching logic
   const handleSwitchToHistory = useCallback(async () => {
-    if (hasUnsavedChanges) {
-      if (!confirm('You have unsaved changes. Discard them to view history?')) {
-        return;
-      }
-      // If proceeding, we might want to reload content when coming back?
-      // Or just let store state persist?
-      // For now, discarding changes means we might lose them if we don't save.
-      // Confirm usually implies risk.
-      // If they say yes, we switch. The changes are still in 'content' in store.
-      // But if we come back to 'edit', 'content' remains.
-      // So actually nothing is "Discarded" unless we actively reset.
-      // To truly discard, we should probably reload from disk when switching back or now.
-      // Let's just switch for now, user context is preserved in store.
-      // Wait, if I switch to history and back, is content preserved? Yes, store holds it.
-      // So existing changes are SAFE unless I overwrite them.
-      // The only risk is if history view somehow modifies `content`. It doesn't.
-      // So maybe no confirmation needed?
-      // But AC says "Unsaved changes... warning".
-      // Let's show warning.
+    // Only show unsaved dialog if content is actually filled (not empty/whitespace)
+    if (hasUnsavedChanges && content.trim()) {
+      setShowUnsavedDialog(true);
+      return;
     }
     setViewMode('history');
-  }, [hasUnsavedChanges, setViewMode]);
+  }, [hasUnsavedChanges, content, setViewMode]);
+
+  // Unsaved dialog handlers
+  const handleSaveAndContinue = useCallback(async () => {
+    setShowUnsavedDialog(false);
+    const success = await save();
+    if (success) {
+      setViewMode('history');
+    }
+  }, [save, setViewMode]);
+
+  const handleDiscardAndContinue = useCallback(() => {
+    setShowUnsavedDialog(false);
+    setViewMode('history');
+  }, [setViewMode]);
+
+  const handleCancelUnsaved = useCallback(() => {
+    setShowUnsavedDialog(false);
+  }, []);
 
   const handleBack = useCallback(() => {
     if (viewMode === 'version') {
@@ -255,13 +269,10 @@ export function DevlogModal() {
     }
   }, [viewMode, setViewMode]);
 
-  // Handle modal close
+  // Handle modal close - no auto-save, user must explicitly click Add Entry
   const handleClose = useCallback(async () => {
-    if (hasUnsavedChanges && content.trim() && mode === 'append' && !conflictDetected && viewMode === 'edit') {
-      await save();
-    }
     close();
-  }, [hasUnsavedChanges, content, mode, conflictDetected, save, close, viewMode]);
+  }, [close]);
 
   // Handle project change
   const handleProjectChange = useCallback((projectId: string) => {
@@ -394,22 +405,6 @@ export function DevlogModal() {
                       </SelectContent>
                     </Select>
 
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id="edit-mode"
-                        checked={mode === 'edit'}
-                        onCheckedChange={(checked) => {
-                          if (mode === 'edit' && !checked && hasUnsavedChanges) {
-                            if (!confirm('Discard unsaved changes?')) return;
-                          }
-                          setMode(checked ? 'edit' : 'append');
-                          if (!checked) setContent('');
-                        }}
-                      />
-                      <Label htmlFor="edit-mode" className="text-sm">
-                        Edit Mode
-                      </Label>
-                    </div>
 
                     <Button
                       variant="ghost"
@@ -417,6 +412,7 @@ export function DevlogModal() {
                       onClick={handleSwitchToHistory}
                       title="View History"
                       className="h-8 w-8"
+                      disabled={isSaving}
                     >
                       <History className="h-4 w-4" />
                     </Button>
@@ -434,7 +430,7 @@ export function DevlogModal() {
             )}
           </DialogHeader>
 
-          <div className="min-h-0 flex-1 overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-auto">
             {renderContent()}
           </div>
 
@@ -482,6 +478,26 @@ export function DevlogModal() {
         onCancel={handleCancelConflict}
         externalFileInfo={externalFileInfo}
       />
+
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent className="z-[102]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. What would you like to do?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex gap-2 sm:gap-0">
+            <AlertDialogCancel onClick={handleCancelUnsaved}>Cancel</AlertDialogCancel>
+            <Button variant="outline" onClick={handleDiscardAndContinue}>
+              Discard & Continue
+            </Button>
+            <AlertDialogAction onClick={handleSaveAndContinue}>
+              Save & Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

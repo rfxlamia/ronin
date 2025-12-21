@@ -134,7 +134,8 @@ export const useDevlogStore = create<DevlogStore>((set) => ({
   setContent: (content) =>
     set({
       content,
-      hasUnsavedChanges: true,
+      // Only mark as unsaved if there's actual content (not empty/whitespace)
+      hasUnsavedChanges: content.trim().length > 0,
     }),
 
   setLastKnownMtime: (lastKnownMtime) => set({ lastKnownMtime }),

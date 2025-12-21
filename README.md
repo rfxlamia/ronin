@@ -2,7 +2,7 @@
 
 > A Personal Project Development Manager for Linux developers who struggle with project abandonment due to context loss.
 
-[![CI](https://github.com/v/ronin/actions/workflows/ci.yml/badge.svg)](https://github.com/v/ronin/actions/workflows/ci.yml)
+[![CI](https://github.com/rfxlamia/ronin/actions/workflows/ci.yml/badge.svg)](https://github.com/v/ronin/actions/workflows/ci.yml)
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![License](https://img.shields.io/badge/license-private-lightgrey)
 
