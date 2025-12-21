@@ -7,6 +7,11 @@ interface CursorPosition {
   column: number;
 }
 
+interface ExternalFileInfo {
+  lineCount: number;
+  userLineCount?: number;
+}
+
 interface DevlogStore {
   // State
   isOpen: boolean;
@@ -14,9 +19,15 @@ interface DevlogStore {
   activeProjectId: number | null;
   activeProjectPath: string | null;
   content: string;
-  fileMtime: number;
-  hasUnsavedChanges: boolean;
+
+  // Conflict Detection State
+  lastKnownMtime: number | null;
   conflictDetected: boolean;
+  conflictDialogOpen: boolean;
+  lastSavedTimestamp: number | null;
+  externalFileInfo: ExternalFileInfo | null;
+
+  hasUnsavedChanges: boolean;
   isSaving: boolean;
   cursorPosition: CursorPosition;
 
@@ -26,9 +37,16 @@ interface DevlogStore {
   setMode: (mode: DevlogMode) => void;
   setActiveProject: (projectId: number, projectPath: string) => void;
   setContent: (content: string) => void;
-  setFileMtime: (mtime: number) => void;
-  setHasUnsavedChanges: (hasChanges: boolean) => void;
+
+  // Conflict Actions
+  setLastKnownMtime: (mtime: number) => void;
+  detectConflict: () => void;
   setConflictDetected: (detected: boolean) => void;
+  setConflictDialogOpen: (open: boolean) => void;
+  setLastSaved: (timestamp: number) => void;
+  setExternalFileInfo: (info: ExternalFileInfo | null) => void;
+
+  setHasUnsavedChanges: (hasChanges: boolean) => void;
   setIsSaving: (saving: boolean) => void;
   setCursorPosition: (position: CursorPosition) => void;
   reset: () => void;
@@ -40,9 +58,14 @@ const initialState = {
   activeProjectId: null as number | null,
   activeProjectPath: null as string | null,
   content: '',
-  fileMtime: 0,
-  hasUnsavedChanges: false,
+
+  lastKnownMtime: null as number | null,
   conflictDetected: false,
+  conflictDialogOpen: false,
+  lastSavedTimestamp: null as number | null,
+  externalFileInfo: null as ExternalFileInfo | null,
+
+  hasUnsavedChanges: false,
   isSaving: false,
   cursorPosition: { line: 1, column: 1 } as CursorPosition,
 };
@@ -59,6 +82,9 @@ export const useDevlogStore = create<DevlogStore>((set) => ({
       mode: 'append',
       hasUnsavedChanges: false,
       conflictDetected: false,
+      conflictDialogOpen: false,
+      lastKnownMtime: null,
+      externalFileInfo: null,
     }),
 
   close: () =>
@@ -67,6 +93,7 @@ export const useDevlogStore = create<DevlogStore>((set) => ({
       content: '',
       hasUnsavedChanges: false,
       conflictDetected: false,
+      conflictDialogOpen: false,
     }),
 
   setMode: (mode) => set({ mode }),
@@ -85,11 +112,19 @@ export const useDevlogStore = create<DevlogStore>((set) => ({
       hasUnsavedChanges: true,
     }),
 
-  setFileMtime: (fileMtime) => set({ fileMtime }),
+  setLastKnownMtime: (lastKnownMtime) => set({ lastKnownMtime }),
 
-  setHasUnsavedChanges: (hasUnsavedChanges) => set({ hasUnsavedChanges }),
+  detectConflict: () => set({ conflictDetected: true, conflictDialogOpen: true }),
 
   setConflictDetected: (conflictDetected) => set({ conflictDetected }),
+
+  setConflictDialogOpen: (conflictDialogOpen) => set({ conflictDialogOpen }),
+
+  setLastSaved: (lastSavedTimestamp) => set({ lastSavedTimestamp }),
+
+  setExternalFileInfo: (externalFileInfo) => set({ externalFileInfo }),
+
+  setHasUnsavedChanges: (hasUnsavedChanges) => set({ hasUnsavedChanges }),
 
   setIsSaving: (isSaving) => set({ isSaving }),
 

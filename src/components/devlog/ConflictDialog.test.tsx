@@ -19,6 +19,7 @@ describe('ConflictDialog', () => {
                 onReload={mockOnReload}
                 onKeepMine={mockOnKeepMine}
                 onCancel={mockOnCancel}
+                externalFileInfo={null}
             />
         );
 
@@ -32,6 +33,7 @@ describe('ConflictDialog', () => {
                 onReload={mockOnReload}
                 onKeepMine={mockOnKeepMine}
                 onCancel={mockOnCancel}
+                externalFileInfo={null}
             />
         );
 
@@ -45,6 +47,7 @@ describe('ConflictDialog', () => {
                 onReload={mockOnReload}
                 onKeepMine={mockOnKeepMine}
                 onCancel={mockOnCancel}
+                externalFileInfo={null}
             />
         );
 
@@ -59,6 +62,7 @@ describe('ConflictDialog', () => {
                 onReload={mockOnReload}
                 onKeepMine={mockOnKeepMine}
                 onCancel={mockOnCancel}
+                externalFileInfo={null}
             />
         );
 
@@ -76,10 +80,11 @@ describe('ConflictDialog', () => {
                 onReload={mockOnReload}
                 onKeepMine={mockOnKeepMine}
                 onCancel={mockOnCancel}
+                externalFileInfo={null}
             />
         );
 
-        const keepMineButton = screen.getByRole('button', { name: /Keep Mine/i });
+        const keepMineButton = screen.getByRole('button', { name: /Keep your changes/i });
         await user.click(keepMineButton);
 
         expect(mockOnKeepMine).toHaveBeenCalledTimes(1);
@@ -93,6 +98,7 @@ describe('ConflictDialog', () => {
                 onReload={mockOnReload}
                 onKeepMine={mockOnKeepMine}
                 onCancel={mockOnCancel}
+                externalFileInfo={null}
             />
         );
 
@@ -109,6 +115,7 @@ describe('ConflictDialog', () => {
                 onReload={mockOnReload}
                 onKeepMine={mockOnKeepMine}
                 onCancel={mockOnCancel}
+                externalFileInfo={null}
             />
         );
 
@@ -124,6 +131,7 @@ describe('ConflictDialog', () => {
                 onReload={mockOnReload}
                 onKeepMine={mockOnKeepMine}
                 onCancel={mockOnCancel}
+                externalFileInfo={null}
             />
         );
 
@@ -139,11 +147,58 @@ describe('ConflictDialog', () => {
                 onReload={mockOnReload}
                 onKeepMine={mockOnKeepMine}
                 onCancel={mockOnCancel}
+                externalFileInfo={null}
             />
         );
 
         expect(screen.getByText(/Discard your changes and load the external version/)).toBeInTheDocument();
         expect(screen.getByText(/Overwrite the external changes with your current edits/)).toBeInTheDocument();
         expect(screen.getByText(/View both versions side-by-side/)).toBeInTheDocument();
+    });
+
+    it('should call onReload when R key is pressed', async () => {
+        const user = userEvent.setup();
+        render(
+            <ConflictDialog
+                isOpen={true}
+                onReload={mockOnReload}
+                onKeepMine={mockOnKeepMine}
+                onCancel={mockOnCancel}
+                externalFileInfo={null}
+            />
+        );
+
+        await user.keyboard('r');
+        expect(mockOnReload).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call onKeepMine when K key is pressed', async () => {
+        const user = userEvent.setup();
+        render(
+            <ConflictDialog
+                isOpen={true}
+                onReload={mockOnReload}
+                onKeepMine={mockOnKeepMine}
+                onCancel={mockOnCancel}
+                externalFileInfo={null}
+            />
+        );
+
+        await user.keyboard('k');
+        expect(mockOnKeepMine).toHaveBeenCalledTimes(1);
+    });
+
+    it('should display line counts when externalFileInfo is provided', () => {
+        render(
+            <ConflictDialog
+                isOpen={true}
+                onReload={mockOnReload}
+                onKeepMine={mockOnKeepMine}
+                onCancel={mockOnCancel}
+                externalFileInfo={{ lineCount: 50, userLineCount: 25 }}
+            />
+        );
+
+        expect(screen.getByText(/External file has 50 lines.*yours has 25 lines/)).toBeInTheDocument();
     });
 });
