@@ -33,7 +33,7 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
     const [showRemoveDialog, setShowRemoveDialog] = useState(false);
 
     // Use AI Context Hook
-    const { contextState, contextText, attribution, error, retry } = useAiContext(
+    const { contextState, contextText, attribution, error, parsedError, retry } = useAiContext(
         isOpen ? project.id : null
     );
 
@@ -204,6 +204,7 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
                                     attribution={contextState === 'complete' && attribution ? attribution : undefined}
                                     onRetry={retry}
                                     error={error || undefined}
+                                    parsedError={parsedError || undefined}
                                 />
 
                                 <Button

@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { ContextPanel } from '@/components/ContextPanel';
 import { Button } from '@/components/ui/button';
-import { ContextPanelState, AttributionData } from '@/types/context';
+import { ContextPanelState, AttributionData, ParsedError } from '@/types/context';
 
 export function TestContextPanel() {
     const [state, setState] = useState<ContextPanelState>('idle');
     const [text, setText] = useState('');
     const [error, setError] = useState('');
+    const [parsedError, setParsedError] = useState<ParsedError | undefined>(undefined);
 
     const mockAttribution: AttributionData = {
         commits: 15,
@@ -18,6 +19,8 @@ export function TestContextPanel() {
     const handleStream = () => {
         setState('streaming');
         setText('');
+        setError('');
+        setParsedError(undefined);
         const chunks = ["This is ", "a test ", "stream ", "of AI ", "context."];
         let chunkIndex = 0;
 
@@ -33,15 +36,35 @@ export function TestContextPanel() {
         setTimeout(streamNext, 200);
     };
 
+    const triggerOfflineError = () => {
+        setState('error');
+        setError('OFFLINE:No network connection');
+        setParsedError({ kind: 'offline', message: 'No network connection' });
+    };
+
+    const triggerRateLimitError = () => {
+        setState('error');
+        setError('RATELIMIT:30:AI resting');
+        setParsedError({ kind: 'ratelimit', message: 'AI resting', retryAfter: 30 });
+    };
+
+    const triggerApiError = () => {
+        setState('error');
+        setError('APIERROR:500:Server error');
+        setParsedError({ kind: 'api', message: 'Server error' });
+    };
+
     return (
         <div className="p-8 space-y-8">
             <h1 className="text-2xl font-serif">ContextPanel Harness</h1>
 
-            <div className="flex gap-4">
-                <Button onClick={() => { setState('idle'); setText(''); }}>Idle</Button>
+            <div className="flex flex-wrap gap-4">
+                <Button onClick={() => { setState('idle'); setText(''); setError(''); setParsedError(undefined); }}>Idle</Button>
                 <Button onClick={handleStream}>Trigger Stream</Button>
-                <Button onClick={() => { setState('complete'); setText('Full context loaded.'); }}>Complete</Button>
-                <Button onClick={() => { setState('error'); setError('Simulated error.'); }}>Error</Button>
+                <Button onClick={() => { setState('complete'); setText('Full context loaded.'); setError(''); setParsedError(undefined); }}>Complete</Button>
+                <Button variant="outline" onClick={triggerOfflineError}>Offline Error</Button>
+                <Button variant="outline" onClick={triggerRateLimitError}>Rate Limit (30s)</Button>
+                <Button variant="outline" onClick={triggerApiError}>API Error</Button>
             </div>
 
             <div className="border border-border rounded-lg p-4 max-w-md bg-muted/20">
@@ -50,10 +73,12 @@ export function TestContextPanel() {
                     state={state}
                     text={text}
                     attribution={state === 'complete' ? mockAttribution : undefined}
-                    error={error}
+                    error={error || undefined}
+                    parsedError={parsedError}
                     onRetry={handleStream}
                 />
             </div>
         </div>
     );
 }
+

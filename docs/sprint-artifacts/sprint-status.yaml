@@ -66,7 +66,7 @@ development_status:
   3-3-contextpanel-component: done
   3-4-ai-context-generation: done
   3-5-ai-attribution-display: done
-  3-6-error-states-offline-mode: backlog
+  3-6-error-states-offline-mode: done
   3-7-devlog-analysis-for-ai-context: backlog
   epic-3-retrospective: optional
 

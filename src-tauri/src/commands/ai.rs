@@ -150,16 +150,17 @@ pub async fn generate_context(
     // Get Git context
     let git_context = match get_git_context(project_path.clone()).await {
         Ok(ctx) => ctx,
-        Err(e) => {
+        Err(_e) => {
+            let error_msg = "APIERROR:0:Couldn't access git repository".to_string();
             window
                 .emit(
                     "ai-error",
                     serde_json::json!({
-                        "message": "Couldn't access git repository"
+                        "message": error_msg.clone()
                     }),
                 )
                 .map_err(|e| e.to_string())?;
-            return Err(format!("Git context error: {}", e));
+            return Err(error_msg);
         }
     };
 
@@ -168,31 +169,33 @@ pub async fn generate_context(
     let system_prompt = build_system_prompt(&git_context_str);
 
     // Validate payload size
-    if let Err(e) = validate_payload_size(&system_prompt) {
+    if let Err(_e) = validate_payload_size(&system_prompt) {
+        let error_msg = "APIERROR:0:Context too large to process".to_string();
         window
             .emit(
                 "ai-error",
                 serde_json::json!({
-                    "message": "Context too large to process"
+                    "message": error_msg.clone()
                 }),
             )
             .map_err(|e| e.to_string())?;
-        return Err(e);
+        return Err(error_msg);
     }
 
     // Get API key
     let api_key = match get_api_key(pool.clone()).await? {
         Some(key) => key,
         None => {
+            let error_msg = "APIERROR:0:API key not configured".to_string();
             window
                 .emit(
                     "ai-error",
                     serde_json::json!({
-                        "message": "API key not configured"
+                        "message": error_msg.clone()
                     }),
                 )
                 .map_err(|e| e.to_string())?;
-            return Err("API key not set".to_string());
+            return Err(error_msg);
         }
     };
 
@@ -223,11 +226,8 @@ pub async fn generate_context(
         .chat_stream(messages, window.clone(), attribution.clone())
         .await
     {
-        Ok(_) => {
-            // Cache attribution data for offline reference
-            // Note: Context text accumulates on the frontend via ai-chunk events.
-            // The full text is not reconstructed here; this is by design.
-            // Future enhancement: accumulate text in chat_stream and return it.
+        Ok(full_text) => {
+            // Cache the actual context text for offline fallback
             let attribution_json = serde_json::json!({
                 "commits": commit_count,
                 "files": file_count,
@@ -237,10 +237,10 @@ pub async fn generate_context(
 
             let timestamp = chrono::Utc::now().timestamp();
 
-            // Store empty context_text - offline mode will show "Context not cached" instead
+            // Store actual context_text for offline mode
             conn.execute(
                 "INSERT OR REPLACE INTO ai_cache (project_id, context_text, attribution_json, generated_at) VALUES (?1, ?2, ?3, ?4)",
-                rusqlite::params![project_id, "", attribution_json, timestamp],
+                rusqlite::params![project_id, full_text, attribution_json, timestamp],
             )
             .map_err(|e| format!("Cache write failed: {}", e))?;
 

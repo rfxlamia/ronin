@@ -2,7 +2,7 @@
 
 **Auto-generated** list of key source files. Excludes: tests, migrations, workflow engine, build artifacts.
 
-## Files (95 total)
+## Files (97 total)
 
 - [`README.md`](file:///home/v/project/ronin/README.md)
 - [`docs/epics.md`](file:///home/v/project/ronin/docs/epics.md)
@@ -23,6 +23,7 @@
 - [`docs/sprint-artifacts/3-2-git-history-analysis.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-2-git-history-analysis.md)
 - [`docs/sprint-artifacts/3-3-contextpanel-component.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-3-contextpanel-component.md)
 - [`docs/sprint-artifacts/3-4-ai-context-generation.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-4-ai-context-generation.md)
+- [`docs/sprint-artifacts/3-5-ai-attribution-display.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-5-ai-attribution-display.md)
 - [`docs/sprint-artifacts/epic-1-retro-2025-12-18.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-1-retro-2025-12-18.md)
 - [`docs/sprint-artifacts/epic-2-retro-2025-12-20.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-2-retro-2025-12-20.md)
 - [`docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md`](file:///home/v/project/ronin/docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md)
@@ -33,6 +34,7 @@
 - [`docs/sprint-artifacts/validation-report-3-1-20251220.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-1-20251220.md)
 - [`docs/sprint-artifacts/validation-report-3-3-20251220-165907.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-3-20251220-165907.md)
 - [`docs/sprint-artifacts/validation-report-3-4-2025-12-20_20-26-41.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-4-2025-12-20_20-26-41.md)
+- [`docs/sprint-artifacts/validation-report-3-5.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-5.md)
 - [`package.json`](file:///home/v/project/ronin/package.json)
 - [`src-tauri/Cargo.toml`](file:///home/v/project/ronin/src-tauri/Cargo.toml)
 - [`src-tauri/build.rs`](file:///home/v/project/ronin/src-tauri/build.rs)
@@ -101,4 +103,4 @@
 - [`vitest.config.ts`](file:///home/v/project/ronin/vitest.config.ts)
 
 ---
-*Generated: 2025-12-20T20:33:10.851Z*
+*Generated: 2025-12-20T23:53:36.414Z*

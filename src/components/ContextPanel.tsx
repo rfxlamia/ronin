@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
-import { ContextPanelProps, AttributionData } from '@/types/context';
+import { useState, useMemo, useEffect } from 'react';
+import type { ContextPanelProps, AttributionData, ParsedError, ErrorKind } from '@/types/context';
 import { RoninLoader } from './RoninLoader';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { GitCommitHorizontal, FileText, ChevronDown, AlertTriangle, RefreshCw } from 'lucide-react';
+import { GitCommitHorizontal, FileText, ChevronDown, AlertTriangle, RefreshCw, WifiOff, ServerCrash, Hourglass, CloudOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
+import { useCountdown } from '@/hooks/useCountdown';
 
 function Attribution({ data }: { data?: AttributionData }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -87,32 +88,159 @@ function Attribution({ data }: { data?: AttributionData }) {
     );
 }
 
-export function ContextPanel({ state, text, attribution, error, onRetry, className }: ContextPanelProps) {
+interface ErrorDisplayProps {
+    parsedError: ParsedError;
+    onRetry?: () => void;
+    cachedText?: string;
+    cachedAttribution?: AttributionData;
+}
+
+function ErrorDisplay({ parsedError, onRetry, cachedText, cachedAttribution }: ErrorDisplayProps) {
+    const initialSeconds = parsedError.kind === 'ratelimit' ? (parsedError.retryAfter || 30) : 0;
+    const countdown = useCountdown(initialSeconds);
+    const [lastAnnounced, setLastAnnounced] = useState<number>(initialSeconds);
+
+    // Track if we should announce (at 10-second intervals for screen readers)
+    useEffect(() => {
+        if (!countdown.isActive || countdown.secondsRemaining <= 0) return;
+
+        const currentBucket = Math.floor(countdown.secondsRemaining / 10);
+        const lastBucket = Math.floor(lastAnnounced / 10);
+
+        if (currentBucket !== lastBucket) {
+            setLastAnnounced(countdown.secondsRemaining);
+        }
+    }, [countdown.isActive, countdown.secondsRemaining, lastAnnounced]);
+
+    const getErrorIcon = (kind: ErrorKind) => {
+        switch (kind) {
+            case 'offline':
+                return <WifiOff className="w-6 h-6" />;
+            case 'ratelimit':
+                return <Hourglass className="w-6 h-6" />;
+            case 'api':
+                return <ServerCrash className="w-6 h-6" />;
+            default:
+                return <AlertTriangle className="w-6 h-6" />;
+        }
+    };
+
+    const getErrorClass = (kind: ErrorKind) => {
+        switch (kind) {
+            case 'offline':
+                return 'ronin-error-offline';
+            case 'ratelimit':
+                return 'ronin-error-ratelimit';
+            case 'api':
+                return 'ronin-error-api';
+            default:
+                return '';
+        }
+    };
+
+    const getErrorMessage = () => {
+        switch (parsedError.kind) {
+            case 'offline':
+                return 'Offline mode. Local tools ready.';
+            case 'ratelimit':
+                return countdown.isActive && countdown.secondsRemaining > 0
+                    ? `AI resting. Try again in ${countdown.secondsRemaining} seconds.`
+                    : 'AI resting. Ready to retry.';
+            case 'api':
+                return (
+                    <>
+                        AI reconnecting...
+                        <br />
+                        Your dashboard is ready.
+                    </>
+                );
+            default:
+                return parsedError.message || 'Something went wrong.';
+        }
+    };
+
+    const isRetryDisabled = parsedError.kind === 'ratelimit' && countdown.isActive;
+
+    return (
+        <div className="flex flex-col gap-4">
+            {/* Error State Display */}
+            <div className={cn(
+                "flex flex-col items-center gap-3 py-4 text-center border-2 border-dashed rounded-lg",
+                getErrorClass(parsedError.kind),
+                parsedError.kind === 'offline' && "border-muted-foreground/30 bg-muted/20",
+                parsedError.kind === 'ratelimit' && "border-ronin-brass/50 bg-ronin-brass/5",
+                parsedError.kind === 'api' && "border-amber-500/50 bg-amber-500/5",
+                !['offline', 'ratelimit', 'api'].includes(parsedError.kind) && "border-destructive/30 bg-destructive/5"
+            )}>
+                <div className={cn(
+                    "p-3 rounded-full",
+                    parsedError.kind === 'offline' && "bg-muted text-muted-foreground",
+                    parsedError.kind === 'ratelimit' && "bg-ronin-brass/10 text-ronin-brass",
+                    parsedError.kind === 'api' && "bg-amber-500/10 text-amber-600",
+                    !['offline', 'ratelimit', 'api'].includes(parsedError.kind) && "bg-destructive/10 text-destructive"
+                )}>
+                    {getErrorIcon(parsedError.kind)}
+                </div>
+
+                <div
+                    className="text-sm text-foreground font-mono"
+                    aria-live="polite"
+                    aria-atomic="true"
+                >
+                    {getErrorMessage()}
+                </div>
+
+                {onRetry && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onRetry}
+                        disabled={isRetryDisabled}
+                        className="font-sans gap-2"
+                        aria-label={isRetryDisabled ? `Retry disabled, wait ${countdown.secondsRemaining} seconds` : 'Retry'}
+                    >
+                        <RefreshCw className={cn("w-3 h-3", isRetryDisabled && "opacity-50")} />
+                        Retry
+                    </Button>
+                )}
+            </div>
+
+            {/* Show cached content if available */}
+            {cachedText && (
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
+                        <CloudOff className="w-3 h-3" />
+                        <span className="px-1.5 py-0.5 rounded bg-muted">Offline / Cached</span>
+                    </div>
+                    <div className="text-sm prose prose-sm dark:prose-invert max-w-none opacity-80">
+                        <ReactMarkdown>{cachedText}</ReactMarkdown>
+                    </div>
+                    {cachedAttribution && <Attribution data={cachedAttribution} />}
+                </div>
+            )}
+        </div>
+    );
+}
+
+export function ContextPanel({ state, text, attribution, error, parsedError, onRetry, cachedText, cachedAttribution, className }: ContextPanelProps) {
     if (state === 'idle') return null;
 
-    // Show error state
+    // Show error state with enhanced UI
     if (state === 'error') {
+        // Use parsed error if available, otherwise create a basic one
+        const errorInfo: ParsedError = parsedError || {
+            kind: 'unknown',
+            message: error || 'Something went wrong',
+        };
+
         return (
             <div className={cn("p-4 bg-card max-h-[400px] overflow-auto", className)}>
-                <div className="flex flex-col items-center gap-3 py-2 text-center">
-                    <div className="p-2 rounded-full bg-destructive/10 text-destructive">
-                        <AlertTriangle className="w-6 h-6" />
-                    </div>
-                    <div className="text-sm text-foreground">
-                        {error || "Something went wrong."}
-                    </div>
-                    {onRetry && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={onRetry}
-                            className="font-serif gap-2"
-                        >
-                            <RefreshCw className="w-3 h-3" />
-                            Retry
-                        </Button>
-                    )}
-                </div>
+                <ErrorDisplay
+                    parsedError={errorInfo}
+                    onRetry={onRetry}
+                    cachedText={cachedText}
+                    cachedAttribution={cachedAttribution}
+                />
             </div>
         );
     }
