@@ -32,10 +32,10 @@ dist-ssr
 coverage/
 
 # AI Agent command configurations
-.qwen/commands/bmad/
-.kiro/agents/
-.gemini/commands/
-.claude/commands/bmad/
-.augment/commands/bmad/
-.agent/workflows/
+.qwen/
+.kiro/
+.gemini/
+.claude/
+.augment/
+.agent/
 _bmad/
