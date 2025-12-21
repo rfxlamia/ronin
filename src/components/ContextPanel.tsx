@@ -217,7 +217,7 @@ function ErrorDisplay({ parsedError, onRetry, cachedText, cachedAttribution }: E
                         <CloudOff className="w-3 h-3" />
                         <span className="px-1.5 py-0.5 rounded bg-muted">Offline / Cached</span>
                     </div>
-                    <div className="text-sm prose prose-sm dark:prose-invert max-w-none opacity-80">
+                    <div className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none opacity-80">
                         <ReactMarkdown>{cachedText}</ReactMarkdown>
                     </div>
                     {cachedAttribution && <Attribution data={cachedAttribution} />}
@@ -270,7 +270,7 @@ export function ContextPanel({ state, text, attribution, error, parsedError, onR
             {/* Content - stable container, no remount on state change */}
             {text && (
                 <div
-                    className="text-sm prose prose-sm dark:prose-invert max-w-none"
+                    className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none"
                     aria-live="polite"
                     aria-atomic="false"
                 >
