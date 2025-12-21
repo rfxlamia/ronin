@@ -313,6 +313,18 @@ try {
 
 ---
 
+## Reference Documents
+
+### Epic 4 - DEVLOG Editor
+
+| File | Purpose | When to Read |
+|------|---------|--------------|
+| `docs/sprint-artifacts/codemirror-research-2025-12-21.md` | CodeMirror 6 integration guide with setup, custom keymaps, and auto-save patterns | Read when creating Story 4.1 (DEVLOG Editor Component) |
+| `docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md` | File conflict resolution UI specification with dialog mockup and implementation notes | Read when creating Story 4.2 (File Sync with Repository) |
+| `docs/ux-validation-checklist.md` | UX validation checklist for mid-story quality checks | Read during ALL story development (before marking complete) |
+
+---
+
 ## Quick Reference
 
 ### Keyboard Shortcuts
@@ -320,6 +332,7 @@ try {
 | Shortcut | Action |
 |----------|--------|
 | `Ctrl+Alt+R` | Open/focus Ronin (global) |
+| `Ctrl+Shift+D` | Open DEVLOG editor modal (global) |
 | `Ctrl+K` | Focus search (in-app) |
 | `Escape` | Close expanded card |
 | `Enter` | Expand focused card |
@@ -336,5 +349,5 @@ try {
 
 ---
 
-_Last updated: 2025-12-17_
-_Source: PRD, Architecture, UX Spec, Philosophy_
+_Last updated: 2025-12-21_
+_Source: PRD, Architecture, UX Spec, Philosophy, Epic 3 Retrospective_

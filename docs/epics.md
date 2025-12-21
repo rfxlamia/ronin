@@ -928,76 +928,121 @@ So that **my personal notes enhance the context recovery accuracy**.
 
 ## Epic 4: Context Vault & DEVLOG
 
+### UX Design Decisions (from Epic 3 Retrospective - 2025-12-21)
+
+**Global DEVLOG Editor Approach:**
+- **Floating Action Button**: Bottom-right corner, always visible across all views
+- **Modal Editor**: Fixed size, centered, opens on button click or `Ctrl+Shift+D`
+- **Project Selection**: Dropdown at top of modal to select which project's DEVLOG to edit
+- **Editor Component**: CodeMirror 6 with markdown extensions
+- **Keyboard Shortcuts**: Ctrl+B (bold), Ctrl+I (italic), standard markdown shortcuts
+- **Append-Only Default**: New entries append to end of DEVLOG.md with auto-timestamp headers (e.g., `## 2025-12-21 12:30`)
+- **Edit Mode Toggle**: Optional full-edit mode for modifying existing content
+- **Auto-Save**: On modal close + every 30 seconds while typing
+- **File Conflict Resolution**: Prompt user with [Reload] [Keep Mine] [Merge] if external changes detected
+- **History View**: Separate "View History" button in modal header showing git log for DEVLOG.md
+
+**Rationale:**
+- Global accessibility enables quick thought capture without navigation
+- Append-only prevents accidental content destruction
+- Always-visible button reduces friction for context documentation
+- CodeMirror provides professional editing experience with markdown support
+
+---
+
 ### Story 4.1: DEVLOG Editor Component
 
+**Dependencies:** None (first story in epic)  
+**Integration Checkpoint:** After completion, validate modal opens/closes correctly and project dropdown populates before starting Story 4.2
+
 As a **developer**,
-I want **a markdown editor for DEVLOG.md within each project**,
-So that **I can capture my thoughts and context alongside my code**.
+I want **a global markdown editor accessible from anywhere in Ronin**,
+So that **I can capture my thoughts and context instantly without navigation**.
 
 **Acceptance Criteria:**
 
-**Given** the user expands a project card
-**When** viewing the DEVLOG section
-**Then** a markdown editor is displayed with:
-- Basic markdown support (headings, bullets, code blocks, links)
+**Given** the user is anywhere in the Ronin application
+**When** clicking the floating DEVLOG button (bottom-right) or pressing `Ctrl+Shift+D`
+**Then** a modal editor opens with:
+- Project selection dropdown at top
+- CodeMirror 6 editor with markdown syntax highlighting
+- Markdown keyboard shortcuts (Ctrl+B for bold, Ctrl+I for italic, etc.)
 - JetBrains Mono font for code blocks
-- Auto-save on blur or after 2 seconds of no typing
-- Character/word count displayed
-**And** `Cmd/Ctrl + Enter` saves and closes the editor
-**And** editor is keyboard accessible
-**And** placeholder text guides new users: "Capture your context here..."
+- Auto-timestamp header inserted at cursor position (e.g., `## 2025-12-21 12:30`)
+**And** content appends to existing DEVLOG.md by default (append-only mode)
+**And** "Edit Mode" toggle allows full DEVLOG editing when needed
+**And** auto-save triggers on modal close + every 30 seconds while typing
+**And** modal is keyboard accessible (Escape to close, Tab navigation)
+**And** floating button remains visible across all views with proper z-index
 
 **Technical Notes:**
-- Use a lightweight markdown editor (consider `@uiw/react-md-editor` or custom textarea)
+- Use CodeMirror 6 with `@codemirror/lang-markdown` extension
+- Floating button: `position: fixed; bottom: 24px; right: 24px; z-index: 50`
+- Modal: Fixed size (e.g., 800x600px), centered with backdrop
 - Store content in DEVLOG.md file in project root
-- MVP: basic textarea with markdown preview, fancy editor in v0.3
+- Append mode: Read existing file, add newline + timestamp + content
 
 ---
 
 ### Story 4.2: File Sync with Repository
 
+**Dependencies:** Story 4.1 (requires modal editor and project selection working)  
+**Integration Checkpoint:** After completion, validate file writes to correct project path and external changes are detected before starting Story 4.3
+
 As a **developer**,
-I want **DEVLOG content to sync with a file in my project**,
-So that **my notes travel with my code and are version-controlled**.
+I want **DEVLOG content to sync with a file in my project with conflict detection**,
+So that **my notes travel with my code and external edits are handled safely**.
 
 **Acceptance Criteria:**
 
-**Given** the user edits DEVLOG content in Ronin
-**When** the content is saved
+**Given** the user edits DEVLOG content in Ronin's modal editor
+**When** the content is saved (auto-save or manual close)
 **Then** the file `DEVLOG.md` is written to the project root directory
 **And** file is created if it doesn't exist
-**And** existing DEVLOG.md content is loaded on project open
-**And** file changes made outside Ronin are detected and loaded
-**And** conflict handling: if file changed externally, prompt user to reload or overwrite
+**And** existing DEVLOG.md content is loaded when modal opens
+**And** file changes made outside Ronin are detected via notify crate
+**And** if file changed externally while modal open, prompt user with dialog:
+  - "DEVLOG.md changed externally"
+  - [Reload] - discard modal changes, load external version
+  - [Keep Mine] - overwrite external changes with modal content
+  - [Merge] - show both versions for manual merge (v0.3 feature)
+**And** auto-save pauses when conflict detected until user resolves
 
 **Technical Notes:**
 - Use Rust's `std::fs` for file operations
-- Watch for file changes using notify crate
+- Watch for file changes using notify crate (already configured in Epic 1)
+- Conflict detection: Compare file mtime before save vs after last load
 - DEVLOG enhances AI context to 90% accuracy (vs 80% git-only)
 
 ---
 
 ### Story 4.3: DEVLOG History View
 
+**Dependencies:** Story 4.2 (requires file sync working to have DEVLOG.md in git)  
+**Integration Checkpoint:** After completion, validate full Epic 4 workflow: open modal → write content → save → view history → external edit → conflict resolution
+
 As a **developer**,
-I want **to see the history of my DEVLOG changes**,
-So that **I can review my past context and thoughts**.
+I want **to see the history of my DEVLOG changes within the modal editor**,
+So that **I can review my past context and thoughts without leaving the editor**.
 
 **Acceptance Criteria:**
 
 **Given** a project with DEVLOG.md tracked in Git
-**When** viewing DEVLOG history
-**Then** the user can:
-- See list of commits that modified DEVLOG.md
-- Click a commit to view that version's content
-- Compare current content with a previous version
-**And** history is displayed in chronological order (newest first)
-**And** if not in Git, show "History available for Git projects only"
+**When** clicking "View History" button in modal header
+**Then** the editor switches to history view showing:
+- List of commits that modified DEVLOG.md (newest first)
+- Each entry shows: commit date, commit message, author
+- Click a commit to view that version's content (read-only)
+- "Back to Editor" button returns to editing mode
+**And** history view is read-only (no editing of past versions)
+**And** if not in Git, show message: "History available for Git projects only"
+**And** if DEVLOG.md never committed, show: "No history yet - commit your DEVLOG to track changes"
 
 **Technical Notes:**
 - Use `git log -- DEVLOG.md` to get history
 - Use `git show <commit>:DEVLOG.md` to get content at commit
-- MVP: simple list view, diff view in v0.3
+- MVP: simple list view with read-only content display
+- Diff view deferred to v0.3
 
 ---
 
