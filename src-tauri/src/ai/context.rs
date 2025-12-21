@@ -1,8 +1,10 @@
 /// Context aggregation for AI generation
 use crate::commands::git::GitContext;
+use crate::context::devlog::DevlogContent;
 
 const MAX_PAYLOAD_SIZE: usize = 10 * 1024; // 10KB
 const WARNING_THRESHOLD: usize = 8 * 1024; // 8KB
+const GIT_PRIORITY_SIZE: usize = 6 * 1024; // 6KB reserved for Git context
 
 /// Build AI context from Git repository data
 pub fn build_git_context(git_context: &GitContext) -> String {
@@ -76,7 +78,17 @@ pub fn build_git_context(git_context: &GitContext) -> String {
 }
 
 /// Build system prompt with Ronin philosophy and context
-pub fn build_system_prompt(git_context_str: &str) -> String {
+pub fn build_system_prompt(git_context_str: &str, devlog: Option<&DevlogContent>) -> String {
+    let context_sources = build_context_sources(git_context_str, devlog);
+    let (based_on, prioritization) = if devlog.is_some() {
+        (
+            "Git history · DEVLOG",
+            "\n**PRIORITIZATION:**\n- Use DEVLOG for user intent, blockers, planned next steps (the \"Why\")\n- Use Git history for actual progress, modified files (the \"What\")\n"
+        )
+    } else {
+        ("Git history", "")
+    };
+
     format!(
         r#"You are Ronin, a mindful AI consultant analyzing a developer's project context.
 
@@ -86,8 +98,7 @@ pub fn build_system_prompt(git_context_str: &str) -> String {
 - Output format: Markdown with **bold** for key terms
 
 **Context provided:**
-{}
-
+{}{}
 **Your response structure:**
 ## Context
 {{What they were working on - file, feature, specific location}}
@@ -95,9 +106,75 @@ pub fn build_system_prompt(git_context_str: &str) -> String {
 ## Next Steps
 {{Actionable suggestions, 2-3 bullet points}}
 
-**Based on:** Git history"#,
-        git_context_str
+**Based on:** {}"#,
+        context_sources, prioritization, based_on
     )
+}
+
+/// Build combined context sources string with Git history and optional DEVLOG
+fn build_context_sources(git_context_str: &str, devlog: Option<&DevlogContent>) -> String {
+    let mut sources = String::new();
+
+    // 1. Git History (always present)
+    sources.push_str("## 1. GIT HISTORY:\n");
+    sources.push_str(git_context_str);
+
+    // 2. DEVLOG (if present)
+    if let Some(devlog_content) = devlog {
+        sources.push_str("\n\n## 2. DEVLOG (User's Development Log):\n");
+        // Wrap in XML tags to prevent prompt injection (Architecture requirement)
+        sources.push_str("<devlog>\n");
+        sources.push_str(&devlog_content.content);
+        sources.push_str("\n</devlog>");
+        
+        if devlog_content.truncated {
+            sources.push_str("\n(Note: DEVLOG was truncated to last ~500 lines)");
+        }
+    }
+
+    sources
+}
+
+/// Enforce token budget: if combined Git + DEVLOG > 10KB, truncate DEVLOG intelligently
+pub fn enforce_token_budget(
+    git_context_str: &str,
+    devlog: Option<DevlogContent>,
+) -> Option<DevlogContent> {
+    let git_size = git_context_str.len();
+    
+    match devlog {
+        None => None,
+        Some(mut devlog_content) => {
+            let combined_size = git_size + devlog_content.content.len();
+            
+            if combined_size <= MAX_PAYLOAD_SIZE {
+                // Fits within budget
+                Some(devlog_content)
+            } else {
+                // Need to truncate DEVLOG
+                // Priority 1: Keep Git (reserve GIT_PRIORITY_SIZE)
+                let available_for_devlog = MAX_PAYLOAD_SIZE.saturating_sub(git_size.max(GIT_PRIORITY_SIZE));
+                
+                if available_for_devlog < 500 {
+                    // Not enough space for meaningful DEVLOG content
+                    eprintln!("⚠️  DEVLOG excluded: Git context too large");
+                    None
+                } else {
+                    // Truncate DEVLOG at section boundaries
+                    let (truncated_content, was_truncated) = 
+                        crate::context::devlog::truncate_at_section_boundary(
+                            &devlog_content.content,
+                            available_for_devlog,
+                        );
+                    
+                    devlog_content.content = truncated_content;
+                    devlog_content.truncated = devlog_content.truncated || was_truncated;
+                    
+                    Some(devlog_content)
+                }
+            }
+        }
+    }
 }
 
 /// Validate payload size and log warnings
@@ -170,9 +247,9 @@ mod tests {
     }
 
     #[test]
-    fn test_build_system_prompt_format() {
+    fn test_build_system_prompt_without_devlog() {
         let git_str = "Test git context";
-        let prompt = build_system_prompt(git_str);
+        let prompt = build_system_prompt(git_str, None);
 
         assert!(prompt.contains("Ronin"));
         assert!(prompt.contains("勇 (Yu)"));
@@ -180,6 +257,86 @@ mod tests {
         assert!(prompt.contains("Test git context"));
         assert!(prompt.contains("## Context"));
         assert!(prompt.contains("## Next Steps"));
+        assert!(prompt.contains("**Based on:** Git history"));
+        // When no devlog, should not mention DEVLOG or PRIORITIZATION
+        assert!(!prompt.contains("DEVLOG"));
+        assert!(!prompt.contains("PRIORITIZATION"));
+    }
+
+    #[test]
+    fn test_build_system_prompt_with_devlog() {
+        let git_str = "Test git context";
+        let devlog = DevlogContent {
+            content: "# DEVLOG\n\n## Today\n- Working on feature X".to_string(),
+            lines_read: 4,
+            truncated: false,
+            source_path: "DEVLOG.md".to_string(),
+        };
+        let prompt = build_system_prompt(git_str, Some(&devlog));
+
+        assert!(prompt.contains("Ronin"));
+        assert!(prompt.contains("Test git context"));
+        assert!(prompt.contains("<devlog>"));
+        assert!(prompt.contains("Working on feature X"));
+        assert!(prompt.contains("</devlog>"));
+        assert!(prompt.contains("**Based on:** Git history · DEVLOG"));
+        assert!(prompt.contains("PRIORITIZATION"));
+    }
+
+    #[test]
+    fn test_build_system_prompt_with_truncated_devlog() {
+        let git_str = "Test git context";
+        let devlog = DevlogContent {
+            content: "# DEVLOG content".to_string(),
+            lines_read: 500,
+            truncated: true,
+            source_path: "DEVLOG.md".to_string(),
+        };
+        let prompt = build_system_prompt(git_str, Some(&devlog));
+
+        assert!(prompt.contains("truncated to last ~500 lines"));
+    }
+
+    #[test]
+    fn test_enforce_token_budget_no_devlog() {
+        let git_str = "Small git context";
+        let result = enforce_token_budget(git_str, None);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_enforce_token_budget_within_limit() {
+        let git_str = "Small git context";
+        let devlog = DevlogContent {
+            content: "Small devlog".to_string(),
+            lines_read: 1,
+            truncated: false,
+            source_path: "DEVLOG.md".to_string(),
+        };
+        
+        let result = enforce_token_budget(git_str, Some(devlog));
+        assert!(result.is_some());
+        let result = result.unwrap();
+        assert_eq!(result.content, "Small devlog");
+        assert!(!result.truncated);
+    }
+
+    #[test]
+    fn test_enforce_token_budget_truncates_large_devlog() {
+        let git_str = "x".repeat(5000); // 5KB git context
+        let devlog = DevlogContent {
+            content: "y".repeat(8000), // 8KB devlog - combined would be 13KB > 10KB
+            lines_read: 100,
+            truncated: false,
+            source_path: "DEVLOG.md".to_string(),
+        };
+        
+        let result = enforce_token_budget(&git_str, Some(devlog));
+        assert!(result.is_some());
+        let result = result.unwrap();
+        // Should be truncated to fit within budget
+        assert!(result.content.len() < 8000);
+        assert!(result.truncated);
     }
 
     #[test]

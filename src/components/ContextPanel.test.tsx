@@ -22,6 +22,13 @@ describe('ContextPanel', () => {
         sources: ['git'],
     };
 
+    const mockAttributionWithDevlog: AttributionData = {
+        commits: 15,
+        files: 3,
+        devlogLines: 250,
+        sources: ['git', 'devlog'],
+    };
+
     it('renders nothing in idle state', () => {
         const { container } = render(<ContextPanel state="idle" text="" />);
         expect(container).toBeEmptyDOMElement();
@@ -119,6 +126,93 @@ describe('ContextPanel', () => {
 
         // Should show detailed view
         expect(screen.getByText(/Git History/i)).toBeInTheDocument();
+    });
+
+    // DEVLOG Attribution Tests (Story 3.7)
+    describe('DEVLOG Attribution (Story 3.7)', () => {
+        it('shows DEVLOG icon when sources includes devlog', () => {
+            render(
+                <ContextPanel
+                    state="complete"
+                    text="Context with DEVLOG."
+                    attribution={mockAttributionWithDevlog}
+                />
+            );
+
+            // Should show DEVLOG icon in collapsed view (check via tooltip)
+            expect(screen.getByTitle('Based on recent DEVLOG (last ~500 lines)')).toBeInTheDocument();
+        });
+
+        it('shows DEVLOG lines count in expanded attribution', async () => {
+            render(
+                <ContextPanel
+                    state="complete"
+                    text="Context with DEVLOG."
+                    attribution={mockAttributionWithDevlog}
+                />
+            );
+
+            // Expand attribution
+            const trigger = screen.getByRole('button', { name: /based on/i });
+            await userEvent.click(trigger);
+
+            // Should show DEVLOG with line count
+            expect(screen.getByText(/DEVLOG \(250 lines\)/i)).toBeInTheDocument();
+        });
+
+        it('has tooltip for DEVLOG icon', () => {
+            render(
+                <ContextPanel
+                    state="complete"
+                    text="Context with DEVLOG."
+                    attribution={mockAttributionWithDevlog}
+                />
+            );
+
+            // Check for title attribute on DEVLOG icon container
+            const devlogContainer = screen.getByTitle('Based on recent DEVLOG (last ~500 lines)');
+            expect(devlogContainer).toBeInTheDocument();
+        });
+
+        it('does not show DEVLOG icon when sources does not include devlog', () => {
+            render(
+                <ContextPanel
+                    state="complete"
+                    text="Context without DEVLOG."
+                    attribution={mockAttribution}
+                />
+            );
+
+            // Should not show DEVLOG icon (no tooltip for DEVLOG)
+            expect(screen.queryByTitle('Based on recent DEVLOG (last ~500 lines)')).not.toBeInTheDocument();
+        });
+
+        it('handles attribution with devlog but no devlogLines gracefully', async () => {
+            const attrWithDevlogNoLines: AttributionData = {
+                commits: 10,
+                files: 2,
+                sources: ['git', 'devlog'],
+                // devlogLines is undefined
+            };
+
+            render(
+                <ContextPanel
+                    state="complete"
+                    text="Context."
+                    attribution={attrWithDevlogNoLines}
+                />
+            );
+
+            // Should still show DEVLOG icon in collapsed view (via tooltip)
+            expect(screen.getByTitle('Based on recent DEVLOG (last ~500 lines)')).toBeInTheDocument();
+
+            // Expand attribution
+            const trigger = screen.getByRole('button', { name: /based on/i });
+            await userEvent.click(trigger);
+
+            // Should NOT show DEVLOG line count in expanded view (since devlogLines is undefined)
+            expect(screen.queryByText(/DEVLOG \(/i)).not.toBeInTheDocument();
+        });
     });
 
     // Error state tests for Story 3.6

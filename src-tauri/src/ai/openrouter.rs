@@ -10,6 +10,8 @@ pub struct Attribution {
     pub commits: usize,
     pub files: usize,
     pub sources: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub devlog_lines: Option<usize>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -243,22 +245,40 @@ mod tests {
             commits: 15,
             files: 3,
             sources: vec!["git".to_string()],
+            devlog_lines: None,
         };
 
         let json = serde_json::to_string(&attribution).expect("Should serialize");
         assert!(json.contains("\"commits\":15"));
         assert!(json.contains("\"files\":3"));
         assert!(json.contains("\"sources\":[\"git\"]"));
+        // devlog_lines should be skipped when None
+        assert!(!json.contains("devlog_lines"));
+    }
+
+    #[test]
+    fn test_attribution_with_devlog() {
+        let attribution = Attribution {
+            commits: 15,
+            files: 3,
+            sources: vec!["git".to_string(), "devlog".to_string()],
+            devlog_lines: Some(250),
+        };
+
+        let json = serde_json::to_string(&attribution).expect("Should serialize");
+        assert!(json.contains("\"devlog_lines\":250"));
+        assert!(json.contains("\"devlog\""));
     }
 
     #[test]
     fn test_attribution_deserialization() {
-        let json = r#"{"commits":10,"files":5,"sources":["git","devlog"]}"#;
+        let json = r#"{"commits":10,"files":5,"sources":["git","devlog"],"devlog_lines":100}"#;
         let attribution: Attribution = serde_json::from_str(json).expect("Should deserialize");
 
         assert_eq!(attribution.commits, 10);
         assert_eq!(attribution.files, 5);
         assert_eq!(attribution.sources, vec!["git", "devlog"]);
+        assert_eq!(attribution.devlog_lines, Some(100));
     }
 
     #[test]
@@ -267,6 +287,7 @@ mod tests {
             commits: 0,
             files: 0,
             sources: vec![],
+            devlog_lines: None,
         };
 
         let json = serde_json::to_string(&attribution).expect("Should serialize");

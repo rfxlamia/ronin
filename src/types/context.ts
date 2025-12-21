@@ -6,7 +6,7 @@ export interface AttributionData {
   files: number;
   devlogLines?: number;
   searches?: number;
-  sources: string[]; // Currently: 'git'. Future: 'devlog', 'behavior'
+  sources: string[]; // 'git', 'devlog'
 }
 
 export interface ParsedError {

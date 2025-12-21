@@ -1,5 +1,6 @@
 mod ai;
 mod commands;
+mod context;
 mod db;
 mod security;
 

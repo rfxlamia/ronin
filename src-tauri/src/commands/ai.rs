@@ -1,7 +1,8 @@
 /// AI-related Tauri commands for OpenRouter API integration
-use crate::ai::context::{build_git_context, build_system_prompt, validate_payload_size};
+use crate::ai::context::{build_git_context, build_system_prompt, enforce_token_budget, validate_payload_size};
 use crate::ai::openrouter::{Attribution, Message, OpenRouterClient};
 use crate::commands::git::get_git_context;
+use crate::context::devlog::read_devlog;
 use crate::security::{decrypt_api_key, encrypt_api_key};
 use base64::{engine::general_purpose, Engine as _};
 use rusqlite::OptionalExtension;
@@ -166,7 +167,16 @@ pub async fn generate_context(
 
     // Build context strings
     let git_context_str = build_git_context(&git_context);
-    let system_prompt = build_system_prompt(&git_context_str);
+    
+    // Read DEVLOG if available (Story 3.7)
+    let project_path = std::path::Path::new(&project_path);
+    let devlog = read_devlog(project_path);
+    
+    // Enforce token budget: truncate DEVLOG if combined > 10KB
+    let devlog = enforce_token_budget(&git_context_str, devlog);
+    
+    // Build system prompt with Git context and optional DEVLOG
+    let system_prompt = build_system_prompt(&git_context_str, devlog.as_ref());
 
     // Validate payload size
     if let Err(_e) = validate_payload_size(&system_prompt) {
@@ -199,13 +209,22 @@ pub async fn generate_context(
         }
     };
 
-    // Build attribution data from git context
+    // Build attribution data from git context and DEVLOG
     let commit_count = git_context.commits.len();
     let file_count = git_context.status.modified_files.len();
+    let has_devlog = devlog.is_some();
+    let devlog_lines = devlog.as_ref().map(|d| d.lines_read);
+    
+    let mut sources = vec!["git".to_string()];
+    if has_devlog {
+        sources.push("devlog".to_string());
+    }
+    
     let attribution = Attribution {
         commits: commit_count,
         files: file_count,
-        sources: vec!["git".to_string()],
+        sources,
+        devlog_lines,
     };
 
     // Create OpenRouter client and stream
@@ -231,7 +250,8 @@ pub async fn generate_context(
             let attribution_json = serde_json::json!({
                 "commits": commit_count,
                 "files": file_count,
-                "sources": ["git"]
+                "sources": attribution.sources,
+                "devlogLines": devlog_lines
             })
             .to_string();
 
