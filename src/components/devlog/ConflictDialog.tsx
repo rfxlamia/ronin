@@ -57,7 +57,7 @@ export function ConflictDialog({
 
   return (
     <AlertDialog open={isOpen}>
-      <AlertDialogContent className="max-w-md" onEscapeKeyDown={onCancel}>
+      <AlertDialogContent className="max-w-md z-[110]" onEscapeKeyDown={onCancel}>
         <AlertDialogHeader>
           <div className="flex items-center gap-2">
             <AlertTriangle className="size-5 text-amber-500" />

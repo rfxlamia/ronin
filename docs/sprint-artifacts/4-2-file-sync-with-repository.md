@@ -666,6 +666,12 @@ serde = { version = "1.0", features = ["derive"] }  # For DevlogData struct
 - Verified frontend components with Vitest (`npm test src/components/devlog/`)
 - All Acceptance Criteria met
 
+### Manual Verification & Polish (Post-Code Review)
+- **Fixed UI Crash (Z-Index War):** Increased `ConflictDialog` z-index to `[110]` to appear above `DevlogModal` (`[101]`), resolving an issue where the dialog trapped focus but was visually obscured.
+- **Fixed Layout Issues:** Added `flex-shrink-0` to modal footer and `overflow-hidden` to editor container to prevent text bleeding and layout shifting in Edit Mode.
+- **Theming Improvements:** Added CSS variable overrides to `index.css` to ensure prose (headers, bold text) uses theme-aware colors (`text-foreground`) instead of hardcoded defaults, fixing readability in Light Mode.
+- **UI Polish:** Removed visual keyboard shortcut hints (`Ctrl+B/I`) for a cleaner footer and consolidated status indicators.
+
 ### File List
 - src-tauri/src/commands/devlog.rs
 - src-tauri/src/context/devlog.rs
