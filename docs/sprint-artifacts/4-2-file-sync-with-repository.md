@@ -1,6 +1,6 @@
 # Story 4.2: File Sync with Repository
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -69,65 +69,65 @@ So that **my notes travel with my code and external edits are handled safely**.
 
 ## Tasks / Subtasks
 
-- [ ] **Backend Breaking Changes (CRITICAL: Function signature changes)**
-  - [ ] CREATE new command `get_devlog_with_mtime(project_path: String) -> Result<DevlogData, String>` where `DevlogData` struct contains `{ content: String, mtime: u64 }`
-  - [ ] MODIFY `append_devlog(project_path: String, content: String, expected_mtime: u64) -> Result<(), String>` - add `expected_mtime` parameter
-  - [ ] MODIFY `write_devlog(project_path: String, content: String, expected_mtime: u64) -> Result<(), String>` - add `expected_mtime` parameter
-  - [ ] ADD mtime comparison logic before write in both append/write commands
-  - [ ] RETURN special `Err("CONFLICT")` when mtime mismatch detected
-  - [ ] IMPLEMENT `get_devlog_mtime(project_path: String) -> Result<u64, String>` for polling
-  - [ ] IMPLEMENT `resolve_conflict_reload(project_path: String) -> Result<DevlogWithMtime, String>` with error recovery
-  - [ ] VERIFY all commands reuse `find_devlog_path()` from `src-tauri/src/context/devlog.rs`
+- [x] **Backend Breaking Changes (CRITICAL: Function signature changes)**
+  - [x] CREATE new command `get_devlog_with_mtime(project_path: String) -> Result<DevlogData, String>` where `DevlogData` struct contains `{ content: String, mtime: u64 }`
+  - [x] MODIFY `append_devlog(project_path: String, content: String, expected_mtime: u64) -> Result<(), String>` - add `expected_mtime` parameter
+  - [x] MODIFY `write_devlog(project_path: String, content: String, expected_mtime: u64) -> Result<(), String>` - add `expected_mtime` parameter
+  - [x] ADD mtime comparison logic before write in both append/write commands
+  - [x] RETURN special `Err("CONFLICT")` when mtime mismatch detected
+  - [x] IMPLEMENT `get_devlog_mtime(project_path: String) -> Result<u64, String>` for polling
+  - [x] IMPLEMENT `resolve_conflict_reload(project_path: String) -> Result<DevlogWithMtime, String>` with error recovery
+  - [x] VERIFY all commands reuse `find_devlog_path()` from `src-tauri/src/context/devlog.rs`
 
-- [ ] **Frontend Store Enhancement**
-  - [ ] ADD `lastKnownMtime: number | null` to devlogStore
-  - [ ] ADD `conflictDetected: boolean` to devlogStore
-  - [ ] ADD `conflictDialogOpen: boolean` to devlogStore
-  - [ ] ADD `lastSavedTimestamp: number | null` for "last saved" indicator
-  - [ ] IMPLEMENT `setMtime(mtime: number)` action
-  - [ ] IMPLEMENT `detectConflict()` action (sets conflictDetected=true, pauses auto-save)
-  - [ ] IMPLEMENT `resolveConflict(action: 'reload' | 'keep-mine')` with error recovery
-  - [ ] ADD local telemetry tracking: log conflict resolution choices
+- [x] **Frontend Store Enhancement**
+  - [x] ADD `lastKnownMtime: number | null` to devlogStore
+  - [x] ADD `conflictDetected: boolean` to devlogStore
+  - [x] ADD `conflictDialogOpen: boolean` to devlogStore
+  - [x] ADD `lastSavedTimestamp: number | null` for "last saved" indicator
+  - [x] IMPLEMENT `setMtime(mtime: number)` action
+  - [x] IMPLEMENT `detectConflict()` action (sets conflictDetected=true, pauses auto-save)
+  - [x] IMPLEMENT `resolveConflict(action: 'reload' | 'keep-mine')` with error recovery
+  - [ ] ADD local telemetry tracking: log conflict resolution choices (deferred to v0.3)
 
-- [ ] **Component Updates - DevlogModal.tsx**
-  - [ ] MODIFY modal open handler to call `get_devlog_with_mtime()` instead of `get_devlog_content()`
-  - [ ] STORE both content and mtime when modal opens
-  - [ ] ADD mtime polling every 5 seconds using `setInterval`
-  - [ ] ADD debounce logic: skip poll if user typed within last 10 seconds
-  - [ ] DETECT conflict when polled mtime !== lastKnownMtime
-  - [ ] PASS expected_mtime to all save operations (append_devlog, write_devlog)
-  - [ ] HANDLE CONFLICT error from backend → show ConflictDialog
-  - [ ] ADD "last saved" timestamp indicator in modal footer
-  - [ ] SHOW visual badge when auto-save is paused due to conflict
+- [x] **Component Updates - DevlogModal.tsx**
+  - [x] MODIFY modal open handler to call `get_devlog_with_mtime()` instead of `get_devlog_content()`
+  - [x] STORE both content and mtime when modal opens
+  - [x] ADD mtime polling every 5 seconds using `setInterval`
+  - [x] ADD debounce logic: skip poll if user typed within last 10 seconds
+  - [x] DETECT conflict when polled mtime !== lastKnownMtime
+  - [x] PASS expected_mtime to all save operations (append_devlog, write_devlog)
+  - [x] HANDLE CONFLICT error from backend → show ConflictDialog
+  - [x] ADD "last saved" timestamp indicator in modal footer
+  - [x] SHOW visual badge when auto-save is paused due to conflict
 
-- [ ] **Component Updates - ConflictDialog.tsx (Verification)**
-  - [ ] VERIFY component exists (created in Story 4.1)
-  - [ ] VERIFY props match: `{ isOpen: boolean, onReload: () => void, onKeepMine: () => void, onCancel: () => void, externalFileInfo?: { lineCount: number } }`
-  - [ ] VERIFY buttons: [Reload] [Keep Mine] [Merge (disabled)]
-  - [ ] IMPLEMENT keyboard shortcuts: R key → Reload, K key → Keep Mine, Escape → Cancel
-  - [ ] ADD external file preview: "External file has X lines (yours has Y lines)"
-  - [ ] VERIFY aria-labels for accessibility
-  - [ ] VERIFY matches spec: `docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md`
+- [x] **Component Updates - ConflictDialog.tsx (Verification)**
+  - [x] VERIFY component exists (created in Story 4.1)
+  - [x] VERIFY props match: `{ isOpen: boolean, onReload: () => void, onKeepMine: () => void, onCancel: () => void, externalFileInfo?: { lineCount: number } }`
+  - [x] VERIFY buttons: [Reload] [Keep Mine] [Merge (disabled)]
+  - [x] IMPLEMENT keyboard shortcuts: R key → Reload, K key → Keep Mine, Escape → Cancel
+  - [x] ADD external file preview: "External file has X lines (yours has Y lines)"
+  - [x] VERIFY aria-labels for accessibility
+  - [x] VERIFY matches spec: `docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md`
 
-- [ ] **Component Updates - MarkdownEditor.tsx**
-  - [ ] MODIFY auto-save effect to check `conflictDetected` flag
-  - [ ] PAUSE auto-save when `conflictDetected === true` (clear timer)
-  - [ ] RESUME auto-save after conflict resolved (restart 30s timer)
-  - [ ] UPDATE all frontend call sites to pass `expectedMtime` parameter to append/write commands
+- [x] **Component Updates - MarkdownEditor.tsx**
+  - [x] MODIFY auto-save effect to check `conflictDetected` flag
+  - [x] PAUSE auto-save when `conflictDetected === true` (clear timer)
+  - [x] RESUME auto-save after conflict resolved (restart 30s timer)
+  - [x] UPDATE all frontend call sites to pass `expectedMtime` parameter to append/write commands
 
-- [ ] **Testing**
-  - [ ] Test: Open modal → edit externally → polling detects conflict within 5s → dialog shows
-  - [ ] Test: Conflict detected → [Reload] → editor updates with external content
-  - [ ] Test: Conflict detected → [Keep Mine] → file overwritten with modal content
-  - [ ] Test: Conflict → Reload fails (file deleted) → modal content preserved, error shown
-  - [ ] Test: Auto-save pauses when conflict detected, resumes after resolution
-  - [ ] Test: Auto-save timer resets after resolution
-  - [ ] Test: Keyboard shortcuts (R/K/Escape) work in ConflictDialog
-  - [ ] Test: "Auto-save paused" badge shows during conflict
-  - [ ] Test: "Last saved" timestamp updates after successful save
-  - [ ] Test: Multi-location strategy (root, docs/, .devlog/) all work
-  - [ ] Test: File creation when doesn't exist
-  - [ ] Test: Debounce polling when user actively typing
+- [x] **Testing**
+  - [x] Test: Open modal → edit externally → polling detects conflict within 5s → dialog shows
+  - [x] Test: Conflict detected → [Reload] → editor updates with external content
+  - [x] Test: Conflict detected → [Keep Mine] → file overwritten with modal content
+  - [x] Test: Conflict → Reload fails (file deleted) → modal content preserved, error shown
+  - [x] Test: Auto-save pauses when conflict detected, resumes after resolution
+  - [x] Test: Auto-save timer resets after resolution
+  - [x] Test: Keyboard shortcuts (R/K/Escape) work in ConflictDialog
+  - [x] Test: "Auto-save paused" badge shows during conflict
+  - [x] Test: "Last saved" timestamp updates after successful save
+  - [x] Test: Multi-location strategy (root, docs/, .devlog/) all work
+  - [x] Test: File creation when doesn't exist
+  - [x] Test: Debounce polling when user actively typing
 
 ## Technical Requirements
 
@@ -410,12 +410,12 @@ interface DevlogStore {
 
 **Verification checklist:**
 
-- [ ] Props: `isOpen`, `onReload`, `onKeepMine`, `onCancel`, `externalFileInfo?`
-- [ ] Buttons: [Reload] [Keep Mine] [Merge (disabled with tooltip)]
-- [ ] Keyboard shortcuts: R → Reload, K → Keep Mine, Escape → Cancel
-- [ ] Preview text: "External file has X lines (yours has Y lines)"
-- [ ] Aria-labels: `aria-label="Reload external changes (R)"` etc.
-- [ ] Matches spec: `docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md`
+- [x] Props: `isOpen`, `onReload`, `onKeepMine`, `onCancel`, `externalFileInfo?`
+- [x] Buttons: [Reload] [Keep Mine] [Merge (disabled with tooltip)]
+- [x] Keyboard shortcuts: R → Reload, K → Keep Mine, Escape → Cancel
+- [x] Preview text: "External file has X lines (yours has Y lines)"
+- [x] Aria-labels: `aria-label="Reload external changes (R)"` etc.
+- [x] Matches spec: `docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md`
 
 **3. MarkdownEditor.tsx**
 
@@ -657,4 +657,24 @@ serde = { version = "1.0", features = ["derive"] }  # For DevlogData struct
 
 ### Completion Notes List
 
+- Implemented backend conflict detection using mtime comparison with millisecond precision
+- Updated `DevlogModal` to poll for external changes every 5 seconds (debounced)
+- Added `ConflictDialog` with options to Reload or Keep Mine (overwrite)
+- Implemented auto-save pause/resume logic during conflict state
+- Added visual indicators for conflict and last saved time
+- Verified backend logic with Rust tests (`cargo test commands::devlog`)
+- Verified frontend components with Vitest (`npm test src/components/devlog/`)
+- All Acceptance Criteria met
+
 ### File List
+- src-tauri/src/commands/devlog.rs
+- src-tauri/src/context/devlog.rs
+- src-tauri/src/lib.rs
+- src/stores/devlogStore.ts
+- src/components/devlog/DevlogModal.tsx
+- src/components/devlog/ConflictDialog.tsx
+- src/components/devlog/DevlogModal.test.tsx
+- src/stores/devlogStore.test.ts
+- src/components/devlog/ConflictDialog.test.tsx
+- package.json
+- package-lock.json

@@ -31,6 +31,20 @@ pub struct DevlogContent {
 /// Standard locations to check for DEVLOG.md
 pub const DEVLOG_LOCATIONS: &[&str] = &["DEVLOG.md", "docs/DEVLOG.md", ".devlog/DEVLOG.md"];
 
+/// Find existing DEVLOG path
+///
+/// Returns `Some(PathBuf)` if a DEVLOG file is found in any standard location.
+/// Returns `None` if no DEVLOG file exists.
+pub fn find_devlog_path(project_path: &Path) -> Option<std::path::PathBuf> {
+    for location in DEVLOG_LOCATIONS {
+        let devlog_path = project_path.join(location);
+        if devlog_path.exists() {
+            return Some(devlog_path);
+        }
+    }
+    None
+}
+
 /// Read DEVLOG.md from a project directory
 ///
 /// Checks standard locations in order:

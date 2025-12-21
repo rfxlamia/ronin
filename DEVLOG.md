@@ -18,3 +18,11 @@ wah! fitur baru, devlog editor!
 ## 2025-12-21 15:39
 
 ini adalah tes devlog editor sebelum commit. jika kamu membacanya, tolong katakan "HODOR"
+
+## 2025-12-21 16:50
+
+story 4-2 selesai, namun ada masalah lag saat ada conflict devlog. aku akan memperbaikinya saat bangun tidur.
+
+## 2025-12-21 16:56
+
+fitur lag sudah diperbaiki, dan aku belum tidur. hahaha. lega rasanya. **saatnya tidur**

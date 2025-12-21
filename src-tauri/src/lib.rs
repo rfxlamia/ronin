@@ -39,8 +39,9 @@ pub fn run() {
             commands::ai::delete_api_key,
             commands::ai::test_api_connection,
             commands::ai::generate_context,
-            commands::devlog::get_devlog_content,
+            commands::devlog::get_devlog_with_mtime,
             commands::devlog::get_devlog_mtime,
+            commands::devlog::resolve_conflict_reload,
             commands::devlog::append_devlog,
             commands::devlog::write_devlog
         ])

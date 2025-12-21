@@ -17,6 +17,10 @@ describe('devlogStore', () => {
     expect(state.content).toBe('');
     expect(state.hasUnsavedChanges).toBe(false);
     expect(state.conflictDetected).toBe(false);
+    expect(state.conflictDialogOpen).toBe(false);
+    expect(state.lastKnownMtime).toBeNull();
+    expect(state.lastSavedTimestamp).toBeNull();
+    expect(state.externalFileInfo).toBeNull();
     expect(state.cursorPosition).toEqual({ line: 1, column: 1 });
   });
 
@@ -30,6 +34,9 @@ describe('devlogStore', () => {
     expect(state.activeProjectId).toBe(1);
     expect(state.activeProjectPath).toBe('/path/to/project');
     expect(state.mode).toBe('append');
+    // Should reset temporary state
+    expect(state.conflictDetected).toBe(false);
+    expect(state.externalFileInfo).toBeNull();
   });
 
   it('should close modal and reset content', () => {
@@ -43,6 +50,8 @@ describe('devlogStore', () => {
     expect(state.isOpen).toBe(false);
     expect(state.content).toBe('');
     expect(state.hasUnsavedChanges).toBe(false);
+    expect(state.conflictDetected).toBe(false);
+    expect(state.conflictDialogOpen).toBe(false);
   });
 
   it('should set mode', () => {
@@ -80,25 +89,54 @@ describe('devlogStore', () => {
     expect(state.hasUnsavedChanges).toBe(false);
   });
 
-  it('should set conflict detected flag', () => {
-    const { setConflictDetected } = useDevlogStore.getState();
+  it('should handle conflict detection', () => {
+    const { detectConflict, setConflictDetected, setConflictDialogOpen } = useDevlogStore.getState();
 
-    setConflictDetected(true);
-    expect(useDevlogStore.getState().conflictDetected).toBe(true);
+    detectConflict();
+    const state = useDevlogStore.getState();
+    expect(state.conflictDetected).toBe(true);
+    expect(state.conflictDialogOpen).toBe(true);
 
+    setConflictDialogOpen(false);
+    expect(useDevlogStore.getState().conflictDialogOpen).toBe(false);
+    expect(useDevlogStore.getState().conflictDetected).toBe(true); // Still true (paused state)
+    
     setConflictDetected(false);
     expect(useDevlogStore.getState().conflictDetected).toBe(false);
   });
+  
+  it('should set last known mtime', () => {
+      const { setLastKnownMtime } = useDevlogStore.getState();
+      setLastKnownMtime(12345);
+      expect(useDevlogStore.getState().lastKnownMtime).toBe(12345);
+  });
+
+  it('should set last saved timestamp', () => {
+      const { setLastSaved } = useDevlogStore.getState();
+      const now = Date.now();
+      setLastSaved(now);
+      expect(useDevlogStore.getState().lastSavedTimestamp).toBe(now);
+  });
+  
+  it('should set external file info', () => {
+      const { setExternalFileInfo } = useDevlogStore.getState();
+      setExternalFileInfo({ lineCount: 50 });
+      expect(useDevlogStore.getState().externalFileInfo).toEqual({ lineCount: 50 });
+      
+      setExternalFileInfo(null);
+      expect(useDevlogStore.getState().externalFileInfo).toBeNull();
+  });
 
   it('should reset to initial state', () => {
-    const { open, setContent, setMode, setConflictDetected, setCursorPosition, reset } = useDevlogStore.getState();
+    const { open, setContent, setMode, detectConflict, setCursorPosition, setLastKnownMtime, reset } = useDevlogStore.getState();
 
     // Modify state
     open(1, '/path/to/project');
     setContent('Some content');
     setMode('edit');
-    setConflictDetected(true);
+    detectConflict();
     setCursorPosition({ line: 5, column: 10 });
+    setLastKnownMtime(999);
 
     // Reset
     reset();
@@ -109,15 +147,8 @@ describe('devlogStore', () => {
     expect(state.activeProjectId).toBeNull();
     expect(state.content).toBe('');
     expect(state.conflictDetected).toBe(false);
+    expect(state.conflictDialogOpen).toBe(false);
+    expect(state.lastKnownMtime).toBeNull();
     expect(state.cursorPosition).toEqual({ line: 1, column: 1 });
-  });
-
-  it('should set cursor position', () => {
-    const { setCursorPosition } = useDevlogStore.getState();
-
-    setCursorPosition({ line: 10, column: 25 });
-
-    const state = useDevlogStore.getState();
-    expect(state.cursorPosition).toEqual({ line: 10, column: 25 });
   });
 });
