@@ -129,7 +129,7 @@ describe('DevlogModal', () => {
 
         render(<DevlogModal />);
 
-        expect(screen.getByText('Last saved: 5 minutes ago')).toBeInTheDocument();
+        expect(screen.getByText('· 5 minutes ago')).toBeInTheDocument();
     });
 
     it('should disable save button when conflict is detected', () => {
