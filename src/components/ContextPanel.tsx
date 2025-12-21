@@ -3,7 +3,7 @@ import type { ContextPanelProps, AttributionData, ParsedError, ErrorKind } from 
 import { RoninLoader } from './RoninLoader';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { GitCommitHorizontal, FileText, ChevronDown, AlertTriangle, RefreshCw, WifiOff, ServerCrash, Hourglass, CloudOff } from 'lucide-react';
+import { GitCommitHorizontal, FileText, ChevronDown, AlertTriangle, RefreshCw, WifiOff, ServerCrash, Hourglass, CloudOff, NotebookPen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { useCountdown } from '@/hooks/useCountdown';
@@ -53,6 +53,11 @@ function Attribution({ data }: { data?: AttributionData }) {
                                 <span>{data.files}</span>
                             </div>
                         )}
+                        {data.sources.includes('devlog') && (
+                            <div className="flex items-center gap-1" title="Based on recent DEVLOG (last ~500 lines)">
+                                <NotebookPen className="w-3 h-3" />
+                            </div>
+                        )}
                     </div>
                 </div>
                 <ChevronDown
@@ -77,8 +82,8 @@ function Attribution({ data }: { data?: AttributionData }) {
                         </div>
                     )}
                     {data.sources.includes('devlog') && data.devlogLines && data.devlogLines > 0 && (
-                        <div className="flex items-center gap-2">
-                            <FileText className="w-3 h-3" />
+                        <div className="flex items-center gap-2" title="Based on recent DEVLOG (last ~500 lines)">
+                            <NotebookPen className="w-3 h-3" />
                             <span>DEVLOG ({data.devlogLines} lines)</span>
                         </div>
                     )}

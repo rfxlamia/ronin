@@ -67,7 +67,7 @@ development_status:
   3-4-ai-context-generation: done
   3-5-ai-attribution-display: done
   3-6-error-states-offline-mode: done
-  3-7-devlog-analysis-for-ai-context: backlog
+  3-7-devlog-analysis-for-ai-context: done
   epic-3-retrospective: optional
 
   epic-4: backlog
