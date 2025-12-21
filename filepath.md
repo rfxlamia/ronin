@@ -2,7 +2,7 @@
 
 **Auto-generated** list of key source files. Excludes: tests, migrations, workflow engine, build artifacts.
 
-## Files (106 total)
+## Files (119 total)
 
 - [`README.md`](file:///home/v/project/ronin/README.md)
 - [`docs/epics.md`](file:///home/v/project/ronin/docs/epics.md)
@@ -26,6 +26,7 @@
 - [`docs/sprint-artifacts/3-5-ai-attribution-display.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-5-ai-attribution-display.md)
 - [`docs/sprint-artifacts/3-6-error-states-offline-mode.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-6-error-states-offline-mode.md)
 - [`docs/sprint-artifacts/3-7-devlog-analysis-for-ai-context.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-7-devlog-analysis-for-ai-context.md)
+- [`docs/sprint-artifacts/4-1-devlog-editor-component.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4-1-devlog-editor-component.md)
 - [`docs/sprint-artifacts/codemirror-research-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/codemirror-research-2025-12-21.md)
 - [`docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md)
 - [`docs/sprint-artifacts/epic-1-retro-2025-12-18.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-1-retro-2025-12-18.md)
@@ -41,6 +42,7 @@
 - [`docs/sprint-artifacts/validation-report-3-3-20251220-165907.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-3-20251220-165907.md)
 - [`docs/sprint-artifacts/validation-report-3-4-2025-12-20_20-26-41.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-4-2025-12-20_20-26-41.md)
 - [`docs/sprint-artifacts/validation-report-3-5.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-5.md)
+- [`docs/sprint-artifacts/validation-report-4-1-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-4-1-2025-12-21.md)
 - [`package.json`](file:///home/v/project/ronin/package.json)
 - [`src-tauri/Cargo.toml`](file:///home/v/project/ronin/src-tauri/Cargo.toml)
 - [`src-tauri/build.rs`](file:///home/v/project/ronin/src-tauri/build.rs)
@@ -48,6 +50,7 @@
 - [`src-tauri/src/ai/mod.rs`](file:///home/v/project/ronin/src-tauri/src/ai/mod.rs)
 - [`src-tauri/src/ai/openrouter.rs`](file:///home/v/project/ronin/src-tauri/src/ai/openrouter.rs)
 - [`src-tauri/src/commands/ai.rs`](file:///home/v/project/ronin/src-tauri/src/commands/ai.rs)
+- [`src-tauri/src/commands/devlog.rs`](file:///home/v/project/ronin/src-tauri/src/commands/devlog.rs)
 - [`src-tauri/src/commands/git.rs`](file:///home/v/project/ronin/src-tauri/src/commands/git.rs)
 - [`src-tauri/src/commands/mod.rs`](file:///home/v/project/ronin/src-tauri/src/commands/mod.rs)
 - [`src-tauri/src/commands/projects.rs`](file:///home/v/project/ronin/src-tauri/src/commands/projects.rs)
@@ -73,6 +76,11 @@
 - [`src/components/RoninLoader.tsx`](file:///home/v/project/ronin/src/components/RoninLoader.tsx)
 - [`src/components/RoninOathModal.tsx`](file:///home/v/project/ronin/src/components/RoninOathModal.tsx)
 - [`src/components/WindowControls.tsx`](file:///home/v/project/ronin/src/components/WindowControls.tsx)
+- [`src/components/devlog/ConflictDialog.tsx`](file:///home/v/project/ronin/src/components/devlog/ConflictDialog.tsx)
+- [`src/components/devlog/DevlogButton.tsx`](file:///home/v/project/ronin/src/components/devlog/DevlogButton.tsx)
+- [`src/components/devlog/DevlogModal.tsx`](file:///home/v/project/ronin/src/components/devlog/DevlogModal.tsx)
+- [`src/components/devlog/MarkdownEditor.tsx`](file:///home/v/project/ronin/src/components/devlog/MarkdownEditor.tsx)
+- [`src/components/devlog/index.ts`](file:///home/v/project/ronin/src/components/devlog/index.ts)
 - [`src/components/mode-toggle.tsx`](file:///home/v/project/ronin/src/components/mode-toggle.tsx)
 - [`src/components/theme-provider.tsx`](file:///home/v/project/ronin/src/components/theme-provider.tsx)
 - [`src/components/ui/alert-dialog.tsx`](file:///home/v/project/ronin/src/components/ui/alert-dialog.tsx)
@@ -84,13 +92,17 @@
 - [`src/components/ui/dialog.tsx`](file:///home/v/project/ronin/src/components/ui/dialog.tsx)
 - [`src/components/ui/dropdown-menu.tsx`](file:///home/v/project/ronin/src/components/ui/dropdown-menu.tsx)
 - [`src/components/ui/input.tsx`](file:///home/v/project/ronin/src/components/ui/input.tsx)
+- [`src/components/ui/label.tsx`](file:///home/v/project/ronin/src/components/ui/label.tsx)
 - [`src/components/ui/light-modal.tsx`](file:///home/v/project/ronin/src/components/ui/light-modal.tsx)
 - [`src/components/ui/loader.tsx`](file:///home/v/project/ronin/src/components/ui/loader.tsx)
+- [`src/components/ui/select.tsx`](file:///home/v/project/ronin/src/components/ui/select.tsx)
 - [`src/components/ui/skeleton.tsx`](file:///home/v/project/ronin/src/components/ui/skeleton.tsx)
 - [`src/components/ui/streaming-text.tsx`](file:///home/v/project/ronin/src/components/ui/streaming-text.tsx)
+- [`src/components/ui/switch.tsx`](file:///home/v/project/ronin/src/components/ui/switch.tsx)
 - [`src/components/ui/tabs.tsx`](file:///home/v/project/ronin/src/components/ui/tabs.tsx)
 - [`src/hooks/useAiContext.ts`](file:///home/v/project/ronin/src/hooks/useAiContext.ts)
 - [`src/hooks/useCountdown.ts`](file:///home/v/project/ronin/src/hooks/useCountdown.ts)
+- [`src/hooks/useHotkeys.ts`](file:///home/v/project/ronin/src/hooks/useHotkeys.ts)
 - [`src/hooks/useWindowSize.ts`](file:///home/v/project/ronin/src/hooks/useWindowSize.ts)
 - [`src/lib/logic/projectHealth.ts`](file:///home/v/project/ronin/src/lib/logic/projectHealth.ts)
 - [`src/lib/utils.ts`](file:///home/v/project/ronin/src/lib/utils.ts)
@@ -99,6 +111,7 @@
 - [`src/pages/Dashboard.tsx`](file:///home/v/project/ronin/src/pages/Dashboard.tsx)
 - [`src/pages/Settings.tsx`](file:///home/v/project/ronin/src/pages/Settings.tsx)
 - [`src/pages/TestContextPanel.tsx`](file:///home/v/project/ronin/src/pages/TestContextPanel.tsx)
+- [`src/stores/devlogStore.ts`](file:///home/v/project/ronin/src/stores/devlogStore.ts)
 - [`src/stores/projectStore.ts`](file:///home/v/project/ronin/src/stores/projectStore.ts)
 - [`src/stores/settingsStore.ts`](file:///home/v/project/ronin/src/stores/settingsStore.ts)
 - [`src/types/context.ts`](file:///home/v/project/ronin/src/types/context.ts)
@@ -112,4 +125,4 @@
 - [`vitest.config.ts`](file:///home/v/project/ronin/vitest.config.ts)
 
 ---
-*Generated: 2025-12-21T06:46:23.490Z*
+*Generated: 2025-12-21T08:42:59.863Z*
