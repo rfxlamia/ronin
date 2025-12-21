@@ -2,7 +2,7 @@
 
 **Auto-generated** list of key source files. Excludes: tests, migrations, workflow engine, build artifacts.
 
-## Files (97 total)
+## Files (106 total)
 
 - [`README.md`](file:///home/v/project/ronin/README.md)
 - [`docs/epics.md`](file:///home/v/project/ronin/docs/epics.md)
@@ -24,12 +24,18 @@
 - [`docs/sprint-artifacts/3-3-contextpanel-component.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-3-contextpanel-component.md)
 - [`docs/sprint-artifacts/3-4-ai-context-generation.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-4-ai-context-generation.md)
 - [`docs/sprint-artifacts/3-5-ai-attribution-display.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-5-ai-attribution-display.md)
+- [`docs/sprint-artifacts/3-6-error-states-offline-mode.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-6-error-states-offline-mode.md)
+- [`docs/sprint-artifacts/3-7-devlog-analysis-for-ai-context.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-7-devlog-analysis-for-ai-context.md)
+- [`docs/sprint-artifacts/codemirror-research-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/codemirror-research-2025-12-21.md)
+- [`docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md)
 - [`docs/sprint-artifacts/epic-1-retro-2025-12-18.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-1-retro-2025-12-18.md)
 - [`docs/sprint-artifacts/epic-2-retro-2025-12-20.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-2-retro-2025-12-20.md)
+- [`docs/sprint-artifacts/epic-3-retro-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-3-retro-2025-12-21.md)
 - [`docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md`](file:///home/v/project/ronin/docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md)
 - [`docs/sprint-artifacts/validation-report-2-2.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-2.md)
 - [`docs/sprint-artifacts/validation-report-2-8.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-8.md)
 - [`docs/sprint-artifacts/validation-report-2-9.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-9.md)
+- [`docs/sprint-artifacts/validation-report-2025-12-21-devlog-analysis.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2025-12-21-devlog-analysis.md)
 - [`docs/sprint-artifacts/validation-report-20251220-140839.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-20251220-140839.md)
 - [`docs/sprint-artifacts/validation-report-3-1-20251220.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-1-20251220.md)
 - [`docs/sprint-artifacts/validation-report-3-3-20251220-165907.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-3-20251220-165907.md)
@@ -46,6 +52,8 @@
 - [`src-tauri/src/commands/mod.rs`](file:///home/v/project/ronin/src-tauri/src/commands/mod.rs)
 - [`src-tauri/src/commands/projects.rs`](file:///home/v/project/ronin/src-tauri/src/commands/projects.rs)
 - [`src-tauri/src/commands/settings.rs`](file:///home/v/project/ronin/src-tauri/src/commands/settings.rs)
+- [`src-tauri/src/context/devlog.rs`](file:///home/v/project/ronin/src-tauri/src/context/devlog.rs)
+- [`src-tauri/src/context/mod.rs`](file:///home/v/project/ronin/src-tauri/src/context/mod.rs)
 - [`src-tauri/src/db.rs`](file:///home/v/project/ronin/src-tauri/src/db.rs)
 - [`src-tauri/src/lib.rs`](file:///home/v/project/ronin/src-tauri/src/lib.rs)
 - [`src-tauri/src/main.rs`](file:///home/v/project/ronin/src-tauri/src/main.rs)
@@ -82,6 +90,7 @@
 - [`src/components/ui/streaming-text.tsx`](file:///home/v/project/ronin/src/components/ui/streaming-text.tsx)
 - [`src/components/ui/tabs.tsx`](file:///home/v/project/ronin/src/components/ui/tabs.tsx)
 - [`src/hooks/useAiContext.ts`](file:///home/v/project/ronin/src/hooks/useAiContext.ts)
+- [`src/hooks/useCountdown.ts`](file:///home/v/project/ronin/src/hooks/useCountdown.ts)
 - [`src/hooks/useWindowSize.ts`](file:///home/v/project/ronin/src/hooks/useWindowSize.ts)
 - [`src/lib/logic/projectHealth.ts`](file:///home/v/project/ronin/src/lib/logic/projectHealth.ts)
 - [`src/lib/utils.ts`](file:///home/v/project/ronin/src/lib/utils.ts)
@@ -103,4 +112,4 @@
 - [`vitest.config.ts`](file:///home/v/project/ronin/vitest.config.ts)
 
 ---
-*Generated: 2025-12-20T23:53:36.414Z*
+*Generated: 2025-12-21T06:46:23.490Z*
