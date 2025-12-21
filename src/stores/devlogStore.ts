@@ -1,6 +1,14 @@
 import { create } from 'zustand';
 
 export type DevlogMode = 'append' | 'edit';
+export type DevlogViewMode = 'edit' | 'history' | 'version';
+
+export interface DevlogCommit {
+  hash: string;
+  date: string;
+  author: string;
+  message: string;
+}
 
 interface CursorPosition {
   line: number;
@@ -31,6 +39,12 @@ interface DevlogStore {
   isSaving: boolean;
   cursorPosition: CursorPosition;
 
+  // History View State
+  viewMode: DevlogViewMode;
+  versionCache: Record<string, string>; // hash -> content
+  selectedVersionHash: string | null;
+  selectedVersionContent: string | null;
+
   // Actions
   open: (projectId: number, projectPath: string) => void;
   close: () => void;
@@ -50,6 +64,13 @@ interface DevlogStore {
   setIsSaving: (saving: boolean) => void;
   setCursorPosition: (position: CursorPosition) => void;
   reset: () => void;
+
+  // History Actions
+  setViewMode: (mode: DevlogViewMode) => void;
+  cacheVersion: (hash: string, content: string) => void;
+  selectVersion: (hash: string | null) => void;
+  setSelectedVersionContent: (content: string | null) => void;
+  clearCache: () => void;
 }
 
 const initialState = {
@@ -68,6 +89,11 @@ const initialState = {
   hasUnsavedChanges: false,
   isSaving: false,
   cursorPosition: { line: 1, column: 1 } as CursorPosition,
+
+  viewMode: 'edit' as DevlogViewMode,
+  versionCache: {} as Record<string, string>,
+  selectedVersionHash: null as string | null,
+  selectedVersionContent: null as string | null,
 };
 
 export const useDevlogStore = create<DevlogStore>((set) => ({
@@ -75,16 +101,11 @@ export const useDevlogStore = create<DevlogStore>((set) => ({
 
   open: (projectId, projectPath) =>
     set({
+      ...initialState, // Reset everything on open
       isOpen: true,
       activeProjectId: projectId,
       activeProjectPath: projectPath,
-      content: '',
       mode: 'append',
-      hasUnsavedChanges: false,
-      conflictDetected: false,
-      conflictDialogOpen: false,
-      lastKnownMtime: null,
-      externalFileInfo: null,
     }),
 
   close: () =>
@@ -94,6 +115,10 @@ export const useDevlogStore = create<DevlogStore>((set) => ({
       hasUnsavedChanges: false,
       conflictDetected: false,
       conflictDialogOpen: false,
+      viewMode: 'edit',
+      versionCache: {}, // Clear cache on close
+      selectedVersionHash: null,
+      selectedVersionContent: null,
     }),
 
   setMode: (mode) => set({ mode }),
@@ -131,4 +156,24 @@ export const useDevlogStore = create<DevlogStore>((set) => ({
   setCursorPosition: (cursorPosition) => set({ cursorPosition }),
 
   reset: () => set(initialState),
+
+  // History Actions
+  setViewMode: (viewMode) => set({ viewMode }),
+
+  cacheVersion: (hash, content) => set((state) => {
+    const newCache = { ...state.versionCache, [hash]: content };
+    // LRU-like eviction (simple implementation: remove oldest key)
+    const keys = Object.keys(newCache);
+    if (keys.length > 10) {
+      const keyToRemove = keys[0];
+      delete newCache[keyToRemove];
+    }
+    return { versionCache: newCache };
+  }),
+
+  selectVersion: (selectedVersionHash) => set({ selectedVersionHash }),
+
+  setSelectedVersionContent: (selectedVersionContent) => set({ selectedVersionContent }),
+
+  clearCache: () => set({ versionCache: {} }),
 }));

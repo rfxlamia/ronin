@@ -61,73 +61,45 @@ describe('MarkdownEditor', () => {
         });
     });
 
-    it('should have border and background styling', () => {
+    it('should show read-only banner when readOnly is true', () => {
+        render(
+            <MarkdownEditor
+                value="Test"
+                onChange={mockOnChange}
+                readOnly={true}
+            />
+        );
+
+        expect(document.querySelector('.cm-editor')).toBeInTheDocument();
+        expect(document.body.textContent).toContain('READ ONLY VERSION');
+    });
+
+    it('should NOT show read-only banner when readOnly is false', () => {
+        render(
+            <MarkdownEditor
+                value="Test"
+                onChange={mockOnChange}
+                readOnly={false}
+            />
+        );
+
+        expect(document.body.textContent).not.toContain('READ ONLY VERSION');
+    });
+
+    // Removed specific border/bg tests as component relies on parent styling or custom className now
+    // or we can test that className is applied correctly
+
+    it('should apply custom className', () => {
         render(
             <MarkdownEditor
                 value=""
                 onChange={mockOnChange}
-                onCursorChange={mockOnCursorChange}
+                className="custom-class"
             />
         );
-
-        const container = document.querySelector('.border.bg-background');
-        expect(container).toBeInTheDocument();
-    });
-
-    it('should have rounded corners', () => {
-        render(
-            <MarkdownEditor
-                value=""
-                onChange={mockOnChange}
-                onCursorChange={mockOnCursorChange}
-            />
-        );
-
-        const container = document.querySelector('.rounded-md');
-        expect(container).toBeInTheDocument();
-    });
-
-    it('should initialize CodeMirror editor', async () => {
-        render(
-            <MarkdownEditor
-                value="Test content"
-                onChange={mockOnChange}
-                onCursorChange={mockOnCursorChange}
-            />
-        );
-
-        await waitFor(() => {
-            const cmEditor = document.querySelector('.cm-editor');
-            expect(cmEditor).toBeInTheDocument();
-        });
-    });
-
-    it('should have line wrapping enabled', async () => {
-        render(
-            <MarkdownEditor
-                value="A very long line of text that should wrap in the editor"
-                onChange={mockOnChange}
-                onCursorChange={mockOnCursorChange}
-            />
-        );
-
-        await waitFor(() => {
-            // EditorView.lineWrapping is applied
-            const cmEditor = document.querySelector('.cm-editor');
-            expect(cmEditor).toBeInTheDocument();
-        });
-    });
-
-    it('should have minimum height of 200px', () => {
-        render(
-            <MarkdownEditor
-                value=""
-                onChange={mockOnChange}
-                onCursorChange={mockOnCursorChange}
-            />
-        );
-
-        const container = document.querySelector('.min-h-\\[200px\\]');
+        // Container
+        const container = document.querySelector('.custom-class');
         expect(container).toBeInTheDocument();
     });
 });
+

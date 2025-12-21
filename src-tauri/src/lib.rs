@@ -43,7 +43,9 @@ pub fn run() {
             commands::devlog::get_devlog_mtime,
             commands::devlog::resolve_conflict_reload,
             commands::devlog::append_devlog,
-            commands::devlog::write_devlog
+            commands::devlog::write_devlog,
+            commands::devlog::get_devlog_history,
+            commands::devlog::get_devlog_version
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

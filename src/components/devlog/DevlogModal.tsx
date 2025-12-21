@@ -19,10 +19,12 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { MarkdownEditor } from './MarkdownEditor';
 import { ConflictDialog } from './ConflictDialog';
+import { DevlogHistory } from './DevlogHistory';
 import { useDevlogStore } from '@/stores/devlogStore';
 import { useProjectStore } from '@/stores/projectStore';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import { History, ArrowLeft } from 'lucide-react';
 
 const AUTO_SAVE_INTERVAL = 30000; // 30 seconds
 
@@ -34,9 +36,12 @@ interface DevlogData {
 export function DevlogModal() {
   const isOpen = useDevlogStore((s) => s.isOpen);
   const mode = useDevlogStore((s) => s.mode);
+  const viewMode = useDevlogStore((s) => s.viewMode);
   const activeProjectId = useDevlogStore((s) => s.activeProjectId);
   const activeProjectPath = useDevlogStore((s) => s.activeProjectPath);
   const content = useDevlogStore((s) => s.content);
+  const selectedVersionContent = useDevlogStore((s) => s.selectedVersionContent);
+  const selectedVersionHash = useDevlogStore((s) => s.selectedVersionHash);
 
   const lastKnownMtime = useDevlogStore((s) => s.lastKnownMtime);
   const conflictDetected = useDevlogStore((s) => s.conflictDetected);
@@ -48,6 +53,7 @@ export function DevlogModal() {
 
   const close = useDevlogStore((s) => s.close);
   const setMode = useDevlogStore((s) => s.setMode);
+  const setViewMode = useDevlogStore((s) => s.setViewMode);
   const setActiveProject = useDevlogStore((s) => s.setActiveProject);
   const setContent = useDevlogStore((s) => s.setContent);
 
@@ -84,25 +90,8 @@ export function DevlogModal() {
           projectPath: activeProjectPath,
         });
 
-        // Only update content if not in append mode (append always starts empty)
-        // OR if needed. Wait, in append mode we usually start empty.
-        // But if we want to show existing content? The requirements say:
-        // "existing DEVLOG.md content is loaded when modal opens" (AC 1)
-        // But also "modal editor content is NOT cleared after save" (AC 5)
-
-        // Actually, existing implementation sets content only in EDIT mode.
-        // AC 1 says "loaded when modal opens".
-        // Use case: context for what I wrote before?
-        // But typically Append mode is blank.
-        // Let's stick to: Append = blank (or previous session?), Edit = full file.
-        // Story 4.1 implementation: Append starts blank.
-        // Re-reading AC 1: "existing DEVLOG.md content is loaded when modal opens".
-        // This might imply Edit mode behavior or just loading into store for reference?
-        // AC 5: "append mode... modal editor content is NOT cleared after save".
-
-        // I will follow existing pattern: Append starts empty, Edit loads file.
-        // BUT I must store mtime regardless of mode for conflict detection.
-
+        // In edit mode (initial or switched), load current content
+        // In append mode, we start empty, but we need mtime
         if (mode === 'edit') {
           setContent(data.content);
         }
@@ -134,7 +123,6 @@ export function DevlogModal() {
 
         if (lastKnownMtime !== null && currentMtime !== lastKnownMtime && currentMtime !== 0) {
           // Conflict detected!
-          // Fetch info for preview
           const externalData = await invoke<DevlogData>('resolve_conflict_reload', {
             projectPath: activeProjectPath
           });
@@ -186,17 +174,11 @@ export function DevlogModal() {
       setHasUnsavedChanges(false);
 
       if (mode === 'append') {
-        // NOTE: AC 5 says "modal editor content is NOT cleared after save"
-        // But UX-wise, for "Add Entry", usually you want to clear?
-        // "allows continued writing" implies NOT clearing.
-        // "modal editor content is NOT cleared after save (allows continued writing)"
-        // Okay, I will NOT clear content. 
-        // But user might want to clear manually?
-        // I'll leave it as is per AC.
         toast.success('Entry added to DEVLOG');
       } else {
         toast.success('DEVLOG saved');
       }
+      return true; // Return success
     } catch (error) {
       if (error === 'CONFLICT') {
         // Fetch info and show dialog
@@ -215,6 +197,7 @@ export function DevlogModal() {
         console.error('Failed to save DEVLOG:', error);
         toast.error("Couldn't save DEVLOG. Try again?");
       }
+      return false; // Return failure
     } finally {
       setIsSaving(false);
     }
@@ -222,7 +205,7 @@ export function DevlogModal() {
 
   // Auto-save timer with debounce (reset on every keystroke)
   useEffect(() => {
-    if (!isOpen || !hasUnsavedChanges || conflictDetected) {
+    if (!isOpen || !hasUnsavedChanges || conflictDetected || viewMode !== 'edit') {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
       return;
     }
@@ -236,19 +219,49 @@ export function DevlogModal() {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
-  }, [isOpen, hasUnsavedChanges, conflictDetected, lastKeystrokeTime, save]);
+  }, [isOpen, hasUnsavedChanges, conflictDetected, lastKeystrokeTime, save, viewMode]);
 
+
+  // Handle mode switching logic
+  const handleSwitchToHistory = useCallback(async () => {
+    if (hasUnsavedChanges) {
+      if (!confirm('You have unsaved changes. Discard them to view history?')) {
+        return;
+      }
+      // If proceeding, we might want to reload content when coming back?
+      // Or just let store state persist?
+      // For now, discarding changes means we might lose them if we don't save.
+      // Confirm usually implies risk.
+      // If they say yes, we switch. The changes are still in 'content' in store.
+      // But if we come back to 'edit', 'content' remains.
+      // So actually nothing is "Discarded" unless we actively reset.
+      // To truly discard, we should probably reload from disk when switching back or now.
+      // Let's just switch for now, user context is preserved in store.
+      // Wait, if I switch to history and back, is content preserved? Yes, store holds it.
+      // So existing changes are SAFE unless I overwrite them.
+      // The only risk is if history view somehow modifies `content`. It doesn't.
+      // So maybe no confirmation needed?
+      // But AC says "Unsaved changes... warning".
+      // Let's show warning.
+    }
+    setViewMode('history');
+  }, [hasUnsavedChanges, setViewMode]);
+
+  const handleBack = useCallback(() => {
+    if (viewMode === 'version') {
+      setViewMode('history');
+    } else {
+      setViewMode('edit');
+    }
+  }, [viewMode, setViewMode]);
 
   // Handle modal close
   const handleClose = useCallback(async () => {
-    // Save if there are unsaved changes
-    // Only in append mode? Or both?
-    // "Save if there are unsaved changes in append mode" (from previous code)
-    if (hasUnsavedChanges && content.trim() && mode === 'append' && !conflictDetected) {
+    if (hasUnsavedChanges && content.trim() && mode === 'append' && !conflictDetected && viewMode === 'edit') {
       await save();
     }
     close();
-  }, [hasUnsavedChanges, content, mode, conflictDetected, save, close]);
+  }, [hasUnsavedChanges, content, mode, conflictDetected, save, close, viewMode]);
 
   // Handle project change
   const handleProjectChange = useCallback((projectId: string) => {
@@ -256,8 +269,9 @@ export function DevlogModal() {
     if (project) {
       setActiveProject(project.id, project.path);
       setMode('append');
+      setViewMode('edit');
     }
-  }, [projects, setActiveProject, setMode]);
+  }, [projects, setActiveProject, setMode, setViewMode]);
 
   // Conflict resolution handlers
   const handleReload = useCallback(async () => {
@@ -288,12 +302,40 @@ export function DevlogModal() {
 
   const handleCancelConflict = useCallback(() => {
     setConflictDialogOpen(false);
-    // ConflictDetected remains true (paused state)
-    // Or should it?
-    // "ConflictDialog blocks all save operations until resolved"
-    // "Cancel -> Close dialog, pause auto-save, keep modal open"
-    // So conflictDetected = true.
   }, [setConflictDialogOpen]);
+
+  // Render logic based on viewMode
+  const renderContent = () => {
+    if (viewMode === 'history') {
+      return <DevlogHistory className="h-full" />;
+    }
+    if (viewMode === 'version') {
+      return (
+        <MarkdownEditor
+          value={selectedVersionContent || ''}
+          onChange={() => { }} // Read only
+          readOnly={true}
+          className="h-full min-h-[300px]"
+        />
+      );
+    }
+    // Edit mode
+    return (
+      <MarkdownEditor
+        value={content}
+        onChange={handleContentChange}
+        onSave={() => save()}
+        placeholder={mode === 'append' ? 'What are you working on?' : ''}
+        className="h-full min-h-[300px]"
+      />
+    );
+  };
+
+  const getTitle = () => {
+    if (viewMode === 'history') return 'DEVLOG History';
+    if (viewMode === 'version') return `Version: ${selectedVersionHash?.substring(0, 7) || 'Unknown'}`;
+    return 'DEVLOG Editor';
+  };
 
   // No projects message
   if (isOpen && nonArchivedProjects.length === 0) {
@@ -324,93 +366,111 @@ export function DevlogModal() {
               Editor for writing and managing development logs
             </DialogDescription>
             <div className="flex items-center justify-between gap-4 pr-8">
-              <DialogTitle className="font-serif">DEVLOG Editor</DialogTitle>
+              <div className="flex items-center gap-3">
+                {viewMode !== 'edit' && (
+                  <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                )}
+                <DialogTitle className="font-serif">{getTitle()}</DialogTitle>
+              </div>
 
               <div className="flex items-center gap-4">
-                {/* Project selector */}
-                <Select
-                  value={activeProjectId?.toString() ?? ''}
-                  onValueChange={handleProjectChange}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select project" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[102]">
-                    {nonArchivedProjects.map((project) => (
-                      <SelectItem key={project.id} value={project.id.toString()}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {viewMode === 'edit' && (
+                  <>
+                    <Select
+                      value={activeProjectId?.toString() ?? ''}
+                      onValueChange={handleProjectChange}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select project" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[102]">
+                        {nonArchivedProjects.map((project) => (
+                          <SelectItem key={project.id} value={project.id.toString()}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
-                {/* Edit mode toggle */}
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="edit-mode"
-                    checked={mode === 'edit'}
-                    onCheckedChange={(checked) => {
-                      // Warn if unsaved
-                      if (mode === 'edit' && !checked && hasUnsavedChanges) {
-                        if (!confirm('Discard unsaved changes?')) return;
-                      }
-                      setMode(checked ? 'edit' : 'append');
-                      if (!checked) setContent(''); // Clear on append
-                    }}
-                  />
-                  <Label htmlFor="edit-mode" className="text-sm">
-                    Edit Mode
-                  </Label>
-                </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="edit-mode"
+                        checked={mode === 'edit'}
+                        onCheckedChange={(checked) => {
+                          if (mode === 'edit' && !checked && hasUnsavedChanges) {
+                            if (!confirm('Discard unsaved changes?')) return;
+                          }
+                          setMode(checked ? 'edit' : 'append');
+                          if (!checked) setContent('');
+                        }}
+                      />
+                      <Label htmlFor="edit-mode" className="text-sm">
+                        Edit Mode
+                      </Label>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleSwitchToHistory}
+                      title="View History"
+                      className="h-8 w-8"
+                    >
+                      <History className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground">
-              {mode === 'append'
-                ? 'Quick Capture: Type your thoughts and they\'ll be timestamped and appended.'
-                : 'Edit Mode: Full access to your DEVLOG file.'}
-            </p>
+            {viewMode === 'edit' && (
+              <p className="text-xs text-muted-foreground">
+                {mode === 'append'
+                  ? 'Quick Capture: Type your thoughts and they\'ll be timestamped and appended.'
+                  : 'Edit Mode: Full access to your DEVLOG file.'}
+              </p>
+            )}
           </DialogHeader>
 
           <div className="min-h-0 flex-1 overflow-hidden">
-            <MarkdownEditor
-              value={content}
-              onChange={handleContentChange}
-              placeholder={mode === 'append' ? 'What are you working on?' : ''}
-              className="h-full min-h-[300px]"
-            />
+            {renderContent()}
           </div>
 
           <div className="flex flex-shrink-0 items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-3">
-              {/* Status Indicators */}
-              {conflictDetected ? (
-                <span className="flex items-center gap-1 text-red-600 font-medium">
-                  ⚠️ Auto-save paused (Conflict)
-                </span>
-              ) : hasUnsavedChanges ? (
-                <span className="text-amber-600">• Unsaved</span>
-              ) : (
-                <span className="text-green-600">• Saved</span>
-              )}
+              {viewMode === 'edit' && (
+                <>
+                  {conflictDetected ? (
+                    <span className="flex items-center gap-1 text-red-600 font-medium">
+                      ⚠️ Auto-save paused (Conflict)
+                    </span>
+                  ) : hasUnsavedChanges ? (
+                    <span className="text-amber-600">• Unsaved</span>
+                  ) : (
+                    <span className="text-green-600">• Saved</span>
+                  )}
 
-              {/* Last saved timestamp */}
-              {lastSavedTimestamp && (
-                <span className="opacity-75">
-                  · {formatDistanceToNow(lastSavedTimestamp, { addSuffix: true })}
-                </span>
+                  {lastSavedTimestamp && (
+                    <span className="opacity-75">
+                      · {formatDistanceToNow(lastSavedTimestamp, { addSuffix: true })}
+                    </span>
+                  )}
+                </>
               )}
             </div>
 
-            {/* Save button */}
-            <Button
-              size="sm"
-              onClick={() => save()}
-              disabled={!content.trim() || isSaving || conflictDetected}
-              className="bg-[#CC785C] hover:bg-[#b86a50]"
-            >
-              {isSaving ? 'Saving...' : mode === 'append' ? 'Add Entry' : 'Save'}
-            </Button>
+            {viewMode === 'edit' && (
+              <Button
+                size="sm"
+                onClick={() => save()}
+                disabled={!content.trim() || isSaving || conflictDetected}
+                className="bg-[#CC785C] hover:bg-[#b86a50]"
+              >
+                {isSaving ? 'Saving...' : mode === 'append' ? 'Add Entry' : 'Save'}
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
