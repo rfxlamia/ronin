@@ -11,11 +11,6 @@ interface CursorPosition {
 }
 
 interface MarkdownEditorProps {
-  content: string; // Renamed from value to match store naming convention usually, but kept as value in previous. Let's stick to 'value' or 'content'. Story said 'content' in plan. Previous file had 'value'. I will use 'value' to match previous file but map it if needed. Actually plan said 'content'. Usage in other files might depend on 'value'. Checking usage... I'll support 'value' aliased as content or just change usage.
-  // Wait, I am replacing the file. I should probably use 'value' if that's what was there, OR update callsites. 
-  // Previous file used 'value'. 
-  // Plan said "Component Updates - MarkdownEditor.tsx".
-  // I will use `value` to avoid breaking changes in other places if possible, generally better.
   value: string;
   onChange: (value: string) => void;
   onCursorChange?: (position: CursorPosition) => void;
@@ -210,7 +205,7 @@ export function MarkdownEditor({
   }, [value]);
 
   return (
-    <div className={cn("flex flex-col h-full relative min-h-[200px]", className)}>
+    <div className={cn("flex flex-col h-full relative min-h-0", className)}>
       {readOnly && (
         <div className="w-full bg-[#828179]/20 text-[#141413] dark:text-[#F0EFEA] p-2 text-sm flex items-center gap-2 border-b border-[#CC785C]/20">
           <svg
@@ -233,7 +228,7 @@ export function MarkdownEditor({
       )}
       <div
         ref={editorRef}
-        className="flex-1 overflow-hidden bg-transparent"
+        className="flex-1 overflow-auto bg-transparent"
       />
     </div>
   );

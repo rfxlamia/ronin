@@ -74,6 +74,26 @@ describe('devlogStore', () => {
     expect(state.hasUnsavedChanges).toBe(true);
   });
 
+  it('should NOT mark as unsaved when content is empty or whitespace', () => {
+    const { setContent } = useDevlogStore.getState();
+
+    // Empty string - should NOT mark as unsaved
+    setContent('');
+    expect(useDevlogStore.getState().hasUnsavedChanges).toBe(false);
+
+    // Whitespace only - should NOT mark as unsaved
+    setContent('   ');
+    expect(useDevlogStore.getState().hasUnsavedChanges).toBe(false);
+
+    // Newlines only - should NOT mark as unsaved
+    setContent('\n\n');
+    expect(useDevlogStore.getState().hasUnsavedChanges).toBe(false);
+
+    // Actual content - should mark as unsaved
+    setContent('Hello');
+    expect(useDevlogStore.getState().hasUnsavedChanges).toBe(true);
+  });
+
   it('should set active project and reset content', () => {
     const { open, setContent, setActiveProject } = useDevlogStore.getState();
 
