@@ -76,11 +76,11 @@ development_status:
   4-3-devlog-history-view: done
   epic-4-retrospective: done
 
-  epic-4.25: in-progress
+  epic-4.25: done
   4.25-1-unified-api-client-vercel-sdk: done
   4.25-2-aws-lambda-demo-mode-proxy: done
   4.25-3-provider-settings-ui-multi-key-storage: done
-  epic-4.25-retrospective: optional
+  epic-4.25-retrospective: done
 
   epic-4.5: backlog
   4.5-1-reasoning-foundation-schemas-store: backlog
