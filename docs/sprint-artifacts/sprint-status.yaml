@@ -34,7 +34,7 @@
 # - SM typically drafts next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
-generated: 2025-12-18
+generated: 2025-12-22
 project: ronin
 project_key: ronin
 tracking_system: file-system
@@ -70,11 +70,24 @@ development_status:
   3-7-devlog-analysis-for-ai-context: done
   epic-3-retrospective: done
 
-  epic-4: in-progress
+  epic-4: done
   4-1-devlog-editor-component: done
   4-2-file-sync-with-repository: done
   4-3-devlog-history-view: done
-  epic-4-retrospective: optional
+  epic-4-retrospective: done
+
+  epic-4.25: in-progress
+  4.25-1-unified-api-client-vercel-sdk: drafted
+  4.25-2-aws-lambda-demo-mode-proxy: backlog
+  4.25-3-provider-settings-ui-multi-key-storage: backlog
+  epic-4.25-retrospective: optional
+
+  epic-4.5: backlog
+  4.5-1-reasoning-foundation-schemas-store: backlog
+  4.5-2-agent-route-thinking-ui: backlog
+  4.5-3-project-resurrection-protocol: backlog
+  4.5-4-persona-migration-architect-dev: backlog
+  epic-4.5-retrospective: optional
 
   epic-5: backlog
   5-1-git-status-display: backlog

@@ -1046,6 +1046,306 @@ So that **I can review my past context and thoughts without leaving the editor**
 
 ---
 
+## Epic 4.25: Multi-Provider API Support + AWS Lambda Demo Mode
+
+**Goal:** Enable Ronin to work with multiple AI providers (OpenAI, Anthropic, Groq) and offer a demo mode for users without API keys.
+
+**User Outcome:** Users can use their existing API keys from any major provider, or try Ronin without any setup via demo mode.
+
+**Why This Epic:**
+- **Distribution Blocker:** Ronin currently only supports OpenRouter, limiting adoption for users with existing Anthropic/OpenAI/Groq keys
+- **User Friction:** Users must create OpenRouter account and add credits before using Ronin
+- **Differentiation:** Demo mode (AWS Lambda with V's key) lowers barrier to entry for first-time users
+
+**FRs covered:** FR42 (extended for multi-provider), FR14 (graceful degradation)
+
+**NFRs addressed:**
+- NFR11: API key storage - encrypted locally for multiple providers
+- NFR18: Graceful degradation - works with any single provider configured
+
+**Key Deliverables:**
+- Unified API client using Vercel AI SDK Core
+- Direct API clients for OpenAI, Anthropic, Groq
+- Provider selection in Settings UI
+- AWS Lambda serverless proxy for demo mode (rate-limited)
+- Multi-key storage (encrypted, per-provider)
+
+**Technical Research Source:** [technical-epic-4.25-multi-provider-api-research-2025-12-22.md](file:///home/v/project/ronin/docs/analysis/research/technical-epic-4.25-multi-provider-api-research-2025-12-22.md)
+
+---
+
+### Story 4.25.1: Unified API Client with Vercel AI SDK ✅ DRAFTED
+
+**Dependencies:** Epic 4 complete (DEVLOG editor functional)
+**Integration Checkpoint:** After completion, validate that context generation works with OpenAI and Anthropic API keys before starting Story 4.25.2
+**Story File:** [4.25-1-unified-api-client-vercel-sdk.md](file:///home/v/project/ronin/docs/sprint-artifacts/4.25-1-unified-api-client-vercel-sdk.md)
+
+As a **developer with an existing OpenAI or Anthropic API key**,
+I want **to use my existing API key directly in Ronin**,
+So that **I don't need to create an OpenRouter account or add credits**.
+
+**Acceptance Criteria:**
+
+**Given** the user has an OpenAI, Anthropic, or Groq API key
+**When** configuring API settings in Ronin
+**Then** the user can:
+- Select provider from dropdown (OpenRouter, OpenAI, Anthropic, Groq)
+- Enter their API key for the selected provider
+- API key is stored encrypted per-provider (AES-256-GCM)
+**And** context generation uses the Vercel AI SDK `streamText` interface
+**And** all providers use consistent streaming response format
+**And** existing OpenRouter integration continues to work (backward compatible)
+**And** error handling differentiates between providers (rate limits, auth errors)
+
+**Technical Notes:**
+- Install: `ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic` packages
+- Create `src/lib/ai/client.ts` with factory pattern for provider selection
+- Migrate existing OpenRouter `fetch` calls to Vercel AI SDK
+- Store selected provider in SQLite settings table
+- Groq uses OpenAI SDK (fully compatible format)
+- Vercel AI SDK standardizes error handling (retries, timeouts)
+
+---
+
+### Story 4.25.2: AWS Lambda Demo Mode Proxy
+
+**Dependencies:** Story 4.25.1 (unified client must work with direct API keys first)
+**Integration Checkpoint:** After completion, validate demo mode works end-to-end with rate limiting before starting Story 4.25.3
+
+As a **first-time user without any API key**,
+I want **to try Ronin's AI features without setup**,
+So that **I can experience the value before committing to an API subscription**.
+
+**Acceptance Criteria:**
+
+**Given** the user has no API key configured
+**When** using AI context features
+**Then** the "Demo Mode" option is available in provider selection
+**And** demo mode routes requests through AWS Lambda proxy
+**And** Lambda proxy uses V's master API key (server-side, never exposed)
+**And** rate limiting enforces fair usage:
+  - Max 10 requests per hour per user
+  - Max 4000 tokens per request
+  - Clear messaging when limit reached
+**And** demo mode clearly labeled in UI: "Demo Mode (limited)"
+**And** prompt to upgrade: "For unlimited use, add your own API key"
+
+**Technical Notes:**
+- AWS SAM project in `serverless/demo-proxy` folder
+- Lambda Function URL (not API Gateway) for simplicity and cost
+- Use `awslambda.streamifyResponse()` for true streaming
+- Store master API key in AWS Systems Manager Parameter Store
+- Rate limiting via client fingerprint (hashed IP + user-agent)
+- CORS configured for Ronin desktop app
+- Cold start optimization: esbuild bundling, <1MB package
+
+---
+
+### Story 4.25.3: Provider Settings UI & Multi-Key Storage
+
+**Dependencies:** Story 4.25.1 and 4.25.2 (both client and demo mode working)
+**Integration Checkpoint:** After completion, validate full Epic 4.25 workflow: select provider → enter key → test connection → switch providers → demo mode fallback
+
+As a **user managing multiple AI providers**,
+I want **a clear settings interface for provider selection and key management**,
+So that **I can easily switch between providers or use demo mode**.
+
+**Acceptance Criteria:**
+
+**Given** the user opens Settings → AI Provider
+**When** viewing the provider settings
+**Then** the interface shows:
+- Provider dropdown: OpenRouter | OpenAI | Anthropic | Groq | Demo Mode
+- API key input field (password masked, with show/hide toggle)
+- "Test Connection" button for validation
+- Connection status indicator (✓ Connected / ✗ Failed / ⚠ Demo Mode)
+- Per-provider key storage (can have multiple keys saved)
+**And** switching providers instantly applies (no restart)
+**And** demo mode shows usage stats: "X/10 requests remaining this hour"
+**And** "Add your own key" link navigates to provider signup pages
+**And** all keys encrypted with AES-256-GCM (existing security pattern)
+
+**Technical Notes:**
+- Extend existing `settingsStore.ts` for multi-provider state
+- New Rust commands: `get_api_keys`, `set_api_key`, `test_provider_connection`
+- Store keys in SQLite: `api_keys` table (provider, encrypted_key, created_at)
+- Provider selection stored in settings: `ai_provider` key
+- Demo mode usage tracked locally (hourly reset)
+- Deep links: openai.com, console.anthropic.com, console.groq.com
+
+---
+
+## Epic 4.5: Reasoning Infrastructure & Agent Personas
+
+**Goal:** Enable "Ronin-Thinking" mode - a multi-step, agentic AI that can analyze projects deeply, follow reasoning protocols, and provide structured guidance.
+
+**User Outcome:** Users can switch between "Ronin-Flash" (quick context) and "Ronin-Thinking" (deep analysis with visible thought process) modes, with the agent showing its work as it reasons through complex problems.
+
+**Why This Epic:**
+- **Deep Context Recovery:** "Project Resurrection" - help users recover mental context for projects untouched for weeks/months
+- **Differentiation:** Visible reasoning process ("Reading package.json...", "Analyzing tests...") builds trust
+- **Free by Default:** Uses free models (MiMo-V2-Flash 309B MoE) that are sufficiently powerful for reasoning loops
+
+**FRs covered:** FR9-10 (enhanced), FR65-68 (behavioral inference foundation)
+
+**NFRs addressed:**
+- NFR1: Deep context generation <30s (multi-step reasoning)
+- NFR29: Context payload optimized per reasoning step
+
+**Key Deliverables:**
+- Dedicated `/agent/:projectId` route for deep analysis
+- AgentPersona and ReasoningProtocol TypeScript schemas
+- Vercel AI SDK integration with `maxSteps` for agentic loops
+- ThinkingIndicator and ProtocolViewer UI components
+- "Project Resurrection" protocol for dormant project analysis
+- Persona migration (Architect, Dev from _bmad format)
+
+**Technical Research Source:** [technical-epic-4.5-reasoning-infrastructure-research-2025-12-22.md](file:///home/v/project/ronin/docs/analysis/research/technical-epic-4.5-reasoning-infrastructure-research-2025-12-22.md)
+
+---
+
+### Story 4.5.1: Reasoning Foundation (Schemas & Store)
+
+**Dependencies:** Epic 4.25 complete (Unified API Client working)
+**Integration Checkpoint:** After completion, validate persona loading and reasoning store state management before starting Story 4.5.2
+
+As a **developer**,
+I want **TypeScript schemas for agent personas and reasoning protocols**,
+So that **the reasoning infrastructure has a solid, type-safe foundation**.
+
+**Acceptance Criteria:**
+
+**Given** the reasoning infrastructure is being built
+**When** implementing the foundation layer
+**Then** the following are implemented:
+- `AgentPersona` TypeScript interface with:
+  - id, name, role, color, icon
+  - systemPrompt: { identity, tone, principles[] }
+  - capabilities: { canUseInternet, canReadFiles, canExecuteCommands }
+  - availableProtocols: string[]
+- `ReasoningProtocol` TypeScript interface with:
+  - id, title, description
+  - contextFiles: string[]
+  - steps: ProtocolStep[]
+- `ProtocolStep` interface with: id, title, instruction, instructionFile?, requiredOutput
+**And** `useReasoningStore` Zustand store tracks:
+  - activePersona (default: "ronin-flash")
+  - activeProtocol (null when not running)
+  - currentStepId, stepHistory
+**And** UnifiedClient (from Epic 4.25) extended with `maxSteps` support
+**And** Default model for Thinking mode: `xiaomi/mimo-v2-flash:free`
+
+**Technical Notes:**
+- Schemas in `src/lib/ai/schemas.ts`
+- Store in `src/stores/reasoningStore.ts`
+- Extend `src/lib/ai/client.ts` with maxSteps configuration
+- Use localStorage for persona selection persistence (SQLite later)
+
+---
+
+### Story 4.5.2: Agent Route & Thinking UI
+
+**Dependencies:** Story 4.5.1 (schemas and store must exist)
+**Integration Checkpoint:** After completion, validate route navigation, persona switching, and thinking indicator display before starting Story 4.5.3
+
+As a **user exploring a dormant project**,
+I want **a dedicated agent view that shows the AI's thinking process**,
+So that **I can see what the agent is analyzing and trust its reasoning**.
+
+**Acceptance Criteria:**
+
+**Given** the user clicks a project card "Deep Analysis" button
+**When** the `/agent/:projectId` route opens
+**Then** the interface shows:
+- Left panel: Chat interface with message history
+- Right panel: ProtocolViewer showing current plan/steps (if protocol active)
+- Top bar: PersonaSelector dropdown (Ronin-Flash / Ronin-Thinking)
+- ThinkingIndicator component shows real-time tool usage:
+  - "📖 Reading package.json..."
+  - "🔍 Analyzing git history..."
+  - "📝 Synthesizing context..."
+**And** state persists when navigating away and back
+**And** route is accessible via Dashboard project card expand
+**And** keyboard shortcut: `Ctrl+Shift+A` opens agent for selected project
+
+**Technical Notes:**
+- Route: `src/pages/Agent.tsx`
+- Components: `ThinkingIndicator`, `ProtocolViewer`, `PersonaSelector`
+- Leverage Vercel AI SDK `tool-call` streaming chunks for indicator
+- Use React Router for `/agent/:projectId` routing
+- State preserved in reasoningStore (not lost on navigation)
+
+---
+
+### Story 4.5.3: Project Resurrection Protocol
+
+**Dependencies:** Story 4.5.2 (Agent route and UI must work)
+**Integration Checkpoint:** After completion, validate full "Project Resurrection" workflow: open agent → trigger protocol → view analysis → receive synthesis
+
+As a **developer returning to a dormant project**,
+I want **the agent to automatically analyze my project and synthesize a status report**,
+So that **I quickly understand where I left off and what needs attention**.
+
+**Acceptance Criteria:**
+
+**Given** the user opens the Agent view for a dormant project
+**When** clicking "Analyze Project" or automatic trigger on first load
+**Then** the agent executes "Project Resurrection" protocol:
+1. Maps project structure (`list_dir` tool)
+2. Reads key files: package.json, README.md, DEVLOG.md
+3. Analyzes git history (last 20 commits, uncommitted changes)
+4. Identifies: tech stack, recent activity areas, potential blockers
+5. Synthesizes "Deep Status Report" with actionable next steps
+**And** each step is visible in ThinkingIndicator
+**And** final report is displayed in chat with:
+  - "Last Active Area" (e.g., "Refactoring auth module")
+  - "Current State" (e.g., "Tests failing in 3 files")
+  - "Suggested Next Steps" (prioritized actions)
+  - "Based on:" attribution list
+**And** protocol runs in <30 seconds for typical projects
+
+**Technical Notes:**
+- Protocol definition in `src/lib/ai/protocols/project-resurrection.json`
+- MVP Tools (Safe Mode - read only):
+  - `read_file`, `list_dir`, `git_status`, `git_log`
+- `write_file` restricted to `docs/` folder only (drafts)
+- `run_command` disabled for MVP
+- Target model: `mimo-v2-flash` with `maxSteps: 10`
+
+---
+
+### Story 4.5.4: Persona Migration (Architect & Dev)
+
+**Dependencies:** Story 4.5.1 (schemas) + 4.5.3 (protocol execution working)
+**Integration Checkpoint:** After completion, validate full Epic 4.5 workflow: persona selection → protocol execution → specialized behavior
+
+As a **developer wanting structured guidance**,
+I want **Architect and Developer personas available for specialized assistance**,
+So that **I can get role-specific advice and workflows**.
+
+**Acceptance Criteria:**
+
+**Given** the reasoning infrastructure is working
+**When** migrating _bmad personas to Ronin format
+**Then** the following personas are available in PersonaSelector:
+- **Ronin-Flash** (default): Quick context, single-shot responses
+- **Ronin-Thinking**: Multi-step reasoning with visible thought process
+- **Architect (Winston)**: Technical architecture focus, "boring tech" principle
+- **Developer (Charlie)**: Code-focused, TDD advocate, practical implementation
+**And** each persona injects appropriate systemPrompt from schema
+**And** Architect has access to "create-architecture" protocol
+**And** Developer has access to "implement-story" protocol
+**And** switching personas clears active protocol but preserves chat history
+
+**Technical Notes:**
+- Manual migration of `_bmad/bmm/agents/architect.md` → `personas/architect.json`
+- Manual migration of `_bmad/bmm/agents/dev.md` → `personas/dev.json`
+- Parse XML `<role>`, `<principles>` → JSON systemPrompt
+- `<menu>` items → availableProtocols array
+- Future: automated migration script
+
+---
+
 ## Epic 5: Git Operations
 
 ### Story 5.1: Git Status Display
