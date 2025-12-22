@@ -34,6 +34,7 @@ pub fn run() {
             commands::settings::set_default_provider,
             commands::settings::save_provider_api_key,
             commands::settings::get_provider_api_key,
+            commands::settings::test_provider_connection,
             commands::git::get_git_history,
             commands::git::get_git_branch,
             commands::git::get_git_status,

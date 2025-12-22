@@ -1,33 +1,24 @@
 /**
  * Demo Rate Limit Error Component
  * Story 4.25-2: AWS Lambda Demo Mode Proxy
+ * Story 4.25-3: Provider Settings UI & Multi-Key Storage
  *
  * Shows empathetic message when demo mode rate limit is reached
+ * Philosophy: 仁 (Jin) - Empathetic errors
  */
 
 import { Clock, Key } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useCountdown } from '@/hooks/useCountdown';
 
 interface DemoRateLimitErrorProps {
     retryAfter: number; // seconds
     onAddApiKey?: () => void;
+    onDismiss?: () => void;
 }
 
-export function DemoRateLimitError({ retryAfter, onAddApiKey }: DemoRateLimitErrorProps) {
-    const [timeRemaining, setTimeRemaining] = useState(retryAfter);
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeRemaining((prev) => Math.max(0, prev - 1));
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, []);
-
-    const minutes = Math.floor(timeRemaining / 60);
-    const seconds = timeRemaining % 60;
-    const progress = Math.max(0, 100 - (timeRemaining / retryAfter) * 100);
+export function DemoRateLimitError({ retryAfter, onAddApiKey, onDismiss }: DemoRateLimitErrorProps) {
+    const { minutes, seconds, progress } = useCountdown(retryAfter);
 
     return (
         <div className="flex flex-col items-center gap-4 p-6 text-center">
@@ -63,7 +54,7 @@ export function DemoRateLimitError({ retryAfter, onAddApiKey }: DemoRateLimitErr
                         <Key className="w-4 h-4 mr-2" />
                         Add API Key
                     </Button>
-                    <Button variant="ghost" className="text-ronin-text-secondary">
+                    <Button variant="ghost" className="text-ronin-text-secondary" onClick={onDismiss}>
                         Maybe Later
                     </Button>
                 </div>

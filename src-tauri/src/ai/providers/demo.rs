@@ -220,42 +220,6 @@ impl AiProvider for DemoProvider {
 
         Ok(Box::pin(stream))
     }
-
-    async fn test_connection(&self) -> Result<(), AiError> {
-        // Simple health check - just verify Lambda URL is reachable
-        let response = self
-            .client
-            .post(&self.lambda_url)
-            .header("Content-Type", "application/json")
-            .header("X-Client-Fingerprint", &self.fingerprint)
-            .json(&serde_json::json!({
-                "messages": [{"role": "user", "content": "test"}]
-            }))
-            .timeout(Duration::from_secs(10))
-            .send()
-            .await
-            .map_err(|_| AiError::Network {
-                message: "Couldn't reach demo service".to_string(),
-            })?;
-
-        match response.status().as_u16() {
-            200 => Ok(()),
-            429 => Err(AiError::RateLimit {
-                message: "Rate limited".to_string(),
-                retry_after: 30,
-            }),
-            400..=499 => Err(AiError::Config {
-                message: "Demo service configuration error".to_string(),
-            }),
-            500..=599 => Err(AiError::Server {
-                message: "Demo service unavailable".to_string(),
-                status: response.status().as_u16(),
-            }),
-            _ => Err(AiError::Network {
-                message: "Unexpected error".to_string(),
-            }),
-        }
-    }
 }
 
 #[cfg(test)]
@@ -292,7 +256,8 @@ mod tests {
 
     #[test]
     fn test_parse_rate_limit_error() {
-        let json = r#"{"retryAfter": 1800, "message": "Demo mode resting. Try again in 30 minutes."}"#;
+        let json =
+            r#"{"retryAfter": 1800, "message": "Demo mode resting. Try again in 30 minutes."}"#;
         let error = DemoProvider::parse_rate_limit_error(json);
 
         assert!(error.is_some());

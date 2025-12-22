@@ -14,12 +14,16 @@ pub struct Attribution {
     pub devlog_lines: Option<usize>,
 }
 
+// DEPRECATED: Old implementation, kept for backward compatibility during migration
+// TODO: Remove in Story 4.26 (Provider Migration Cleanup)
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
     pub role: String,
     pub content: String,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize)]
 pub struct ChatRequest {
     pub model: String,
@@ -27,11 +31,14 @@ pub struct ChatRequest {
     pub stream: bool,
 }
 
+#[allow(dead_code)]
 pub struct OpenRouterClient {
     api_key: String,
     client: reqwest::Client,
 }
 
+// DEPRECATED: Old implementation methods
+#[allow(dead_code)]
 impl OpenRouterClient {
     pub fn new(api_key: String) -> Self {
         Self {
@@ -215,9 +222,14 @@ impl OpenRouterClient {
         }
 
         // All models failed - emit the classified error
-        window.emit("ai-error", serde_json::json!({
-            "message": last_error.clone()
-        })).map_err(|e| e.to_string())?;
+        window
+            .emit(
+                "ai-error",
+                serde_json::json!({
+                    "message": last_error.clone()
+                }),
+            )
+            .map_err(|e| e.to_string())?;
 
         Err(last_error)
     }

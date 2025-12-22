@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Ronin Demo Mode Proxy - Serverless AI Gateway with Rate Limiting
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs20.x
+    Environment:
+      Variables:
+        NODE_ENV: production
+
+Parameters:
+  OpenRouterApiKeyParam:
+    Type: String
+    Default: /ronin/demo/openrouter-api-key
+    Description: SSM parameter name for OpenRouter API key
+
+  AllowedOrigins:
+    Type: String
+    Default: tauri://localhost,https://tauri.localhost
+    Description: Comma-separated list of allowed CORS origins
+
+Resources:
+  # Lambda Function with streaming support
+  DemoProxyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: index.handler
+      Description: Ronin Demo Mode Proxy - Streams AI responses with rate limiting
+      Architectures:
+        - arm64  # Graviton2 for better cost/performance
+      Environment:
+        Variables:
+          OPENROUTER_API_KEY_PARAM: !Ref OpenRouterApiKeyParam
+          DYNAMODB_TABLE: !Ref RateLimitTable
+          ALLOWED_ORIGINS: !Ref AllowedOrigins
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: !Ref OpenRouterApiKeyParam
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RateLimitTable
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+        Cors:
+          AllowOrigins:
+            - tauri://localhost
+            - https://tauri.localhost
+          AllowMethods:
+            - POST
+            - OPTIONS
+          AllowHeaders:
+            - Content-Type
+            - X-Client-Fingerprint
+          MaxAge: 300
+      Tags:
+        Project: Ronin
+        Component: DemoMode
+
+  # DynamoDB table for rate limiting
+  RateLimitTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ronin-demo-rate-limits
+      BillingMode: PAY_PER_REQUEST  # On-demand scaling
+      AttributeDefinitions:
+        - AttributeName: fingerprint
+          AttributeType: S
+        - AttributeName: window
+          AttributeType: S
+      KeySchema:
+        - AttributeName: fingerprint
+          KeyType: HASH
+        - AttributeName: window
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Project
+          Value: Ronin
+        - Key: Component
+          Value: DemoMode
+
+  # CloudWatch Log Group with retention
+  DemoProxyLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${DemoProxyFunction}
+      RetentionInDays: 7
+
+  # CloudWatch Alarm for Lambda errors
+  DemoProxyErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: ronin-demo-proxy-errors
+      AlarmDescription: Alert on Lambda function errors
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300  # 5 minutes
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref DemoProxyFunction
+
+  # CloudWatch Alarm for Lambda throttles
+  DemoProxyThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: ronin-demo-proxy-throttles
+      AlarmDescription: Alert on Lambda function throttles
+      MetricName: Throttles
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref DemoProxyFunction
+
+Outputs:
+  DemoProxyFunctionUrl:
+    Description: Lambda Function URL for Ronin Demo Mode
+    Value: !GetAtt DemoProxyFunctionUrl.FunctionUrl
+    Export:
+      Name: RoninDemoProxyUrl
+
+  RateLimitTableName:
+    Description: DynamoDB table for rate limiting
+    Value: !Ref RateLimitTable
+    Export:
+      Name: RoninDemoRateLimitTable
+
+  DemoProxyFunctionArn:
+    Description: Lambda function ARN
+    Value: !GetAtt DemoProxyFunction.Arn
+    Export:
+      Name: RoninDemoProxyFunctionArn

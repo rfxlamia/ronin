@@ -20,7 +20,7 @@ pub struct ContextPayload {
 pub struct ProviderInfo {
     pub id: String,
     pub name: String,
-    pub is_configured: bool,  // Has API key
+    pub is_configured: bool, // Has API key
     pub is_default: bool,
 }
 
@@ -113,11 +113,6 @@ pub trait AiProvider: Send + Sync {
         &self,
         payload: ContextPayload,
     ) -> Result<Pin<Box<dyn Stream<Item = String> + Send>>, AiError>;
-
-    /// Test provider connection (optional, default returns Ok)
-    async fn test_connection(&self) -> Result<(), AiError> {
-        Ok(())
-    }
 }
 
 #[cfg(test)]
@@ -130,7 +125,10 @@ mod tests {
             message: "Invalid API key".to_string(),
             status: 401,
         };
-        assert_eq!(error.user_message(), "API key invalid. Check your settings.");
+        assert_eq!(
+            error.user_message(),
+            "API key invalid. Check your settings."
+        );
         assert!(!error.is_retryable());
     }
 

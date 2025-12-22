@@ -2,11 +2,12 @@
 use crate::ai::context::{
     build_git_context, build_system_prompt, enforce_token_budget, validate_payload_size,
 };
-use crate::ai::openrouter::{Attribution, Message, OpenRouterClient};
+use crate::ai::openrouter::Attribution;
 use crate::ai::provider::{AiProvider, ContextPayload};
 use crate::ai::providers::{DemoProvider, OpenRouterProvider};
 use crate::commands::git::get_git_context;
-use crate::commands::settings::get_provider_api_key;
+// Note: get_provider_api_key is called directly from db, not via command
+// since we need to pass reveal=true internally
 use crate::context::devlog::read_devlog;
 use crate::security::{decrypt_api_key, encrypt_api_key};
 use base64::{engine::general_purpose, Engine as _};
@@ -234,8 +235,25 @@ pub async fn generate_context(
     let api_key = if default_provider == "demo" {
         None
     } else {
-        match get_provider_api_key(default_provider.clone(), pool.clone()).await? {
-            Some(key) => Some(key),
+        // Get decrypted key directly from database (internal use with reveal=true)
+        let setting_key = format!("api_key_{}", default_provider);
+        let encoded: Option<String> = conn
+            .query_row(
+                "SELECT value FROM settings WHERE key = ?1",
+                rusqlite::params![setting_key],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(|e| format!("Failed to query encrypted key: {}", e))?;
+
+        match encoded {
+            Some(enc) => {
+                let encrypted = general_purpose::STANDARD
+                    .decode(&enc)
+                    .map_err(|e| format!("Failed to decode base64: {}", e))?;
+                let decrypted = decrypt_api_key(&encrypted)?;
+                Some(decrypted)
+            }
             None => {
                 let error_msg = "APIERROR:0:API key not configured".to_string();
                 window

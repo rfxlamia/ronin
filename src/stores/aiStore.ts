@@ -22,6 +22,11 @@ interface AiStore {
   demoQuota: DemoQuota | null;
   upgradePromptDismissed: boolean;
 
+  // Settings state (Story 4.25-3)
+  apiKeyStatus: Record<string, string | null>; // providerId -> masked key or null
+  connectionStatus: Record<string, 'idle' | 'testing' | 'connected' | 'error'>;
+  connectionError: Record<string, string | null>;
+
   // Actions
   loadProviders: () => Promise<void>;
   setDefaultProvider: (id: string) => Promise<void>;
@@ -31,6 +36,10 @@ interface AiStore {
   // Demo mode actions (Story 4.25-2)
   updateDemoQuota: (headers: Headers) => void;
   dismissUpgradePrompt: () => void;
+
+  // Settings actions (Story 4.25-3)
+  getApiKeyStatus: (providerId: string) => Promise<string | null>;
+  testConnection: (providerId: string) => Promise<boolean>;
 }
 
 export const useAiStore = create<AiStore>((set, get) => ({
@@ -42,6 +51,11 @@ export const useAiStore = create<AiStore>((set, get) => ({
   demoQuota: null,
   upgradePromptDismissed:
     localStorage.getItem('demo-upgrade-dismissed') === 'true',
+
+  // Settings state (Story 4.25-3)
+  apiKeyStatus: {},
+  connectionStatus: {},
+  connectionError: {},
 
   // Load providers from backend
   loadProviders: async () => {
@@ -148,6 +162,59 @@ export const useAiStore = create<AiStore>((set, get) => ({
     localStorage.setItem('demo-upgrade-dismissed-until', dismissedUntil.toString());
     set({ upgradePromptDismissed: true });
   },
+
+  // Get masked API key status for display (Story 4.25-3)
+  getApiKeyStatus: async (providerId: string) => {
+    try {
+      // reveal=false returns masked key
+      const maskedKey = await invoke<string | null>('get_provider_api_key', {
+        providerId,
+        reveal: false,
+      });
+
+      set((state) => ({
+        apiKeyStatus: { ...state.apiKeyStatus, [providerId]: maskedKey },
+      }));
+
+      return maskedKey;
+    } catch (error) {
+      console.error('Failed to get API key status:', error);
+      return null;
+    }
+  },
+
+  // Test connection to a provider (Story 4.25-3)
+  testConnection: async (providerId: string) => {
+    set((state) => ({
+      connectionStatus: { ...state.connectionStatus, [providerId]: 'testing' },
+      connectionError: { ...state.connectionError, [providerId]: null },
+    }));
+
+    try {
+      const success = await invoke<boolean>('test_provider_connection', {
+        providerId,
+      });
+
+      set((state) => ({
+        connectionStatus: {
+          ...state.connectionStatus,
+          [providerId]: success ? 'connected' : 'error',
+        },
+      }));
+
+      return success;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      set((state) => ({
+        connectionStatus: { ...state.connectionStatus, [providerId]: 'error' },
+        connectionError: { ...state.connectionError, [providerId]: errorMessage },
+      }));
+
+      return false;
+    }
+  },
 }));
 
 /**
@@ -166,3 +233,6 @@ export const selectError = (state: AiStore) => state.error;
 export const selectDemoQuota = (state: AiStore) => state.demoQuota;
 export const selectUpgradePromptDismissed = (state: AiStore) =>
   state.upgradePromptDismissed;
+export const selectApiKeyStatus = (state: AiStore) => state.apiKeyStatus;
+export const selectConnectionStatus = (state: AiStore) => state.connectionStatus;
+export const selectConnectionError = (state: AiStore) => state.connectionError;

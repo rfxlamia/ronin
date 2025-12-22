@@ -1,0 +1,28 @@
+{
+  "name": "ronin-demo-proxy",
+  "version": "1.0.0",
+  "description": "Ronin Demo Mode Proxy - AWS Lambda function for streaming AI responses with rate limiting",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "build": "esbuild index.mjs --bundle --platform=node --target=node20 --format=esm --outfile=dist/index.mjs --external:@aws-sdk/*",
+    "test": "node --test **/*.test.mjs",
+    "deploy": "sam build && sam deploy"
+  },
+  "keywords": [
+    "aws-lambda",
+    "serverless",
+    "ai-proxy",
+    "rate-limiting"
+  ],
+  "author": "Ronin Project",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/client-ssm": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.12"
+  }
+}
