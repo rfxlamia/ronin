@@ -1175,78 +1175,114 @@ So that **I can easily switch between providers or use demo mode**.
 
 ---
 
-## Epic 4.5: Reasoning Infrastructure & Agent Personas
+## Epic 4.5: Reasoning Infrastructure
 
-**Goal:** Enable "Ronin-Thinking" mode - a multi-step, agentic AI that can analyze projects deeply, follow reasoning protocols, and provide structured guidance.
+**Goal:** Enable "Ronin-Thinking" mode - a multi-step, agentic AI that can analyze projects deeply with visible reasoning process.
 
-**User Outcome:** Users can switch between "Ronin-Flash" (quick context) and "Ronin-Thinking" (deep analysis with visible thought process) modes, with the agent showing its work as it reasons through complex problems.
+**User Outcome:** Users can switch between "Ronin-Flash" (quick context, <10s) and "Ronin-Thinking" (deep analysis with visible thought process, <30s). Ronin-Thinking automatically applies Architect and Developer thinking based on context.
 
 **Why This Epic:**
-- **Deep Context Recovery:** "Project Resurrection" - help users recover mental context for projects untouched for weeks/months
+- **Deep Context Recovery:** "Project Resurrection" - help users recover mental context for dormant projects
 - **Differentiation:** Visible reasoning process ("Reading package.json...", "Analyzing tests...") builds trust
-- **Free by Default:** Uses free models (MiMo-V2-Flash 309B MoE) that are sufficiently powerful for reasoning loops
+- **Free by Default:** Uses free models (MiMo-V2-Flash 309B MoE) sufficiently powerful for reasoning loops
+- **Simplified UX:** 2 modes (Flash/Thinking) instead of 4 personas - AI adapts thinking style automatically
 
-**FRs covered:** FR9-10 (enhanced), FR65-68 (behavioral inference foundation)
+**FRs covered:** FR9-13 (fully enhanced), FR65-68 (foundation - full implementation in Epic 6)
 
 **NFRs addressed:**
 - NFR1: Deep context generation <30s (multi-step reasoning)
 - NFR29: Context payload optimized per reasoning step
 
 **Key Deliverables:**
-- Dedicated `/agent/:projectId` route for deep analysis
-- AgentPersona and ReasoningProtocol TypeScript schemas
-- Vercel AI SDK integration with `maxSteps` for agentic loops
-- ThinkingIndicator and ProtocolViewer UI components
+- Agent core with unified Ronin-Thinking system prompt (Architect + Developer principles merged)
+- Tool implementations: `read_file`, `list_dir`, `git_status`, `git_log`
 - "Project Resurrection" protocol for dormant project analysis
-- Persona migration (Architect, Dev from _bmad format)
+- Dedicated `/agent/:projectId` route with ThinkingIndicator and ProtocolViewer
 
 **Technical Research Source:** [technical-epic-4.5-reasoning-infrastructure-research-2025-12-22.md](file:///home/v/project/ronin/docs/analysis/research/technical-epic-4.5-reasoning-infrastructure-research-2025-12-22.md)
 
+**Design Decision:** Simplified 2-mode design per user feedback (2025-12-22). Ronin-Thinking covers Architect + Developer capabilities automatically instead of separate persona selector.
+
 ---
 
-### Story 4.5.1: Reasoning Foundation (Schemas & Store)
+### Story 4.5.1: Agent Core & System Prompt
 
 **Dependencies:** Epic 4.25 complete (Unified API Client working)
-**Integration Checkpoint:** After completion, validate persona loading and reasoning store state management before starting Story 4.5.2
+**Integration Checkpoint:** After completion, test agent logic independently via CLI/REPL before building UI
 
 As a **developer**,
-I want **TypeScript schemas for agent personas and reasoning protocols**,
-So that **the reasoning infrastructure has a solid, type-safe foundation**.
+I want **the agent core with unified system prompt and tool definitions**,
+So that **the reasoning infrastructure can be tested before building the UI**.
 
 **Acceptance Criteria:**
 
-**Given** the reasoning infrastructure is being built
-**When** implementing the foundation layer
+**Given** Epic 4.25 UnifiedClient is working
+**When** implementing the agent core
 **Then** the following are implemented:
-- `AgentPersona` TypeScript interface with:
-  - id, name, role, color, icon
-  - systemPrompt: { identity, tone, principles[] }
-  - capabilities: { canUseInternet, canReadFiles, canExecuteCommands }
-  - availableProtocols: string[]
-- `ReasoningProtocol` TypeScript interface with:
-  - id, title, description
-  - contextFiles: string[]
-  - steps: ProtocolStep[]
-- `ProtocolStep` interface with: id, title, instruction, instructionFile?, requiredOutput
-**And** `useReasoningStore` Zustand store tracks:
-  - activePersona (default: "ronin-flash")
-  - activeProtocol (null when not running)
-  - currentStepId, stepHistory
-**And** UnifiedClient (from Epic 4.25) extended with `maxSteps` support
+- `AgentMode` TypeScript type: `"ronin-flash" | "ronin-thinking"`
+- `ReasoningProtocol` interface with: id, title, description, steps[]
+- `ProtocolStep` interface with: id, title, instruction, requiredOutput
+- **Unified Ronin-Thinking system prompt** containing:
+  - Architect principles extracted from `_bmad/bmm/agents/architect.md`
+  - Developer principles extracted from `_bmad/bmm/agents/dev.md`
+  - Context-aware reasoning instructions (AI decides when to apply which thinking)
+- `useReasoningStore` Zustand store tracking:
+  - activeMode (default: "ronin-flash")
+  - activeProtocol, currentStepId, stepHistory
+**And** UnifiedClient extended with `maxSteps` support for reasoning loops
 **And** Default model for Thinking mode: `xiaomi/mimo-v2-flash:free`
+**And** Agent logic testable independently (without UI)
 
 **Technical Notes:**
 - Schemas in `src/lib/ai/schemas.ts`
+- System prompt in `src/lib/ai/prompts/ronin-thinking.ts`
 - Store in `src/stores/reasoningStore.ts`
-- Extend `src/lib/ai/client.ts` with maxSteps configuration
-- Use localStorage for persona selection persistence (SQLite later)
+- Extract principles from `_bmad` and merge into single prompt
+- Test via Tauri command or temporary REPL
 
 ---
 
-### Story 4.5.2: Agent Route & Thinking UI
+### Story 4.5.2: Tool Implementation & Protocol Execution
 
-**Dependencies:** Story 4.5.1 (schemas and store must exist)
-**Integration Checkpoint:** After completion, validate route navigation, persona switching, and thinking indicator display before starting Story 4.5.3
+**Dependencies:** Story 4.5.1 (agent core must exist)
+**Integration Checkpoint:** After completion, test "Project Resurrection" protocol execution via CLI before building UI
+
+As a **developer**,
+I want **tool implementations and protocol execution logic**,
+So that **Ronin-Thinking can analyze projects autonomously**.
+
+**Acceptance Criteria:**
+
+**Given** Story 4.5.1 agent core is working
+**When** implementing tools and protocol execution
+**Then** the following tools are available to Ronin-Thinking:
+- `read_file`: Read any file in project (returns content)
+- `list_dir`: List directory contents (returns file/folder list)
+- `git_status`: Get current git status (branch, uncommitted files)
+- `git_log`: Get recent commits (last 20 commits with messages)
+**And** "Project Resurrection" protocol is defined:
+  1. Map project structure (`list_dir`)
+  2. Read key files: package.json, README.md, DEVLOG.md
+  3. Analyze git history (commits, uncommitted changes)
+  4. Synthesize "Deep Status Report" with actionable next steps
+**And** protocol execution uses Vercel AI SDK `maxSteps: 10`
+**And** each tool call is logged for ThinkingIndicator integration
+**And** protocol runs in <30 seconds for typical projects
+**And** entire flow testable via CLI without UI
+
+**Technical Notes:**
+- Tools in `src/lib/ai/tools/` (read_file.ts, list_dir.ts, git_status.ts, git_log.ts)
+- Protocol in `src/lib/ai/protocols/project-resurrection.ts`
+- Leverage Tauri commands for file/git operations
+- MVP: read-only tools, `write_file` restricted to `docs/`, `run_command` disabled
+- Tool call logging for later UI integration
+
+---
+
+### Story 4.5.3: Agent Route & UI
+
+**Dependencies:** Story 4.5.2 (tools and protocol execution must work)
+**Integration Checkpoint:** After completion, validate full workflow: Dashboard → Expand card → Click "Deeper Analysis" → Agent View → Protocol execution → Report display
 
 As a **user exploring a dormant project**,
 I want **a dedicated agent view that shows the AI's thinking process**,
@@ -1254,95 +1290,44 @@ So that **I can see what the agent is analyzing and trust its reasoning**.
 
 **Acceptance Criteria:**
 
-**Given** the user clicks a project card "Deep Analysis" button
-**When** the `/agent/:projectId` route opens
+**Given** the user expands a project card
+**When** viewing the AI context from Flash mode
+**Then** a "🧠 Deeper Analysis" button appears below the "Based on" attribution
+**And** clicking the button navigates to `/agent/:projectId` route
+**And** keyboard shortcut `Ctrl+Shift+A` also opens agent for expanded/selected project
+
+**Given** the user is in the `/agent/:projectId` route
+**When** the view loads
 **Then** the interface shows:
-- Left panel: Chat interface with message history
-- Right panel: ProtocolViewer showing current plan/steps (if protocol active)
-- Top bar: PersonaSelector dropdown (Ronin-Flash / Ronin-Thinking)
-- ThinkingIndicator component shows real-time tool usage:
+- **ModeToggle** (2 options): [ ⚡ Flash ] [ 🧠 Thinking ]
+- **Left panel:** Chat interface with message history
+- **Right panel:** ProtocolViewer showing current plan/steps
+- **ThinkingIndicator** showing real-time tool usage:
   - "📖 Reading package.json..."
   - "🔍 Analyzing git history..."
   - "📝 Synthesizing context..."
-**And** state persists when navigating away and back
-**And** route is accessible via Dashboard project card expand
-**And** keyboard shortcut: `Ctrl+Shift+A` opens agent for selected project
 
-**Technical Notes:**
-- Route: `src/pages/Agent.tsx`
-- Components: `ThinkingIndicator`, `ProtocolViewer`, `PersonaSelector`
-- Leverage Vercel AI SDK `tool-call` streaming chunks for indicator
-- Use React Router for `/agent/:projectId` routing
-- State preserved in reasoningStore (not lost on navigation)
-
----
-
-### Story 4.5.3: Project Resurrection Protocol
-
-**Dependencies:** Story 4.5.2 (Agent route and UI must work)
-**Integration Checkpoint:** After completion, validate full "Project Resurrection" workflow: open agent → trigger protocol → view analysis → receive synthesis
-
-As a **developer returning to a dormant project**,
-I want **the agent to automatically analyze my project and synthesize a status report**,
-So that **I quickly understand where I left off and what needs attention**.
-
-**Acceptance Criteria:**
-
-**Given** the user opens the Agent view for a dormant project
-**When** clicking "Analyze Project" or automatic trigger on first load
-**Then** the agent executes "Project Resurrection" protocol:
-1. Maps project structure (`list_dir` tool)
-2. Reads key files: package.json, README.md, DEVLOG.md
-3. Analyzes git history (last 20 commits, uncommitted changes)
-4. Identifies: tech stack, recent activity areas, potential blockers
-5. Synthesizes "Deep Status Report" with actionable next steps
-**And** each step is visible in ThinkingIndicator
-**And** final report is displayed in chat with:
+**Given** the user clicks "Analyze Project" in Agent View
+**When** the Project Resurrection protocol executes
+**Then** final report displays with:
   - "Last Active Area" (e.g., "Refactoring auth module")
   - "Current State" (e.g., "Tests failing in 3 files")
   - "Suggested Next Steps" (prioritized actions)
   - "Based on:" attribution list
-**And** protocol runs in <30 seconds for typical projects
+**And** state persists when navigating away and back
 
 **Technical Notes:**
-- Protocol definition in `src/lib/ai/protocols/project-resurrection.json`
-- MVP Tools (Safe Mode - read only):
-  - `read_file`, `list_dir`, `git_status`, `git_log`
-- `write_file` restricted to `docs/` folder only (drafts)
-- `run_command` disabled for MVP
-- Target model: `mimo-v2-flash` with `maxSteps: 10`
-
----
-
-### Story 4.5.4: Persona Migration (Architect & Dev)
-
-**Dependencies:** Story 4.5.1 (schemas) + 4.5.3 (protocol execution working)
-**Integration Checkpoint:** After completion, validate full Epic 4.5 workflow: persona selection → protocol execution → specialized behavior
-
-As a **developer wanting structured guidance**,
-I want **Architect and Developer personas available for specialized assistance**,
-So that **I can get role-specific advice and workflows**.
-
-**Acceptance Criteria:**
-
-**Given** the reasoning infrastructure is working
-**When** migrating _bmad personas to Ronin format
-**Then** the following personas are available in PersonaSelector:
-- **Ronin-Flash** (default): Quick context, single-shot responses
-- **Ronin-Thinking**: Multi-step reasoning with visible thought process
-- **Architect (Winston)**: Technical architecture focus, "boring tech" principle
-- **Developer (Charlie)**: Code-focused, TDD advocate, practical implementation
-**And** each persona injects appropriate systemPrompt from schema
-**And** Architect has access to "create-architecture" protocol
-**And** Developer has access to "implement-story" protocol
-**And** switching personas clears active protocol but preserves chat history
-
-**Technical Notes:**
-- Manual migration of `_bmad/bmm/agents/architect.md` → `personas/architect.json`
-- Manual migration of `_bmad/bmm/agents/dev.md` → `personas/dev.json`
-- Parse XML `<role>`, `<principles>` → JSON systemPrompt
-- `<menu>` items → availableProtocols array
-- Future: automated migration script
+- Route: `src/pages/Agent.tsx`
+- Components: `ModeToggle`, `ThinkingIndicator`, `ProtocolViewer`, `AgentChat`
+- Leverage tool call logs from Story 4.5.2 for ThinkingIndicator
+- Use React Router for `/agent/:projectId` routing
+- State preserved in reasoningStore (not lost on navigation)
+- **Button placement in ProjectCard:**
+  - Only visible when card is expanded (showing AI context)
+  - Positioned below "Based on: ∞ X 📄 Y" attribution line
+  - Full-width button with Antique Brass styling
+  - Label: "🧠 Deeper Analysis" (clarifies this is deeper than Flash mode)
+  - Above "Open in IDE" button if both present
 
 ---
 
