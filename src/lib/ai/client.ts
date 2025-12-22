@@ -3,16 +3,22 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type { AiChunkEvent, AiErrorEvent, Message, ContextPayload } from '@/types/ai';
 
-export const createTauriLanguageModel = (config: {
+/**
+ * Custom Tauri-bridged language model for Vercel AI SDK v5.
+ * Implements the v2 specification required by AI SDK 5.
+ */
+export interface TauriLanguageModelConfig {
     provider: string;
     model?: string;
     projectId: number;
-}): any => {
+}
+
+export const createTauriLanguageModel = (config: TauriLanguageModelConfig) => {
     return {
-        specificationVersion: 'v1',
+        specificationVersion: 'v2' as const,
         provider: 'tauri',
         modelId: config.model || config.provider,
-        defaultObjectGenerationMode: 'json',
+        defaultObjectGenerationMode: 'json' as const,
 
         async doGenerate(options: any) {
             const streamResult = await this.doStream(options);
@@ -23,16 +29,17 @@ export const createTauriLanguageModel = (config: {
                 const { done, value } = await reader.read();
                 if (done) break;
                 if (value.type === 'text-delta') {
-                    // Assuming value conforms to LanguageModelStreamPart which uses textDelta
                     text += value.textDelta;
                 }
             }
 
+            // v2 format requires content array instead of text
             return {
-                text,
-                finishReason: 'stop',
+                content: [{ type: 'text' as const, text }],
+                finishReason: 'stop' as const,
                 usage: { promptTokens: 0, completionTokens: 0 },
-                rawCall: { rawPrompt: options.prompt, rawSettings: {} }
+                rawCall: { rawPrompt: options.prompt, rawSettings: {} },
+                warnings: [],
             };
         },
 

@@ -44,7 +44,9 @@ function App() {
             {import.meta.env.DEV && (
               <Route path="/test/context-panel" element={<TestContextPanel />} />
             )}
-            <Route path="/debug/agent" element={<DebugAgent />} />
+            {import.meta.env.DEV && (
+              <Route path="/debug/agent" element={<DebugAgent />} />
+            )}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AppShell>

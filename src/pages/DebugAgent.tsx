@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { streamText, CoreMessage } from 'ai';
+import { useState } from 'react';
+import { streamText, CoreMessage, StepResult } from 'ai';
 import { createTauriLanguageModel } from '@/lib/ai/client';
 import { mockTools } from '@/lib/ai/tools';
 import { RONIN_THINKING_PROMPT } from '@/lib/ai/prompts/ronin-thinking';
@@ -39,7 +39,7 @@ export default function DebugAgent() {
                 ],
                 tools: mockTools,
                 maxSteps: 5, // Safety limit
-                onStepFinish: (step) => {
+                onStepFinish: (step: StepResult<typeof mockTools>) => {
                     console.log('Step finished:', step);
                     if (step.toolCalls.length > 0) {
                         setToolInvocations(prev => [...prev, ...step.toolCalls]);

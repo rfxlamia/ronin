@@ -1,5 +1,4 @@
 import type { Tool } from 'ai';
-import type { Attribution } from './ai';
 
 /**
  * Agent execution modes
