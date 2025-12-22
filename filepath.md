@@ -2,7 +2,7 @@
 
 **Auto-generated** list of key source files. Excludes: tests, migrations, workflow engine, build artifacts.
 
-## Files (133 total)
+## Files (142 total)
 
 - [`README.md`](file:///home/v/project/ronin/README.md)
 - [`docs/epics.md`](file:///home/v/project/ronin/docs/epics.md)
@@ -38,6 +38,7 @@
 - [`docs/sprint-artifacts/epic-3-retro-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-3-retro-2025-12-21.md)
 - [`docs/sprint-artifacts/epic-4-retro-2025-12-22.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-4-retro-2025-12-22.md)
 - [`docs/sprint-artifacts/epic-4.25-retro-2025-12-22.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-4.25-retro-2025-12-22.md)
+- [`docs/sprint-artifacts/validation-report-4.5-1-2025-12-22.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-4.5-1-2025-12-22.md)
 - [`package.json`](file:///home/v/project/ronin/package.json)
 - [`serverless/demo-proxy/.aws-sam/build.toml`](file:///home/v/project/ronin/serverless/demo-proxy/.aws-sam/build.toml)
 - [`serverless/demo-proxy/package.json`](file:///home/v/project/ronin/serverless/demo-proxy/package.json)
@@ -115,18 +116,26 @@
 - [`src/hooks/useCountdown.ts`](file:///home/v/project/ronin/src/hooks/useCountdown.ts)
 - [`src/hooks/useHotkeys.ts`](file:///home/v/project/ronin/src/hooks/useHotkeys.ts)
 - [`src/hooks/useWindowSize.ts`](file:///home/v/project/ronin/src/hooks/useWindowSize.ts)
+- [`src/lib/ai/client.ts`](file:///home/v/project/ronin/src/lib/ai/client.ts)
+- [`src/lib/ai/prompts/ronin-thinking.ts`](file:///home/v/project/ronin/src/lib/ai/prompts/ronin-thinking.ts)
 - [`src/lib/ai/registry.ts`](file:///home/v/project/ronin/src/lib/ai/registry.ts)
+- [`src/lib/ai/tools/index.ts`](file:///home/v/project/ronin/src/lib/ai/tools/index.ts)
+- [`src/lib/ai/tools/mock/index.ts`](file:///home/v/project/ronin/src/lib/ai/tools/mock/index.ts)
+- [`src/lib/ai/tools/schemas.ts`](file:///home/v/project/ronin/src/lib/ai/tools/schemas.ts)
 - [`src/lib/logic/projectHealth.ts`](file:///home/v/project/ronin/src/lib/logic/projectHealth.ts)
 - [`src/lib/utils.ts`](file:///home/v/project/ronin/src/lib/utils.ts)
 - [`src/lib/utils/dateUtils.ts`](file:///home/v/project/ronin/src/lib/utils/dateUtils.ts)
 - [`src/main.tsx`](file:///home/v/project/ronin/src/main.tsx)
 - [`src/pages/Dashboard.tsx`](file:///home/v/project/ronin/src/pages/Dashboard.tsx)
+- [`src/pages/DebugAgent.tsx`](file:///home/v/project/ronin/src/pages/DebugAgent.tsx)
 - [`src/pages/Settings.tsx`](file:///home/v/project/ronin/src/pages/Settings.tsx)
 - [`src/pages/TestContextPanel.tsx`](file:///home/v/project/ronin/src/pages/TestContextPanel.tsx)
 - [`src/stores/aiStore.ts`](file:///home/v/project/ronin/src/stores/aiStore.ts)
 - [`src/stores/devlogStore.ts`](file:///home/v/project/ronin/src/stores/devlogStore.ts)
 - [`src/stores/projectStore.ts`](file:///home/v/project/ronin/src/stores/projectStore.ts)
+- [`src/stores/reasoningStore.ts`](file:///home/v/project/ronin/src/stores/reasoningStore.ts)
 - [`src/stores/settingsStore.ts`](file:///home/v/project/ronin/src/stores/settingsStore.ts)
+- [`src/types/agent.ts`](file:///home/v/project/ronin/src/types/agent.ts)
 - [`src/types/ai.ts`](file:///home/v/project/ronin/src/types/ai.ts)
 - [`src/types/context.ts`](file:///home/v/project/ronin/src/types/context.ts)
 - [`src/types/health.ts`](file:///home/v/project/ronin/src/types/health.ts)
@@ -139,4 +148,4 @@
 - [`vitest.config.ts`](file:///home/v/project/ronin/vitest.config.ts)
 
 ---
-*Generated: 2025-12-22T11:33:17.009Z*
+*Generated: 2025-12-22T13:45:00.729Z*
