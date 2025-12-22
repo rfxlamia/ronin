@@ -2,7 +2,7 @@
 
 **Auto-generated** list of key source files. Excludes: tests, migrations, workflow engine, build artifacts.
 
-## Files (126 total)
+## Files (139 total)
 
 - [`README.md`](file:///home/v/project/ronin/README.md)
 - [`docs/epics.md`](file:///home/v/project/ronin/docs/epics.md)
@@ -30,6 +30,8 @@
 - [`docs/sprint-artifacts/4-2-file-sync-with-repository.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4-2-file-sync-with-repository.md)
 - [`docs/sprint-artifacts/4-3-devlog-history-view.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4-3-devlog-history-view.md)
 - [`docs/sprint-artifacts/4-3-fixes-applied.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4-3-fixes-applied.md)
+- [`docs/sprint-artifacts/4.25-1-unified-api-client-vercel-sdk.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4.25-1-unified-api-client-vercel-sdk.md)
+- [`docs/sprint-artifacts/4.25-2-aws-lambda-demo-mode-proxy.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4.25-2-aws-lambda-demo-mode-proxy.md)
 - [`docs/sprint-artifacts/codemirror-research-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/codemirror-research-2025-12-21.md)
 - [`docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md)
 - [`docs/sprint-artifacts/epic-1-retro-2025-12-18.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-1-retro-2025-12-18.md)
@@ -50,11 +52,16 @@
 - [`docs/sprint-artifacts/validation-report-4-3-devlog-history.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-4-3-devlog-history.md)
 - [`docs/sprint-artifacts/validation-report-4.2-20251221-155432.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-4.2-20251221-155432.md)
 - [`package.json`](file:///home/v/project/ronin/package.json)
+- [`serverless/demo-proxy/package.json`](file:///home/v/project/ronin/serverless/demo-proxy/package.json)
 - [`src-tauri/Cargo.toml`](file:///home/v/project/ronin/src-tauri/Cargo.toml)
 - [`src-tauri/build.rs`](file:///home/v/project/ronin/src-tauri/build.rs)
 - [`src-tauri/src/ai/context.rs`](file:///home/v/project/ronin/src-tauri/src/ai/context.rs)
 - [`src-tauri/src/ai/mod.rs`](file:///home/v/project/ronin/src-tauri/src/ai/mod.rs)
 - [`src-tauri/src/ai/openrouter.rs`](file:///home/v/project/ronin/src-tauri/src/ai/openrouter.rs)
+- [`src-tauri/src/ai/provider.rs`](file:///home/v/project/ronin/src-tauri/src/ai/provider.rs)
+- [`src-tauri/src/ai/providers/demo.rs`](file:///home/v/project/ronin/src-tauri/src/ai/providers/demo.rs)
+- [`src-tauri/src/ai/providers/mod.rs`](file:///home/v/project/ronin/src-tauri/src/ai/providers/mod.rs)
+- [`src-tauri/src/ai/providers/openrouter.rs`](file:///home/v/project/ronin/src-tauri/src/ai/providers/openrouter.rs)
 - [`src-tauri/src/commands/ai.rs`](file:///home/v/project/ronin/src-tauri/src/commands/ai.rs)
 - [`src-tauri/src/commands/devlog.rs`](file:///home/v/project/ronin/src-tauri/src/commands/devlog.rs)
 - [`src-tauri/src/commands/git.rs`](file:///home/v/project/ronin/src-tauri/src/commands/git.rs)
@@ -79,6 +86,9 @@
 - [`src/components/Dashboard/ProjectCardSkeleton.tsx`](file:///home/v/project/ronin/src/components/Dashboard/ProjectCardSkeleton.tsx)
 - [`src/components/Dashboard/ProjectDetailModal.tsx`](file:///home/v/project/ronin/src/components/Dashboard/ProjectDetailModal.tsx)
 - [`src/components/Dashboard/ProjectScanner.tsx`](file:///home/v/project/ronin/src/components/Dashboard/ProjectScanner.tsx)
+- [`src/components/DemoModeBadge.tsx`](file:///home/v/project/ronin/src/components/DemoModeBadge.tsx)
+- [`src/components/DemoRateLimitError.tsx`](file:///home/v/project/ronin/src/components/DemoRateLimitError.tsx)
+- [`src/components/DemoUpgradePrompt.tsx`](file:///home/v/project/ronin/src/components/DemoUpgradePrompt.tsx)
 - [`src/components/RoninLoader.tsx`](file:///home/v/project/ronin/src/components/RoninLoader.tsx)
 - [`src/components/RoninOathModal.tsx`](file:///home/v/project/ronin/src/components/RoninOathModal.tsx)
 - [`src/components/WindowControls.tsx`](file:///home/v/project/ronin/src/components/WindowControls.tsx)
@@ -111,6 +121,7 @@
 - [`src/hooks/useCountdown.ts`](file:///home/v/project/ronin/src/hooks/useCountdown.ts)
 - [`src/hooks/useHotkeys.ts`](file:///home/v/project/ronin/src/hooks/useHotkeys.ts)
 - [`src/hooks/useWindowSize.ts`](file:///home/v/project/ronin/src/hooks/useWindowSize.ts)
+- [`src/lib/ai/registry.ts`](file:///home/v/project/ronin/src/lib/ai/registry.ts)
 - [`src/lib/logic/projectHealth.ts`](file:///home/v/project/ronin/src/lib/logic/projectHealth.ts)
 - [`src/lib/utils.ts`](file:///home/v/project/ronin/src/lib/utils.ts)
 - [`src/lib/utils/dateUtils.ts`](file:///home/v/project/ronin/src/lib/utils/dateUtils.ts)
@@ -118,9 +129,11 @@
 - [`src/pages/Dashboard.tsx`](file:///home/v/project/ronin/src/pages/Dashboard.tsx)
 - [`src/pages/Settings.tsx`](file:///home/v/project/ronin/src/pages/Settings.tsx)
 - [`src/pages/TestContextPanel.tsx`](file:///home/v/project/ronin/src/pages/TestContextPanel.tsx)
+- [`src/stores/aiStore.ts`](file:///home/v/project/ronin/src/stores/aiStore.ts)
 - [`src/stores/devlogStore.ts`](file:///home/v/project/ronin/src/stores/devlogStore.ts)
 - [`src/stores/projectStore.ts`](file:///home/v/project/ronin/src/stores/projectStore.ts)
 - [`src/stores/settingsStore.ts`](file:///home/v/project/ronin/src/stores/settingsStore.ts)
+- [`src/types/ai.ts`](file:///home/v/project/ronin/src/types/ai.ts)
 - [`src/types/context.ts`](file:///home/v/project/ronin/src/types/context.ts)
 - [`src/types/health.ts`](file:///home/v/project/ronin/src/types/health.ts)
 - [`src/types/project.ts`](file:///home/v/project/ronin/src/types/project.ts)
@@ -132,4 +145,4 @@
 - [`vitest.config.ts`](file:///home/v/project/ronin/vitest.config.ts)
 
 ---
-*Generated: 2025-12-22T01:47:33.885Z*
+*Generated: 2025-12-22T05:04:54.983Z*

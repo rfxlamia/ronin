@@ -1,14 +1,22 @@
 /// AI-related Tauri commands for OpenRouter API integration
-use crate::ai::context::{build_git_context, build_system_prompt, enforce_token_budget, validate_payload_size};
+use crate::ai::context::{
+    build_git_context, build_system_prompt, enforce_token_budget, validate_payload_size,
+};
 use crate::ai::openrouter::{Attribution, Message, OpenRouterClient};
+use crate::ai::provider::{AiProvider, ContextPayload};
+use crate::ai::providers::{DemoProvider, OpenRouterProvider};
 use crate::commands::git::get_git_context;
+use crate::commands::settings::get_provider_api_key;
 use crate::context::devlog::read_devlog;
 use crate::security::{decrypt_api_key, encrypt_api_key};
 use base64::{engine::general_purpose, Engine as _};
+use futures_util::StreamExt;
 use rusqlite::OptionalExtension;
 use tauri::Emitter;
 
 /// Set (encrypt and store) API key
+///
+/// BACKWARD COMPATIBILITY: Stores in new location (api_key_openrouter) and cleans up old key if it exists
 #[tauri::command]
 pub async fn set_api_key(
     key: String,
@@ -22,33 +30,33 @@ pub async fn set_api_key(
         .get()
         .map_err(|e| format!("Failed to get database connection: {}", e))?;
 
-    // Check for migration: if plaintext key exists, delete it
-    let plaintext_exists: bool = conn
-        .query_row(
-            "SELECT COUNT(*) > 0 FROM settings WHERE key = 'openrouter_api_key'",
-            [],
-            |row| row.get(0),
-        )
-        .unwrap_or(false);
-
-    if plaintext_exists {
-        // Migration: delete old plaintext key
-        conn.execute("DELETE FROM settings WHERE key = 'openrouter_api_key'", [])
-            .map_err(|e| format!("Migration failed: {}", e))?;
-        eprintln!("Migrated API key to encrypted storage"); // Console only, never to file
-    }
-
-    // Store encrypted key with new key name
+    // Store in new multi-provider format (Story 4.25-1)
     conn.execute(
-        "INSERT OR REPLACE INTO settings (key, value) VALUES ('openrouter_api_key_encrypted', ?1)",
+        "INSERT OR REPLACE INTO settings (key, value) VALUES ('api_key_openrouter', ?1)",
         rusqlite::params![encoded],
     )
     .map_err(|e| format!("Failed to store encrypted key: {}", e))?;
+
+    // Set default provider to OpenRouter
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES ('ai_provider_default', 'openrouter')",
+        [],
+    )
+    .map_err(|e| format!("Failed to set default provider: {}", e))?;
+
+    // Clean up old key if it exists (migration cleanup)
+    conn.execute(
+        "DELETE FROM settings WHERE key = 'openrouter_api_key_encrypted'",
+        [],
+    )
+    .ok(); // Ignore errors if old key doesn't exist
 
     Ok(())
 }
 
 /// Get (decrypt and return) API key
+///
+/// BACKWARD COMPATIBILITY: Checks both new (api_key_openrouter) and old (openrouter_api_key_encrypted) locations
 #[tauri::command]
 pub async fn get_api_key(
     pool: tauri::State<'_, crate::db::DbPool>,
@@ -57,16 +65,35 @@ pub async fn get_api_key(
         .get()
         .map_err(|e| format!("Failed to get database connection: {}", e))?;
 
-    let encoded: Option<String> = conn
+    // Try new location first (after Story 4.25-1 migration)
+    let new_key: Option<String> = conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = 'api_key_openrouter'",
+            [],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("Failed to query new API key: {}", e))?;
+
+    if let Some(enc) = new_key {
+        let encrypted = general_purpose::STANDARD
+            .decode(enc)
+            .map_err(|e| format!("Failed to decode base64: {}", e))?;
+        let decrypted = decrypt_api_key(&encrypted)?;
+        return Ok(Some(decrypted));
+    }
+
+    // Fall back to old location (pre-migration)
+    let old_key: Option<String> = conn
         .query_row(
             "SELECT value FROM settings WHERE key = 'openrouter_api_key_encrypted'",
             [],
             |row| row.get(0),
         )
         .optional()
-        .map_err(|e| format!("Failed to query encrypted key: {}", e))?;
+        .map_err(|e| format!("Failed to query old API key: {}", e))?;
 
-    match encoded {
+    match old_key {
         Some(enc) => {
             let encrypted = general_purpose::STANDARD
                 .decode(enc)
@@ -167,14 +194,14 @@ pub async fn generate_context(
 
     // Build context strings
     let git_context_str = build_git_context(&git_context);
-    
+
     // Read DEVLOG if available (Story 3.7)
     let project_path = std::path::Path::new(&project_path);
     let devlog = read_devlog(project_path);
-    
+
     // Enforce token budget: truncate DEVLOG if combined > 10KB
     let devlog = enforce_token_budget(&git_context_str, devlog);
-    
+
     // Build system prompt with Git context and optional DEVLOG
     let system_prompt = build_system_prompt(&git_context_str, devlog.as_ref());
 
@@ -192,11 +219,74 @@ pub async fn generate_context(
         return Err(error_msg);
     }
 
-    // Get API key
-    let api_key = match get_api_key(pool.clone()).await? {
-        Some(key) => key,
-        None => {
-            let error_msg = "APIERROR:0:API key not configured".to_string();
+    // Get default provider
+    let default_provider: String = conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = 'ai_provider_default'",
+            [],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("Failed to query default provider: {}", e))?
+        .unwrap_or_else(|| "openrouter".to_string());
+
+    // Get API key for the provider (demo mode doesn't need one)
+    let api_key = if default_provider == "demo" {
+        None
+    } else {
+        match get_provider_api_key(default_provider.clone(), pool.clone()).await? {
+            Some(key) => Some(key),
+            None => {
+                let error_msg = "APIERROR:0:API key not configured".to_string();
+                window
+                    .emit(
+                        "ai-error",
+                        serde_json::json!({
+                            "message": error_msg.clone()
+                        }),
+                    )
+                    .map_err(|e| e.to_string())?;
+                return Err(error_msg);
+            }
+        }
+    };
+
+    // Build attribution data from git context and DEVLOG
+    let commit_count = git_context.commits.len();
+    let file_count = git_context.status.modified_files.len();
+    let has_devlog = devlog.is_some();
+    let devlog_lines = devlog.as_ref().map(|d| d.lines_read);
+
+    let mut sources = vec!["git".to_string()];
+    if has_devlog {
+        sources.push("devlog".to_string());
+    }
+
+    let attribution = Attribution {
+        commits: commit_count,
+        files: file_count,
+        sources,
+        devlog_lines,
+    };
+
+    // Create provider instance
+    let provider: Box<dyn AiProvider> = match default_provider.as_str() {
+        "openrouter" => {
+            let key = api_key.ok_or("API key required for OpenRouter")?;
+            Box::new(OpenRouterProvider::new(key))
+        }
+        "demo" => {
+            // Lambda URL from compile-time config
+            // TODO: Set DEMO_LAMBDA_URL environment variable during build
+            let lambda_url = option_env!("DEMO_LAMBDA_URL")
+                .unwrap_or(
+                    "https://dkm5aeebsg7dggdpwoovlbzjde0ayxyh.lambda-url.ap-southeast-2.on.aws/",
+                )
+                .to_string();
+            Box::new(DemoProvider::new(lambda_url))
+        }
+        _ => {
+            let error_msg = format!("APIERROR:0:Unknown provider: {}", default_provider);
             window
                 .emit(
                     "ai-error",
@@ -209,44 +299,46 @@ pub async fn generate_context(
         }
     };
 
-    // Build attribution data from git context and DEVLOG
-    let commit_count = git_context.commits.len();
-    let file_count = git_context.status.modified_files.len();
-    let has_devlog = devlog.is_some();
-    let devlog_lines = devlog.as_ref().map(|d| d.lines_read);
-    
-    let mut sources = vec!["git".to_string()];
-    if has_devlog {
-        sources.push("devlog".to_string());
-    }
-    
-    let attribution = Attribution {
-        commits: commit_count,
-        files: file_count,
-        sources,
-        devlog_lines,
+    // Create context payload
+    let payload = ContextPayload {
+        system_prompt,
+        user_message: "Provide context about where I was in this project".to_string(),
+        attribution: attribution.clone(),
     };
 
-    // Create OpenRouter client and stream
-    let client = OpenRouterClient::new(api_key);
-    let messages = vec![
-        Message {
-            role: "system".to_string(),
-            content: system_prompt,
-        },
-        Message {
-            role: "user".to_string(),
-            content: "Provide context about where I was in this project".to_string(),
-        },
-    ];
+    // Stream the response using provider abstraction
+    match provider.stream_context(payload).await {
+        Ok(mut stream) => {
+            let mut full_text = String::new();
 
-    // Stream the response
-    match client
-        .chat_stream(messages, window.clone(), attribution.clone())
-        .await
-    {
-        Ok(full_text) => {
-            // Cache the actual context text for offline fallback
+            while let Some(chunk) = stream.next().await {
+                full_text.push_str(&chunk);
+
+                // Emit chunk with provider ID (backward compatible)
+                window
+                    .emit(
+                        "ai-chunk",
+                        serde_json::json!({
+                            "text": chunk,
+                            "provider": provider.id()
+                        }),
+                    )
+                    .map_err(|e| e.to_string())?;
+            }
+
+            // Emit completion with attribution including provider name
+            window
+                .emit(
+                    "ai-complete",
+                    serde_json::json!({
+                        "text": full_text,
+                        "attribution": attribution,
+                        "provider": provider.name()
+                    }),
+                )
+                .map_err(|e| e.to_string())?;
+
+            // Cache the context text for offline fallback
             let attribution_json = serde_json::json!({
                 "commits": commit_count,
                 "files": file_count,
@@ -257,7 +349,6 @@ pub async fn generate_context(
 
             let timestamp = chrono::Utc::now().timestamp();
 
-            // Store actual context_text for offline mode
             conn.execute(
                 "INSERT OR REPLACE INTO ai_cache (project_id, context_text, attribution_json, generated_at) VALUES (?1, ?2, ?3, ?4)",
                 rusqlite::params![project_id, full_text, attribution_json, timestamp],
@@ -267,6 +358,11 @@ pub async fn generate_context(
             Ok(())
         }
         Err(e) => {
+            // Emit error event with provider info
+            window
+                .emit("ai-inference-failed", e.to_event(provider.id().as_ref()))
+                .map_err(|e| e.to_string())?;
+
             // Try to load from cache on error (offline fallback)
             let cached: Result<(String, String), _> = conn.query_row(
                 "SELECT context_text, attribution_json FROM ai_cache WHERE project_id = ?1",
@@ -287,7 +383,7 @@ pub async fn generate_context(
                     .map_err(|e| e.to_string())?;
                 Ok(())
             } else {
-                Err(e)
+                Err(e.to_string())
             }
         }
     }

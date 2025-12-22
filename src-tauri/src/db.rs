@@ -1,6 +1,7 @@
 use r2d2_sqlite::SqliteConnectionManager;
 #[cfg(test)]
 use rusqlite::params;
+use rusqlite::OptionalExtension;
 use rusqlite_migration::{Migrations, M};
 use std::ops::DerefMut;
 use std::path::{Path, PathBuf};
@@ -36,6 +37,7 @@ pub fn init_db() -> Result<DbPool, String> {
     run_migrations(&mut conn)?;
     verify_integrity(&conn)?;
     evict_old_cache(&conn)?;
+    migrate_to_multi_provider(&conn)?;
 
     Ok(pool)
 }
@@ -174,6 +176,69 @@ fn verify_integrity(conn: &r2d2::PooledConnection<SqliteConnectionManager>) -> R
     if result != "ok" {
         return Err(format!("Database integrity check failed: {}", result));
     }
+    Ok(())
+}
+
+/// Migrate to multi-provider API key storage
+///
+/// Migration: Existing 'openrouter_api_key_encrypted' becomes 'api_key_openrouter'
+/// Migration: Add 'ai_provider_default' = 'openrouter'
+fn migrate_to_multi_provider(
+    conn: &r2d2::PooledConnection<SqliteConnectionManager>,
+) -> Result<(), String> {
+    // Check if old OpenRouter key exists (from Story 3.6)
+    let old_key: Option<String> = conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = 'openrouter_api_key_encrypted'",
+            [],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("Migration check failed: {}", e))?;
+
+    if let Some(key_value) = old_key {
+        // Rename to 'api_key_openrouter' (new multi-provider format)
+        conn.execute(
+            "INSERT INTO settings (key, value) VALUES ('api_key_openrouter', ?1) ON CONFLICT(key) DO UPDATE SET value = ?1",
+            rusqlite::params![&key_value],
+        )
+        .map_err(|e| format!("Migration insert failed: {}", e))?;
+
+        // Set default provider to OpenRouter
+        conn.execute(
+            "INSERT INTO settings (key, value) VALUES ('ai_provider_default', 'openrouter') ON CONFLICT(key) DO NOTHING",
+            [],
+        )
+        .map_err(|e| format!("Migration default provider failed: {}", e))?;
+
+        // Delete old key
+        conn.execute(
+            "DELETE FROM settings WHERE key = 'openrouter_api_key_encrypted'",
+            [],
+        )
+        .map_err(|e| format!("Migration delete failed: {}", e))?;
+
+        eprintln!("✅ Migrated API key to multi-provider format");
+    } else {
+        // Fresh install or already migrated
+        // Set default provider if not set
+        let has_default: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM settings WHERE key = 'ai_provider_default'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(0);
+
+        if has_default == 0 {
+            conn.execute(
+                "INSERT INTO settings (key, value) VALUES ('ai_provider_default', 'openrouter')",
+                [],
+            )
+            .map_err(|e| format!("Failed to set default provider: {}", e))?;
+        }
+    }
+
     Ok(())
 }
 
@@ -409,6 +474,90 @@ mod tests {
         assert!(
             result.is_ok(),
             "Integrity check should pass on valid database"
+        );
+
+        fs::remove_dir_all(test_dir).ok();
+    }
+
+    #[test]
+    fn test_migration_idempotency() {
+        // Story 4.25-1: Run migration 3x on same DB, verify no data duplication or corruption
+        let (test_dir, pool) = create_test_db();
+        let conn = pool.get().unwrap();
+
+        // Simulate existing OpenRouter key (from Story 3.6)
+        conn.execute(
+            "INSERT INTO settings (key, value) VALUES ('openrouter_api_key_encrypted', 'test_encrypted_key')",
+            [],
+        )
+        .unwrap();
+
+        // Run migration 3 times
+        for i in 1..=3 {
+            migrate_to_multi_provider(&conn).expect(&format!("Migration {} should succeed", i));
+        }
+
+        // Verify no duplicate entries
+        let key_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM settings WHERE key = 'api_key_openrouter'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            key_count, 1,
+            "Should have exactly 1 api_key_openrouter entry"
+        );
+
+        let default_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM settings WHERE key = 'ai_provider_default'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            default_count, 1,
+            "Should have exactly 1 ai_provider_default entry"
+        );
+
+        // Verify old key was deleted
+        let old_key_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM settings WHERE key = 'openrouter_api_key_encrypted'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            old_key_count, 0,
+            "Old key should be deleted after migration"
+        );
+
+        // Verify data integrity
+        let new_key: String = conn
+            .query_row(
+                "SELECT value FROM settings WHERE key = 'api_key_openrouter'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            new_key, "test_encrypted_key",
+            "Key value should be preserved"
+        );
+
+        let default_provider: String = conn
+            .query_row(
+                "SELECT value FROM settings WHERE key = 'ai_provider_default'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            default_provider, "openrouter",
+            "Default provider should be openrouter"
         );
 
         fs::remove_dir_all(test_dir).ok();
