@@ -3,11 +3,13 @@
  *
  * Streams AI responses from OpenRouter with rate limiting
  * Uses awslambda.streamifyResponse() for real-time streaming
+ * Note: awslambda is globally provided by Lambda runtime (not imported)
  */
 
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
-import { streamifyResponse } from 'awslambda';
 import { checkRateLimit, generateFingerprint, exceedsTokenLimit } from './ratelimit.mjs';
+
+/* global awslambda */
 
 const ssmClient = new SSMClient({});
 const API_KEY_PARAM = process.env.OPENROUTER_API_KEY_PARAM;
@@ -162,7 +164,7 @@ async function streamOpenRouterResponse(apiKey, requestBody, responseStream, met
 /**
  * Main handler with streaming
  */
-export const handler = streamifyResponse(async (event, responseStream, context) => {
+export const handler = awslambda.streamifyResponse(async (event, responseStream, context) => {
     const metadata = {
         statusCode: 200,
         headers: {}

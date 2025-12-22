@@ -177,45 +177,6 @@ impl AiProvider for OpenRouterProvider {
             status: 500,
         })
     }
-
-    async fn test_connection(&self) -> Result<(), AiError> {
-        let response = self
-            .client
-            .post("https://openrouter.ai/api/v1/chat/completions")
-            .header("Authorization", format!("Bearer {}", self.api_key))
-            .header("HTTP-Referer", "https://ronin.app")
-            .header("X-Title", "Ronin")
-            .json(&serde_json::json!({
-                "model": "xiaomi/mimo-v2-flash:free",
-                "messages": [{"role": "user", "content": "test"}],
-                "max_tokens": 1
-            }))
-            .timeout(Duration::from_secs(10))
-            .send()
-            .await
-            .map_err(|_| AiError::Network {
-                message: "Connection failed".to_string(),
-            })?;
-
-        match response.status().as_u16() {
-            200 => Ok(()),
-            401 | 403 => Err(AiError::Auth {
-                message: "Invalid API key".to_string(),
-                status: response.status().as_u16(),
-            }),
-            429 => Err(AiError::RateLimit {
-                message: "Rate limited".to_string(),
-                retry_after: 30,
-            }),
-            500..=599 => Err(AiError::Server {
-                message: "Server error".to_string(),
-                status: response.status().as_u16(),
-            }),
-            _ => Err(AiError::Network {
-                message: "Unexpected error".to_string(),
-            }),
-        }
-    }
 }
 
 #[cfg(test)]

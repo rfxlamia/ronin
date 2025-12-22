@@ -1,6 +1,7 @@
 /**
  * Demo Upgrade Prompt Component
  * Story 4.25-2: AWS Lambda Demo Mode Proxy
+ * Story 4.25-3: Provider Settings UI & Multi-Key Storage
  *
  * Subtle prompt after successful demo request
  * Dismissable for 24 hours
@@ -30,11 +31,6 @@ export function DemoUpgradePrompt({ onAddApiKey, onDismiss }: DemoUpgradePromptP
     }
 
     const handleDismiss = () => {
-        dismissPrompt();
-        onDismiss?.();
-    };
-
-    const handleDontAsk = () => {
         dismissPrompt();
         onDismiss?.();
     };
@@ -78,7 +74,7 @@ export function DemoUpgradePrompt({ onAddApiKey, onDismiss }: DemoUpgradePromptP
                         <Button
                             size="sm"
                             variant="ghost"
-                            onClick={handleDontAsk}
+                            onClick={handleDismiss}
                             className="text-ronin-text-secondary text-xs"
                         >
                             Don't ask

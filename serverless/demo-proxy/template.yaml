@@ -44,6 +44,7 @@ Resources:
             TableName: !Ref RateLimitTable
       FunctionUrlConfig:
         AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
         Cors:
           AllowOrigins:
             - tauri://localhost

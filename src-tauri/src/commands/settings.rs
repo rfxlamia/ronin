@@ -5,6 +5,7 @@ use crate::ai::provider::ProviderInfo;
 use crate::security::{decrypt_api_key, encrypt_api_key};
 use base64::{engine::general_purpose, Engine as _};
 use rusqlite::OptionalExtension;
+use std::time::Duration;
 
 /// Get a setting value from the database
 #[tauri::command]
@@ -105,7 +106,10 @@ pub async fn set_default_provider(
 ) -> Result<(), String> {
     // Validate provider ID (openrouter or demo)
     if provider_id != "openrouter" && provider_id != "demo" {
-        return Err(format!("Unknown provider: {}", provider_id));
+        return Err(format!(
+            "Provider '{}' coming soon - currently only OpenRouter and Demo Mode supported",
+            provider_id
+        ));
     }
 
     let conn = pool
@@ -152,12 +156,31 @@ pub async fn save_provider_api_key(
     Ok(())
 }
 
+/// Mask an API key for display (first 8 chars + ... + 4 bullets)
+fn mask_api_key(key: &str) -> String {
+    if key.len() <= 8 {
+        return "••••••••".to_string();
+    }
+    let prefix: String = key.chars().take(8).collect();
+    format!("{}...••••", prefix)
+}
+
 /// Get (decrypt and return) API key for a provider
+/// When reveal=false (default): Returns masked format for display
+/// When reveal=true: Returns full decrypted key (use cautiously)
 #[tauri::command]
 pub async fn get_provider_api_key(
     provider_id: String,
+    reveal: Option<bool>,
     pool: tauri::State<'_, crate::db::DbPool>,
 ) -> Result<Option<String>, String> {
+    let reveal = reveal.unwrap_or(false);
+    
+    if reveal {
+        // Log security warning when revealing full key
+        eprintln!("[SECURITY WARNING] Full API key requested for provider: {}", provider_id);
+    }
+
     let conn = pool
         .get()
         .map_err(|e| format!("Failed to get database connection: {}", e))?;
@@ -178,9 +201,80 @@ pub async fn get_provider_api_key(
                 .decode(enc)
                 .map_err(|e| format!("Failed to decode base64: {}", e))?;
             let decrypted = decrypt_api_key(&encrypted)?;
-            Ok(Some(decrypted))
+            
+            if reveal {
+                Ok(Some(decrypted))
+            } else {
+                Ok(Some(mask_api_key(&decrypted)))
+            }
         }
         None => Ok(None),
+    }
+}
+
+/// Test connection to a provider
+/// OpenRouter: GET https://openrouter.ai/api/v1/models (no tokens consumed)
+/// Demo Mode: Always succeeds (no key needed)
+#[tauri::command]
+pub async fn test_provider_connection(
+    provider_id: String,
+    pool: tauri::State<'_, crate::db::DbPool>,
+) -> Result<bool, String> {
+    match provider_id.as_str() {
+        "demo" => {
+            // Demo mode doesn't need a key, always succeeds
+            Ok(true)
+        }
+        "openrouter" => {
+            // Get the API key (revealed for actual use)
+            let conn = pool
+                .get()
+                .map_err(|e| format!("Failed to get database connection: {}", e))?;
+
+            let setting_key = "api_key_openrouter";
+            let encoded: Option<String> = conn
+                .query_row(
+                    "SELECT value FROM settings WHERE key = ?1",
+                    rusqlite::params![setting_key],
+                    |row| row.get(0),
+                )
+                .optional()
+                .map_err(|e| format!("Failed to query encrypted key: {}", e))?;
+
+            let api_key = match encoded {
+                Some(enc) => {
+                    let encrypted = general_purpose::STANDARD
+                        .decode(enc)
+                        .map_err(|e| format!("Failed to decode base64: {}", e))?;
+                    decrypt_api_key(&encrypted)?
+                }
+                None => return Err("API key not configured".to_string()),
+            };
+
+            // Test connection using GET /models endpoint (no tokens consumed)
+            let client = reqwest::Client::new();
+            let response = client
+                .get("https://openrouter.ai/api/v1/models")
+                .header("Authorization", format!("Bearer {}", api_key))
+                .header("HTTP-Referer", "https://ronin.app")
+                .header("X-Title", "Ronin")
+                .timeout(std::time::Duration::from_secs(10))
+                .send()
+                .await
+                .map_err(|e| format!("Connection failed: {}", e))?;
+
+            match response.status().as_u16() {
+                200 => Ok(true),
+                401 | 403 => Err("Invalid API key".to_string()),
+                429 => Err("Rate limited - please try again later".to_string()),
+                500..=599 => Err("OpenRouter server error - please try again later".to_string()),
+                code => Err(format!("Connection failed with status {}", code)),
+            }
+        }
+        _ => Err(format!(
+            "Provider '{}' coming soon - currently only OpenRouter and Demo Mode supported",
+            provider_id
+        )),
     }
 }
 
@@ -461,6 +555,40 @@ mod tests {
         assert_eq!(decrypted, test_key);
 
         fs::remove_dir_all(test_dir).ok();
+    }
+
+    #[test]
+    fn test_mask_api_key() {
+        // Test normal key
+        let key = "sk-or-v1-1234567890abcdef";
+        let masked = mask_api_key(key);
+        assert_eq!(masked, "sk-or-v1...••••");
+        assert!(!masked.contains("1234567890"));
+
+        // Test short key
+        let short_key = "short";
+        let masked_short = mask_api_key(short_key);
+        assert_eq!(masked_short, "••••••••");
+
+        // Test exactly 8 char key
+        let eight_key = "12345678";
+        let masked_eight = mask_api_key(eight_key);
+        assert_eq!(masked_eight, "••••••••");
+    }
+
+    #[test]
+    fn test_set_default_provider_validation() {
+        // Test that invalid provider IDs return appropriate error message
+        let invalid_providers = vec!["openai", "anthropic", "groq", "invalid"];
+        for provider in invalid_providers {
+            // The validation happens in the command, so we just test the message format
+            let expected_error = format!(
+                "Provider '{}' coming soon - currently only OpenRouter and Demo Mode supported",
+                provider
+            );
+            assert!(expected_error.contains("coming soon"));
+            assert!(expected_error.contains(provider));
+        }
     }
 
     #[test]

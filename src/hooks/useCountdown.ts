@@ -3,6 +3,11 @@ import { useState, useEffect, useCallback } from 'react';
 export interface CountdownState {
   secondsRemaining: number;
   isActive: boolean;
+  // Convenience properties for display (Story 4.25-3)
+  timeRemaining: number;
+  minutes: number;
+  seconds: number;
+  progress: number;
 }
 
 /**
@@ -12,9 +17,11 @@ export interface CountdownState {
 export function useCountdown(initialSeconds: number = 0): CountdownState & { start: (seconds: number) => void; reset: () => void } {
   const [secondsRemaining, setSecondsRemaining] = useState(initialSeconds);
   const [isActive, setIsActive] = useState(initialSeconds > 0);
+  const [initialValue, setInitialValue] = useState(initialSeconds);
 
   const start = useCallback((seconds: number) => {
     setSecondsRemaining(seconds);
+    setInitialValue(seconds);
     setIsActive(seconds > 0);
   }, []);
 
@@ -44,5 +51,20 @@ export function useCountdown(initialSeconds: number = 0): CountdownState & { sta
     return () => clearInterval(intervalId);
   }, [isActive, secondsRemaining]);
 
-  return { secondsRemaining, isActive, start, reset };
+  // Computed values for display (Story 4.25-3)
+  const minutes = Math.floor(secondsRemaining / 60);
+  const seconds = secondsRemaining % 60;
+  const progress = initialValue > 0 ? ((initialValue - secondsRemaining) / initialValue) * 100 : 0;
+
+  return {
+    secondsRemaining,
+    isActive,
+    start,
+    reset,
+    // Convenience aliases
+    timeRemaining: secondsRemaining,
+    minutes,
+    seconds,
+    progress,
+  };
 }
