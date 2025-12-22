@@ -91,4 +91,18 @@ describe('DevlogButton', () => {
 
     expect(mockOpen).toHaveBeenCalledWith(2, '/path/to/active');
   });
+
+  it('should not render when no projects exist', () => {
+    (useProjectStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: (state: unknown) => unknown) => {
+      const state = {
+        projects: [], // No projects
+      };
+      return selector(state);
+    });
+
+    render(<DevlogButton />);
+
+    const button = screen.queryByRole('button', { name: /open devlog editor/i });
+    expect(button).not.toBeInTheDocument();
+  });
 });

@@ -28,6 +28,9 @@ export function DevlogButton() {
   // Don't render button when modal is open (it's behind the backdrop anyway)
   if (isOpen) return null;
 
+  // Don't render button when no projects tracked (Epic 4 Retro Item)
+  if (projects.length === 0) return null;
+
   return (
     <Button
       onClick={handleOpen}
