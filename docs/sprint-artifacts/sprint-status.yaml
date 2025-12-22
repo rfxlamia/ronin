@@ -77,8 +77,8 @@ development_status:
   epic-4-retrospective: done
 
   epic-4.25: in-progress
-  4.25-1-unified-api-client-vercel-sdk: drafted
-  4.25-2-aws-lambda-demo-mode-proxy: backlog
+  4.25-1-unified-api-client-vercel-sdk: done
+  4.25-2-aws-lambda-demo-mode-proxy: done
   4.25-3-provider-settings-ui-multi-key-storage: backlog
   epic-4.25-retrospective: optional
 
