@@ -9,6 +9,7 @@ import { TestContextPanel } from '@/pages/TestContextPanel';
 import { DevlogButton } from '@/components/devlog/DevlogButton';
 import { DevlogModal } from '@/components/devlog/DevlogModal';
 import { Toaster } from 'sonner';
+import DebugAgent from '@/pages/DebugAgent';
 
 function App() {
   const [loadingComplete, setLoadingComplete] = useState(false);
@@ -43,6 +44,7 @@ function App() {
             {import.meta.env.DEV && (
               <Route path="/test/context-panel" element={<TestContextPanel />} />
             )}
+            <Route path="/debug/agent" element={<DebugAgent />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AppShell>

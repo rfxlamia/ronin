@@ -7,11 +7,34 @@ use futures_util::stream::Stream;
 use serde::{Deserialize, Serialize};
 use std::pin::Pin;
 
+/// Message struct for multi-turn conversation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Message {
+    pub role: String, // "system", "user", "assistant", "tool"
+    pub content: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>, // For tool calls
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_calls: Option<Vec<serde_json::Value>>, // Support generic tool calls structure
+}
+
 /// Context payload for AI inference
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContextPayload {
-    pub system_prompt: String,
-    pub user_message: String,
+    // NEW: Multi-turn conversation support
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub messages: Option<Vec<Message>>,
+
+    // LEGACY: Single-turn support (Story 3.4 compatibility)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub system_prompt: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_message: Option<String>,
+
+    // Model selection (NEW)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>, // e.g., "xiaomi/mimo-v2-flash:free"
+
     pub attribution: crate::ai::openrouter::Attribution,
 }
 
@@ -89,10 +112,21 @@ impl std::error::Error for AiError {}
 /// AI chunk event for streaming
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiChunkEvent {
-    pub content: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_calls: Option<Vec<serde_json::Value>>,
     pub is_complete: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+}
+
+/// Stream event for AI response
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "type", content = "data")]
+pub enum AiStreamEvent {
+    Text(String),
+    ToolCall(serde_json::Value), // { name, arguments, id }
 }
 
 /// Trait for AI provider implementations
@@ -108,11 +142,11 @@ pub trait AiProvider: Send + Sync {
 
     /// Stream AI context generation
     ///
-    /// Returns a stream of incremental chunks that can be emitted to the frontend
+    /// Returns a stream of incremental events (Text or ToolCall)
     async fn stream_context(
         &self,
         payload: ContextPayload,
-    ) -> Result<Pin<Box<dyn Stream<Item = String> + Send>>, AiError>;
+    ) -> Result<Pin<Box<dyn Stream<Item = AiStreamEvent> + Send>>, AiError>;
 }
 
 #[cfg(test)]
@@ -186,8 +220,10 @@ mod tests {
         use crate::ai::openrouter::Attribution;
 
         let payload = ContextPayload {
-            system_prompt: "Test prompt".to_string(),
-            user_message: "Test message".to_string(),
+            system_prompt: Some("Test prompt".to_string()),
+            user_message: Some("Test message".to_string()),
+            messages: None,
+            model: None,
             attribution: Attribution {
                 commits: 10,
                 files: 5,
@@ -199,6 +235,49 @@ mod tests {
         let json = serde_json::to_string(&payload).expect("Should serialize");
         assert!(json.contains("Test prompt"));
         assert!(json.contains("Test message"));
+    }
+
+    #[test]
+    fn test_context_payload_formats() {
+        // Test New Format
+        let json_new = r#"{
+            "messages": [
+                {"role": "user", "content": "Hello", "name": null}
+            ],
+            "model": "test-model",
+            "attribution": {
+                "commits": 0,
+                "files": 0,
+                "sources": []
+            }
+        }"#;
+        let payload_new: ContextPayload =
+            serde_json::from_str(json_new).expect("Should deserialize new format");
+
+        if let Some(msgs) = payload_new.messages {
+            assert_eq!(msgs.len(), 1);
+            assert_eq!(msgs[0].role, "user");
+            assert_eq!(msgs[0].content, "Hello");
+        } else {
+            panic!("Messages should be present");
+        }
+
+        assert_eq!(payload_new.model.as_deref(), Some("test-model"));
+
+        // Test Legacy Format
+        let json_legacy = r#"{
+            "system_prompt": "Sys",
+            "user_message": "User",
+            "attribution": {
+                "commits": 0,
+                "files": 0,
+                "sources": []
+            }
+        }"#;
+        let payload_legacy: ContextPayload =
+            serde_json::from_str(json_legacy).expect("Should deserialize legacy format");
+        assert_eq!(payload_legacy.system_prompt.as_deref(), Some("Sys"));
+        assert_eq!(payload_legacy.user_message.as_deref(), Some("User"));
     }
 
     #[test]

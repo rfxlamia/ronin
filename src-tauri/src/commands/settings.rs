@@ -5,7 +5,6 @@ use crate::ai::provider::ProviderInfo;
 use crate::security::{decrypt_api_key, encrypt_api_key};
 use base64::{engine::general_purpose, Engine as _};
 use rusqlite::OptionalExtension;
-use std::time::Duration;
 
 /// Get a setting value from the database
 #[tauri::command]
@@ -134,7 +133,10 @@ pub async fn save_provider_api_key(
 ) -> Result<(), String> {
     // Validate provider ID (demo doesn't need API keys)
     if provider_id != "openrouter" {
-        return Err(format!("Unknown provider or provider doesn't support API keys: {}", provider_id));
+        return Err(format!(
+            "Unknown provider or provider doesn't support API keys: {}",
+            provider_id
+        ));
     }
 
     // Encrypt the API key
@@ -175,10 +177,13 @@ pub async fn get_provider_api_key(
     pool: tauri::State<'_, crate::db::DbPool>,
 ) -> Result<Option<String>, String> {
     let reveal = reveal.unwrap_or(false);
-    
+
     if reveal {
         // Log security warning when revealing full key
-        eprintln!("[SECURITY WARNING] Full API key requested for provider: {}", provider_id);
+        eprintln!(
+            "[SECURITY WARNING] Full API key requested for provider: {}",
+            provider_id
+        );
     }
 
     let conn = pool
@@ -201,7 +206,7 @@ pub async fn get_provider_api_key(
                 .decode(enc)
                 .map_err(|e| format!("Failed to decode base64: {}", e))?;
             let decrypted = decrypt_api_key(&encrypted)?;
-            
+
             if reveal {
                 Ok(Some(decrypted))
             } else {

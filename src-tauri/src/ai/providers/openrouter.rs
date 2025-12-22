@@ -45,21 +45,31 @@ impl AiProvider for OpenRouterProvider {
     async fn stream_context(
         &self,
         payload: ContextPayload,
-    ) -> Result<Pin<Box<dyn Stream<Item = String> + Send>>, AiError> {
+    ) -> Result<Pin<Box<dyn Stream<Item = crate::ai::provider::AiStreamEvent> + Send>>, AiError>
+    {
         let api_key = self.api_key.clone();
         let client = self.client.clone();
-        let models = Self::get_models();
 
-        let messages = vec![
-            serde_json::json!({
-                "role": "system",
-                "content": payload.system_prompt
-            }),
-            serde_json::json!({
-                "role": "user",
-                "content": payload.user_message
-            }),
-        ];
+        // Task 3.3: Respect model parameter from payload
+        let models: Vec<String> = if let Some(m) = &payload.model {
+            vec![m.clone()]
+        } else {
+            Self::get_models().into_iter().map(String::from).collect()
+        };
+
+        // Task 3.2: Convert or construct messages
+        let messages = if let Some(msgs) = &payload.messages {
+            serde_json::to_value(msgs).map_err(|e| AiError::Config {
+                message: e.to_string(),
+            })?
+        } else {
+            let sys = payload.system_prompt.clone().unwrap_or_default();
+            let user = payload.user_message.clone().unwrap_or_default();
+            serde_json::json!([
+                { "role": "system", "content": sys },
+                { "role": "user", "content": user }
+            ])
+        };
 
         // Try each model until one succeeds
         for model in models {
@@ -117,6 +127,7 @@ impl AiProvider for OpenRouterProvider {
 
                     // Success! Create streaming response
                     let stream = stream! {
+                        use crate::ai::provider::AiStreamEvent;
                         let mut event_stream = resp.bytes_stream().eventsource();
 
                         while let Some(event) = event_stream.next().await {
@@ -139,12 +150,18 @@ impl AiProvider for OpenRouterProvider {
                                     #[derive(Deserialize)]
                                     struct Delta {
                                         content: Option<String>,
+                                        tool_calls: Option<Vec<serde_json::Value>>,
                                     }
 
                                     if let Ok(chunk) = serde_json::from_str::<StreamChunk>(&evt.data) {
                                         if let Some(choice) = chunk.choices.first() {
                                             if let Some(content) = &choice.delta.content {
-                                                yield content.clone();
+                                                yield AiStreamEvent::Text(content.clone());
+                                            }
+                                            if let Some(tool_calls) = &choice.delta.tool_calls {
+                                                for tc in tool_calls {
+                                                    yield AiStreamEvent::ToolCall(tc.clone());
+                                                }
                                             }
                                         }
                                     }
@@ -200,5 +217,40 @@ mod tests {
         let models = OpenRouterProvider::get_models();
         assert_eq!(models.len(), 3);
         assert_eq!(models[0], "xiaomi/mimo-v2-flash:free");
+    }
+
+    // Task 3.4 Integration Test
+    #[tokio::test]
+    async fn test_provider_with_messages_payload() {
+        use crate::ai::openrouter::Attribution;
+        use crate::ai::provider::Message;
+
+        // Note: This test constructs the provider but doesn't make API calls
+        // to avoid networking in unit tests. It mainly verifies compilation
+        // and struct usage.
+
+        let provider = OpenRouterProvider::new("test-key".to_string());
+
+        let _payload = ContextPayload {
+            messages: Some(vec![Message {
+                role: "user".to_string(),
+                content: "Hello".to_string(),
+                name: None,
+                tool_calls: None,
+            }]),
+            model: Some("test/model".to_string()),
+            system_prompt: None,
+            user_message: None,
+            attribution: Attribution {
+                commits: 0,
+                files: 0,
+                sources: vec![],
+                devlog_lines: None,
+            },
+        };
+
+        assert_eq!(provider.id(), "openrouter");
+        // We can't easily test internal logic without mocking reqwest,
+        // but this confirms the payload structure is compatible.
     }
 }

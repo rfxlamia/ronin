@@ -28,7 +28,9 @@ export interface ProviderInfo {
  * AI chunk event for streaming (backward compatible)
  */
 export interface AiChunkEvent {
-  text: string;
+  text?: string;
+  tool_calls?: any[];
+  is_complete: boolean;
   provider?: string; // Optional provider ID (added in Story 4.25-1)
 }
 
@@ -80,4 +82,24 @@ export interface DemoQuota {
   remainingHourly: number;
   remainingDaily: number;
   resetTime: number | null; // Unix timestamp (seconds)
+}
+
+/**
+ * Message type for multi-turn conversation (Story 4.5.1)
+ */
+export interface Message {
+  role: string; // "system" | "user" | "assistant" | "tool"
+  content: string;
+  name?: string; // For tool calls
+}
+
+/**
+ * Context payload for AI inference (Story 4.5.1)
+ */
+export interface ContextPayload {
+  messages?: Message[];
+  system_prompt?: string;
+  user_message?: string;
+  model?: string;
+  attribution: Attribution;
 }

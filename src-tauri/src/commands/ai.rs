@@ -160,67 +160,15 @@ pub async fn test_api_connection(api_key: String) -> Result<bool, String> {
 #[tauri::command]
 pub async fn generate_context(
     project_id: i64,
+    payload: Option<ContextPayload>, // NEW: Optional payload from Vercel SDK
     window: tauri::Window,
     pool: tauri::State<'_, crate::db::DbPool>,
 ) -> Result<(), String> {
-    // Get project path
     let conn = pool
         .get()
         .map_err(|e| format!("Database connection failed: {}", e))?;
 
-    let project_path: String = conn
-        .query_row(
-            "SELECT path FROM projects WHERE id = ?1",
-            rusqlite::params![project_id],
-            |row| row.get(0),
-        )
-        .map_err(|e| format!("Project not found: {}", e))?;
-
-    // Get Git context
-    let git_context = match get_git_context(project_path.clone()).await {
-        Ok(ctx) => ctx,
-        Err(_e) => {
-            let error_msg = "APIERROR:0:Couldn't access git repository".to_string();
-            window
-                .emit(
-                    "ai-error",
-                    serde_json::json!({
-                        "message": error_msg.clone()
-                    }),
-                )
-                .map_err(|e| e.to_string())?;
-            return Err(error_msg);
-        }
-    };
-
-    // Build context strings
-    let git_context_str = build_git_context(&git_context);
-
-    // Read DEVLOG if available (Story 3.7)
-    let project_path = std::path::Path::new(&project_path);
-    let devlog = read_devlog(project_path);
-
-    // Enforce token budget: truncate DEVLOG if combined > 10KB
-    let devlog = enforce_token_budget(&git_context_str, devlog);
-
-    // Build system prompt with Git context and optional DEVLOG
-    let system_prompt = build_system_prompt(&git_context_str, devlog.as_ref());
-
-    // Validate payload size
-    if let Err(_e) = validate_payload_size(&system_prompt) {
-        let error_msg = "APIERROR:0:Context too large to process".to_string();
-        window
-            .emit(
-                "ai-error",
-                serde_json::json!({
-                    "message": error_msg.clone()
-                }),
-            )
-            .map_err(|e| e.to_string())?;
-        return Err(error_msg);
-    }
-
-    // Get default provider
+    // 1. Initialize Provider (Shared)
     let default_provider: String = conn
         .query_row(
             "SELECT value FROM settings WHERE key = 'ai_provider_default'",
@@ -231,11 +179,9 @@ pub async fn generate_context(
         .map_err(|e| format!("Failed to query default provider: {}", e))?
         .unwrap_or_else(|| "openrouter".to_string());
 
-    // Get API key for the provider (demo mode doesn't need one)
     let api_key = if default_provider == "demo" {
         None
     } else {
-        // Get decrypted key directly from database (internal use with reveal=true)
         let setting_key = format!("api_key_{}", default_provider);
         let encoded: Option<String> = conn
             .query_row(
@@ -269,33 +215,12 @@ pub async fn generate_context(
         }
     };
 
-    // Build attribution data from git context and DEVLOG
-    let commit_count = git_context.commits.len();
-    let file_count = git_context.status.modified_files.len();
-    let has_devlog = devlog.is_some();
-    let devlog_lines = devlog.as_ref().map(|d| d.lines_read);
-
-    let mut sources = vec!["git".to_string()];
-    if has_devlog {
-        sources.push("devlog".to_string());
-    }
-
-    let attribution = Attribution {
-        commits: commit_count,
-        files: file_count,
-        sources,
-        devlog_lines,
-    };
-
-    // Create provider instance
     let provider: Box<dyn AiProvider> = match default_provider.as_str() {
         "openrouter" => {
             let key = api_key.ok_or("API key required for OpenRouter")?;
             Box::new(OpenRouterProvider::new(key))
         }
         "demo" => {
-            // Lambda URL from compile-time config
-            // TODO: Set DEMO_LAMBDA_URL environment variable during build
             let lambda_url = option_env!("DEMO_LAMBDA_URL")
                 .unwrap_or(
                     "https://dkm5aeebsg7dggdpwoovlbzjde0ayxyh.lambda-url.ap-southeast-2.on.aws/",
@@ -317,51 +242,139 @@ pub async fn generate_context(
         }
     };
 
-    // Create context payload
-    let payload = ContextPayload {
-        system_prompt,
-        user_message: "Provide context about where I was in this project".to_string(),
-        attribution: attribution.clone(),
-    };
+    // 2. Determine Payload
+    let final_payload = if let Some(p) = payload {
+        p
+    } else {
+        // Legacy: Generate context from Git/DB
+        let project_path: String = conn
+            .query_row(
+                "SELECT path FROM projects WHERE id = ?1",
+                rusqlite::params![project_id],
+                |row| row.get(0),
+            )
+            .map_err(|e| format!("Project not found: {}", e))?;
 
-    // Stream the response using provider abstraction
-    match provider.stream_context(payload).await {
-        Ok(mut stream) => {
-            let mut full_text = String::new();
-
-            while let Some(chunk) = stream.next().await {
-                full_text.push_str(&chunk);
-
-                // Emit chunk with provider ID (backward compatible)
+        let git_context = match get_git_context(project_path.clone()).await {
+            Ok(ctx) => ctx,
+            Err(_e) => {
+                let error_msg = "APIERROR:0:Couldn't access git repository".to_string();
                 window
                     .emit(
-                        "ai-chunk",
+                        "ai-error",
                         serde_json::json!({
-                            "text": chunk,
-                            "provider": provider.id()
+                            "message": error_msg.clone()
                         }),
                     )
                     .map_err(|e| e.to_string())?;
+                return Err(error_msg);
+            }
+        };
+
+        let git_context_str = build_git_context(&git_context);
+        let project_path_obj = std::path::Path::new(&project_path);
+        let devlog = read_devlog(project_path_obj);
+        let devlog = enforce_token_budget(&git_context_str, devlog);
+        let system_prompt = build_system_prompt(&git_context_str, devlog.as_ref());
+
+        if let Err(_e) = validate_payload_size(&system_prompt) {
+            let error_msg = "APIERROR:0:Context too large to process".to_string();
+            window
+                .emit(
+                    "ai-error",
+                    serde_json::json!({
+                        "message": error_msg.clone()
+                    }),
+                )
+                .map_err(|e| e.to_string())?;
+            return Err(error_msg);
+        }
+
+        let commit_count = git_context.commits.len();
+        let file_count = git_context.status.modified_files.len();
+        let has_devlog = devlog.is_some();
+        let devlog_lines = devlog.as_ref().map(|d| d.lines_read);
+
+        let mut sources = vec!["git".to_string()];
+        if has_devlog {
+            sources.push("devlog".to_string());
+        }
+
+        let attribution = Attribution {
+            commits: commit_count,
+            files: file_count,
+            sources,
+            devlog_lines,
+        };
+
+        ContextPayload {
+            system_prompt: Some(system_prompt),
+            user_message: Some("Provide context about where I was in this project".to_string()),
+            messages: None,
+            model: None,
+            attribution,
+        }
+    };
+
+    // 3. Stream Response
+    let attribution = final_payload.attribution.clone();
+
+    match provider.stream_context(final_payload).await {
+        Ok(mut stream) => {
+            let mut full_text = String::new();
+
+            // Import enum locally relative to crate
+            use crate::ai::provider::AiStreamEvent;
+
+            while let Some(chunk) = stream.next().await {
+                match chunk {
+                    AiStreamEvent::Text(text) => {
+                        full_text.push_str(&text);
+                        window
+                            .emit(
+                                "ai-chunk",
+                                crate::ai::provider::AiChunkEvent {
+                                    text: Some(text),
+                                    tool_calls: None,
+                                    is_complete: false,
+                                    provider: Some(provider.id().to_string()),
+                                },
+                            )
+                            .map_err(|e| e.to_string())?;
+                    }
+                    AiStreamEvent::ToolCall(tc) => {
+                        window
+                            .emit(
+                                "ai-chunk",
+                                crate::ai::provider::AiChunkEvent {
+                                    text: None,
+                                    tool_calls: Some(vec![tc]),
+                                    is_complete: false,
+                                    provider: Some(provider.id().to_string()),
+                                },
+                            )
+                            .map_err(|e| e.to_string())?;
+                    }
+                }
             }
 
-            // Emit completion with attribution including provider name
             window
                 .emit(
                     "ai-complete",
                     serde_json::json!({
                         "text": full_text,
-                        "attribution": attribution,
+                        "attribution": attribution.clone(),
                         "provider": provider.name()
                     }),
                 )
                 .map_err(|e| e.to_string())?;
 
-            // Cache the context text for offline fallback
+            // Cache
             let attribution_json = serde_json::json!({
-                "commits": commit_count,
-                "files": file_count,
+                "commits": attribution.commits,
+                "files": attribution.files,
                 "sources": attribution.sources,
-                "devlogLines": devlog_lines
+                "devlogLines": attribution.devlog_lines
             })
             .to_string();
 

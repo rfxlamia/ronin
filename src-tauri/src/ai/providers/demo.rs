@@ -90,22 +90,25 @@ impl AiProvider for DemoProvider {
     async fn stream_context(
         &self,
         payload: ContextPayload,
-    ) -> Result<Pin<Box<dyn Stream<Item = String> + Send>>, AiError> {
+    ) -> Result<Pin<Box<dyn Stream<Item = crate::ai::provider::AiStreamEvent> + Send>>, AiError>
+    {
         let client = self.client.clone();
         let lambda_url = self.lambda_url.clone();
         let fingerprint = self.fingerprint.clone();
 
         // Convert payload to OpenRouter format
-        let messages = vec![
-            serde_json::json!({
-                "role": "system",
-                "content": payload.system_prompt
-            }),
-            serde_json::json!({
-                "role": "user",
-                "content": payload.user_message
-            }),
-        ];
+        let messages = if let Some(msgs) = &payload.messages {
+            serde_json::to_value(msgs).map_err(|e| AiError::Config {
+                message: e.to_string(),
+            })?
+        } else {
+            let sys = payload.system_prompt.clone().unwrap_or_default();
+            let user = payload.user_message.clone().unwrap_or_default();
+            serde_json::json!([
+                { "role": "system", "content": sys },
+                { "role": "user", "content": user }
+            ])
+        };
 
         let request_body = serde_json::json!({
             "messages": messages,
@@ -178,6 +181,7 @@ impl AiProvider for DemoProvider {
 
         // Stream successful response (SSE format from Lambda)
         let stream = stream! {
+            use crate::ai::provider::AiStreamEvent;
             let mut event_stream = response.bytes_stream().eventsource();
 
             while let Some(event) = event_stream.next().await {
@@ -205,7 +209,7 @@ impl AiProvider for DemoProvider {
                         if let Ok(chunk) = serde_json::from_str::<StreamChunk>(&evt.data) {
                             if let Some(choice) = chunk.choices.first() {
                                 if let Some(content) = &choice.delta.content {
-                                    yield content.clone();
+                                    yield AiStreamEvent::Text(content.clone());
                                 }
                             }
                         }
