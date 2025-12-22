@@ -2,7 +2,7 @@
 
 **Auto-generated** list of key source files. Excludes: tests, migrations, workflow engine, build artifacts.
 
-## Files (139 total)
+## Files (133 total)
 
 - [`README.md`](file:///home/v/project/ronin/README.md)
 - [`docs/epics.md`](file:///home/v/project/ronin/docs/epics.md)
@@ -29,29 +29,17 @@
 - [`docs/sprint-artifacts/4-1-devlog-editor-component.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4-1-devlog-editor-component.md)
 - [`docs/sprint-artifacts/4-2-file-sync-with-repository.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4-2-file-sync-with-repository.md)
 - [`docs/sprint-artifacts/4-3-devlog-history-view.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4-3-devlog-history-view.md)
-- [`docs/sprint-artifacts/4-3-fixes-applied.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4-3-fixes-applied.md)
 - [`docs/sprint-artifacts/4.25-1-unified-api-client-vercel-sdk.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4.25-1-unified-api-client-vercel-sdk.md)
 - [`docs/sprint-artifacts/4.25-2-aws-lambda-demo-mode-proxy.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4.25-2-aws-lambda-demo-mode-proxy.md)
-- [`docs/sprint-artifacts/codemirror-research-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/codemirror-research-2025-12-21.md)
-- [`docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md)
+- [`docs/sprint-artifacts/4.25-3-provider-settings-ui-multi-key-storage.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4.25-3-provider-settings-ui-multi-key-storage.md)
+- [`docs/sprint-artifacts/4.5-1-agent-core-system-prompt.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4.5-1-agent-core-system-prompt.md)
 - [`docs/sprint-artifacts/epic-1-retro-2025-12-18.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-1-retro-2025-12-18.md)
 - [`docs/sprint-artifacts/epic-2-retro-2025-12-20.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-2-retro-2025-12-20.md)
 - [`docs/sprint-artifacts/epic-3-retro-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-3-retro-2025-12-21.md)
 - [`docs/sprint-artifacts/epic-4-retro-2025-12-22.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-4-retro-2025-12-22.md)
-- [`docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md`](file:///home/v/project/ronin/docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md)
-- [`docs/sprint-artifacts/validation-report-2-2.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-2.md)
-- [`docs/sprint-artifacts/validation-report-2-8.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-8.md)
-- [`docs/sprint-artifacts/validation-report-2-9.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-9.md)
-- [`docs/sprint-artifacts/validation-report-2025-12-21-devlog-analysis.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2025-12-21-devlog-analysis.md)
-- [`docs/sprint-artifacts/validation-report-20251220-140839.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-20251220-140839.md)
-- [`docs/sprint-artifacts/validation-report-3-1-20251220.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-1-20251220.md)
-- [`docs/sprint-artifacts/validation-report-3-3-20251220-165907.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-3-20251220-165907.md)
-- [`docs/sprint-artifacts/validation-report-3-4-2025-12-20_20-26-41.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-4-2025-12-20_20-26-41.md)
-- [`docs/sprint-artifacts/validation-report-3-5.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-5.md)
-- [`docs/sprint-artifacts/validation-report-4-1-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-4-1-2025-12-21.md)
-- [`docs/sprint-artifacts/validation-report-4-3-devlog-history.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-4-3-devlog-history.md)
-- [`docs/sprint-artifacts/validation-report-4.2-20251221-155432.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-4.2-20251221-155432.md)
+- [`docs/sprint-artifacts/epic-4.25-retro-2025-12-22.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-4.25-retro-2025-12-22.md)
 - [`package.json`](file:///home/v/project/ronin/package.json)
+- [`serverless/demo-proxy/.aws-sam/build.toml`](file:///home/v/project/ronin/serverless/demo-proxy/.aws-sam/build.toml)
 - [`serverless/demo-proxy/package.json`](file:///home/v/project/ronin/serverless/demo-proxy/package.json)
 - [`src-tauri/Cargo.toml`](file:///home/v/project/ronin/src-tauri/Cargo.toml)
 - [`src-tauri/build.rs`](file:///home/v/project/ronin/src-tauri/build.rs)
@@ -99,6 +87,12 @@
 - [`src/components/devlog/MarkdownEditor.tsx`](file:///home/v/project/ronin/src/components/devlog/MarkdownEditor.tsx)
 - [`src/components/devlog/index.ts`](file:///home/v/project/ronin/src/components/devlog/index.ts)
 - [`src/components/mode-toggle.tsx`](file:///home/v/project/ronin/src/components/mode-toggle.tsx)
+- [`src/components/settings/AiProviderSettings.tsx`](file:///home/v/project/ronin/src/components/settings/AiProviderSettings.tsx)
+- [`src/components/settings/ApiKeyInput.tsx`](file:///home/v/project/ronin/src/components/settings/ApiKeyInput.tsx)
+- [`src/components/settings/ConnectionStatus.tsx`](file:///home/v/project/ronin/src/components/settings/ConnectionStatus.tsx)
+- [`src/components/settings/DemoModeStats.tsx`](file:///home/v/project/ronin/src/components/settings/DemoModeStats.tsx)
+- [`src/components/settings/ProviderSelector.tsx`](file:///home/v/project/ronin/src/components/settings/ProviderSelector.tsx)
+- [`src/components/settings/index.ts`](file:///home/v/project/ronin/src/components/settings/index.ts)
 - [`src/components/theme-provider.tsx`](file:///home/v/project/ronin/src/components/theme-provider.tsx)
 - [`src/components/ui/alert-dialog.tsx`](file:///home/v/project/ronin/src/components/ui/alert-dialog.tsx)
 - [`src/components/ui/badge.tsx`](file:///home/v/project/ronin/src/components/ui/badge.tsx)
@@ -145,4 +139,4 @@
 - [`vitest.config.ts`](file:///home/v/project/ronin/vitest.config.ts)
 
 ---
-*Generated: 2025-12-22T05:24:42.140Z*
+*Generated: 2025-12-22T11:33:17.009Z*

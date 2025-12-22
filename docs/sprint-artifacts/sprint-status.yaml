@@ -82,11 +82,10 @@ development_status:
   4.25-3-provider-settings-ui-multi-key-storage: done
   epic-4.25-retrospective: done
 
-  epic-4.5: backlog
-  4.5-1-reasoning-foundation-schemas-store: backlog
-  4.5-2-agent-route-thinking-ui: backlog
-  4.5-3-project-resurrection-protocol: backlog
-  4.5-4-persona-migration-architect-dev: backlog
+  epic-4.5: in-progress
+  4.5-1-agent-core-system-prompt: ready-for-dev
+  4.5-2-tool-implementation-protocol-execution: backlog
+  4.5-3-agent-route-ui: backlog
   epic-4.5-retrospective: optional
 
   epic-5: backlog
