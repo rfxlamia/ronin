@@ -2,7 +2,7 @@
 
 **Auto-generated** list of key source files. Excludes: tests, migrations, workflow engine, build artifacts.
 
-## Files (119 total)
+## Files (126 total)
 
 - [`README.md`](file:///home/v/project/ronin/README.md)
 - [`docs/epics.md`](file:///home/v/project/ronin/docs/epics.md)
@@ -27,11 +27,15 @@
 - [`docs/sprint-artifacts/3-6-error-states-offline-mode.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-6-error-states-offline-mode.md)
 - [`docs/sprint-artifacts/3-7-devlog-analysis-for-ai-context.md`](file:///home/v/project/ronin/docs/sprint-artifacts/3-7-devlog-analysis-for-ai-context.md)
 - [`docs/sprint-artifacts/4-1-devlog-editor-component.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4-1-devlog-editor-component.md)
+- [`docs/sprint-artifacts/4-2-file-sync-with-repository.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4-2-file-sync-with-repository.md)
+- [`docs/sprint-artifacts/4-3-devlog-history-view.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4-3-devlog-history-view.md)
+- [`docs/sprint-artifacts/4-3-fixes-applied.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4-3-fixes-applied.md)
 - [`docs/sprint-artifacts/codemirror-research-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/codemirror-research-2025-12-21.md)
 - [`docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/devlog-conflict-ui-spec-2025-12-21.md)
 - [`docs/sprint-artifacts/epic-1-retro-2025-12-18.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-1-retro-2025-12-18.md)
 - [`docs/sprint-artifacts/epic-2-retro-2025-12-20.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-2-retro-2025-12-20.md)
 - [`docs/sprint-artifacts/epic-3-retro-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-3-retro-2025-12-21.md)
+- [`docs/sprint-artifacts/epic-4-retro-2025-12-22.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-4-retro-2025-12-22.md)
 - [`docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md`](file:///home/v/project/ronin/docs/sprint-artifacts/tech-spec-epic3-preparation-sprint.md)
 - [`docs/sprint-artifacts/validation-report-2-2.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-2.md)
 - [`docs/sprint-artifacts/validation-report-2-8.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-2-8.md)
@@ -43,6 +47,8 @@
 - [`docs/sprint-artifacts/validation-report-3-4-2025-12-20_20-26-41.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-4-2025-12-20_20-26-41.md)
 - [`docs/sprint-artifacts/validation-report-3-5.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-3-5.md)
 - [`docs/sprint-artifacts/validation-report-4-1-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-4-1-2025-12-21.md)
+- [`docs/sprint-artifacts/validation-report-4-3-devlog-history.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-4-3-devlog-history.md)
+- [`docs/sprint-artifacts/validation-report-4.2-20251221-155432.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-4.2-20251221-155432.md)
 - [`package.json`](file:///home/v/project/ronin/package.json)
 - [`src-tauri/Cargo.toml`](file:///home/v/project/ronin/src-tauri/Cargo.toml)
 - [`src-tauri/build.rs`](file:///home/v/project/ronin/src-tauri/build.rs)
@@ -78,6 +84,7 @@
 - [`src/components/WindowControls.tsx`](file:///home/v/project/ronin/src/components/WindowControls.tsx)
 - [`src/components/devlog/ConflictDialog.tsx`](file:///home/v/project/ronin/src/components/devlog/ConflictDialog.tsx)
 - [`src/components/devlog/DevlogButton.tsx`](file:///home/v/project/ronin/src/components/devlog/DevlogButton.tsx)
+- [`src/components/devlog/DevlogHistory.tsx`](file:///home/v/project/ronin/src/components/devlog/DevlogHistory.tsx)
 - [`src/components/devlog/DevlogModal.tsx`](file:///home/v/project/ronin/src/components/devlog/DevlogModal.tsx)
 - [`src/components/devlog/MarkdownEditor.tsx`](file:///home/v/project/ronin/src/components/devlog/MarkdownEditor.tsx)
 - [`src/components/devlog/index.ts`](file:///home/v/project/ronin/src/components/devlog/index.ts)
@@ -125,4 +132,4 @@
 - [`vitest.config.ts`](file:///home/v/project/ronin/vitest.config.ts)
 
 ---
-*Generated: 2025-12-21T08:42:59.863Z*
+*Generated: 2025-12-22T01:47:33.885Z*
