@@ -39,6 +39,7 @@ pub fn run() {
             commands::git::get_git_branch,
             commands::git::get_git_status,
             commands::git::get_git_context,
+            commands::git::commit_changes,
             commands::ai::set_api_key,
             commands::ai::get_api_key,
             commands::ai::delete_api_key,
