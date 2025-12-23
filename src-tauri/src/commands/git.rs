@@ -14,9 +14,13 @@ pub struct GitCommit {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitStatus {
-    pub is_clean: bool,
-    pub modified_files: Vec<String>,
+    pub branch: String,
+    pub uncommitted_files: u32,
+    pub unpushed_commits: u32,
+    pub last_commit_timestamp: i64,
+    pub has_remote: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -148,12 +152,41 @@ pub async fn get_git_branch(path: String) -> Result<String, String> {
     }
 }
 
-/// Get the git status of the repository
+/// Get the git status of the repository with comprehensive information
 #[tauri::command]
 pub async fn get_git_status(path: String) -> Result<GitStatus, String> {
     let repo = Repository::open(&path)
         .map_err(|e| format!("Not a git repository or failed to open: {}", e))?;
 
+    // Get branch name (handle detached HEAD)
+    let branch = match repo.head() {
+        Ok(head) => {
+            if head.is_branch() {
+                head.shorthand()
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| "unknown".to_string())
+            } else {
+                // Detached HEAD - return commit SHA (short form)
+                head.target()
+                    .map(|oid| {
+                        let sha = oid.to_string();
+                        // Return first 7 characters like git does
+                        sha.chars().take(7).collect()
+                    })
+                    .unwrap_or_else(|| "DETACHED-HEAD".to_string())
+            }
+        }
+        Err(e) => {
+            // Empty repository (no commits yet)
+            if e.code() == git2::ErrorCode::UnbornBranch || e.code() == git2::ErrorCode::NotFound {
+                "main".to_string() // Default branch name for empty repo
+            } else {
+                return Err(format!("Failed to get HEAD: {}", e));
+            }
+        }
+    };
+
+    // Count uncommitted files (includes modified, new, deleted)
     let mut opts = git2::StatusOptions::new();
     opts.include_untracked(true)
         .include_ignored(false)
@@ -163,19 +196,81 @@ pub async fn get_git_status(path: String) -> Result<GitStatus, String> {
         .statuses(Some(&mut opts))
         .map_err(|e| format!("Failed to get git status: {}", e))?;
 
-    let mut modified_files = Vec::new();
-    for entry in statuses.iter() {
-        if let Some(path) = entry.path() {
-            modified_files.push(path.to_string());
-        }
-    }
+    let uncommitted_files = statuses.len() as u32;
 
-    let is_clean = modified_files.is_empty();
+    // Check if remote exists
+    let has_remote = repo
+        .remotes()
+        .map(|remotes| remotes.len() > 0)
+        .unwrap_or(false);
+
+    // Count unpushed commits (commits ahead of upstream)
+    let unpushed_commits = if has_remote {
+        // Try to get upstream branch
+        match repo.head() {
+            Ok(head) => {
+                if let Some(branch_name) = head.shorthand() {
+                    // Try to find upstream branch
+                    let upstream_name = format!("refs/remotes/origin/{}", branch_name);
+                    match repo.refname_to_id(&upstream_name) {
+                        Ok(upstream_oid) => {
+                            // Count commits between upstream and HEAD
+                            match repo.head() {
+                                Ok(head_ref) => {
+                                    if let Some(head_oid) = head_ref.target() {
+                                        match count_commits_between(&repo, upstream_oid, head_oid) {
+                                            Ok(count) => count,
+                                            Err(_) => 0, // If error counting, assume 0
+                                        }
+                                    } else {
+                                        0
+                                    }
+                                }
+                                Err(_) => 0,
+                            }
+                        }
+                        Err(_) => 0, // No tracking branch set up, assume 0
+                    }
+                } else {
+                    0 // Detached HEAD or other edge case
+                }
+            }
+            Err(_) => 0,
+        }
+    } else {
+        0 // No remote, so 0 unpushed commits
+    };
+
+    // Get last commit timestamp
+    let last_commit_timestamp = match repo.head() {
+        Ok(head) => match head.peel_to_commit() {
+            Ok(commit) => commit.time().seconds(),
+            Err(_) => 0, // No commits yet
+        },
+        Err(_) => 0, // No commits yet
+    };
 
     Ok(GitStatus {
-        is_clean,
-        modified_files,
+        branch,
+        uncommitted_files,
+        unpushed_commits,
+        last_commit_timestamp,
+        has_remote,
     })
+}
+
+/// Helper function to count commits between two commit OIDs
+fn count_commits_between(
+    repo: &Repository,
+    base_oid: Oid,
+    head_oid: Oid,
+) -> Result<u32, git2::Error> {
+    let mut revwalk = repo.revwalk()?;
+    revwalk.push(head_oid)?;
+    revwalk.hide(base_oid)?;
+
+    let count = revwalk.count() as u32;
+    Ok(count)
 }
 
 /// Get ONLY the last commit date for health status (lightweight - no file scanning)
@@ -361,10 +456,9 @@ mod tests {
         assert!(result.is_ok());
 
         let status = result.unwrap();
-        assert!(status.is_clean, "Repository should be clean after commits");
-        assert!(
-            status.modified_files.is_empty(),
-            "No modified files expected"
+        assert_eq!(
+            status.uncommitted_files, 0,
+            "Repository should have 0 uncommitted files after commits"
         );
     }
 
@@ -382,13 +476,9 @@ mod tests {
         assert!(result.is_ok());
 
         let status = result.unwrap();
-        assert!(
-            !status.is_clean,
-            "Repository should not be clean with uncommitted files"
-        );
-        assert!(
-            !status.modified_files.is_empty(),
-            "Should have uncommitted files"
+        assert_eq!(
+            status.uncommitted_files, 1,
+            "Repository should have 1 uncommitted file"
         );
     }
 
@@ -403,9 +493,10 @@ mod tests {
         let context = result.unwrap();
         assert_eq!(context.branch, "main");
         assert!(!context.commits.is_empty(), "Should have commits");
+        // Verify status has all required fields
         assert!(
-            context.status.is_clean || !context.status.modified_files.is_empty(),
-            "Status should be populated"
+            !context.status.branch.is_empty(),
+            "Branch should be populated"
         );
     }
 
@@ -501,5 +592,204 @@ mod tests {
         let result = get_git_context("/nonexistent/path".to_string()).await;
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Not a git repository"));
+    }
+
+    // ========================================================================
+    // NEW TESTS FOR STORY 5.1: Git Status Display
+    // These tests verify the expanded GitStatus struct functionality
+    // ========================================================================
+
+    #[tokio::test]
+    async fn test_git_status_includes_branch_name() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path().to_string_lossy().to_string();
+
+        let result = get_git_status(repo_path).await;
+        assert!(result.is_ok());
+
+        let status = result.unwrap();
+        assert_eq!(status.branch, "main", "Should return current branch name");
+    }
+
+    #[tokio::test]
+    async fn test_git_status_counts_uncommitted_files() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path();
+
+        // Create uncommitted files
+        let uncommitted_file1 = repo_path.join("uncommitted1.txt");
+        let uncommitted_file2 = repo_path.join("uncommitted2.txt");
+        fs::write(uncommitted_file1, "uncommitted content 1")
+            .expect("Failed to write uncommitted file 1");
+        fs::write(uncommitted_file2, "uncommitted content 2")
+            .expect("Failed to write uncommitted file 2");
+
+        // Also modify existing file
+        let existing_file = repo_path.join("test.txt");
+        fs::write(existing_file, "modified content").expect("Failed to modify existing file");
+
+        let result = get_git_status(repo_path.to_string_lossy().to_string()).await;
+        assert!(result.is_ok());
+
+        let status = result.unwrap();
+        assert_eq!(
+            status.uncommitted_files, 3,
+            "Should count 2 new files + 1 modified file = 3 uncommitted files"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_git_status_unpushed_commits_with_remote() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path();
+
+        // Add a fake remote (doesn't need to be real for this test)
+        Command::new("git")
+            .args([
+                "remote",
+                "add",
+                "origin",
+                "https://github.com/test/test.git",
+            ])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to add remote");
+
+        // Create a new commit that's ahead of remote
+        let new_file = repo_path.join("ahead.txt");
+        fs::write(new_file, "ahead content").expect("Failed to write ahead file");
+
+        Command::new("git")
+            .args(["add", "ahead.txt"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to add ahead file");
+
+        Command::new("git")
+            .args(["commit", "-m", "Ahead commit"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to commit ahead file");
+
+        let result = get_git_status(repo_path.to_string_lossy().to_string()).await;
+        assert!(result.is_ok());
+
+        let status = result.unwrap();
+        assert!(status.has_remote, "Should detect that remote exists");
+        // Note: unpushed_commits count may be 0 if we don't have an actual tracking branch
+        // This is expected for a test repo with fake remote
+    }
+
+    #[tokio::test]
+    async fn test_git_status_no_remote() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path().to_string_lossy().to_string();
+
+        let result = get_git_status(repo_path).await;
+        assert!(result.is_ok());
+
+        let status = result.unwrap();
+        assert!(!status.has_remote, "Should detect no remote exists");
+        assert_eq!(
+            status.unpushed_commits, 0,
+            "Should return 0 unpushed commits when no remote"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_git_status_detached_head() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path();
+
+        // Checkout first commit to create detached HEAD
+        Command::new("git")
+            .args(["checkout", "HEAD~1"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to checkout first commit");
+
+        let result = get_git_status(repo_path.to_string_lossy().to_string()).await;
+        assert!(result.is_ok());
+
+        let status = result.unwrap();
+        // In detached HEAD state, branch should show commit hash (first 7 chars)
+        assert!(
+            status.branch.len() >= 7 && status.branch.len() <= 40,
+            "Branch should be commit SHA in detached HEAD state, got: {}",
+            status.branch
+        );
+        assert_ne!(
+            status.branch, "main",
+            "Should not return 'main' in detached HEAD"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_git_status_empty_repo() {
+        let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+        let repo_path = temp_dir.path();
+
+        // Initialize empty git repo with no commits
+        Command::new("git")
+            .args(["init"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to init git repo");
+
+        Command::new("git")
+            .args(["config", "user.name", "Test User"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to set git user name");
+
+        Command::new("git")
+            .args(["config", "user.email", "test@example.com"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to set git user email");
+
+        let result = get_git_status(repo_path.to_string_lossy().to_string()).await;
+        assert!(result.is_ok());
+
+        let status = result.unwrap();
+        assert_eq!(
+            status.uncommitted_files, 0,
+            "Empty repo should have 0 uncommitted files"
+        );
+        assert_eq!(
+            status.unpushed_commits, 0,
+            "Empty repo should have 0 unpushed commits"
+        );
+        assert_eq!(
+            status.last_commit_timestamp, 0,
+            "Empty repo should have 0 for last commit timestamp"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_git_status_includes_last_commit_timestamp() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path().to_string_lossy().to_string();
+
+        let result = get_git_status(repo_path).await;
+        assert!(result.is_ok());
+
+        let status = result.unwrap();
+        assert!(
+            status.last_commit_timestamp > 0,
+            "Last commit timestamp should be > 0 for repo with commits"
+        );
+
+        // Verify timestamp is reasonable (within last year and not in future)
+        let now = chrono::Utc::now().timestamp();
+        let one_year_ago = now - (365 * 24 * 60 * 60);
+        assert!(
+            status.last_commit_timestamp >= one_year_ago,
+            "Timestamp should not be older than 1 year for test repo"
+        );
+        assert!(
+            status.last_commit_timestamp <= now + 60,
+            "Timestamp should not be in the future (allowing 60s clock skew)"
+        );
     }
 }

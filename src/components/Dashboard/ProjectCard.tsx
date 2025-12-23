@@ -23,6 +23,7 @@ import { useProjectStore } from '@/stores/projectStore';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useAiContext } from '@/hooks/useAiContext';
+import { GitStatusDisplay } from './GitStatusDisplay';
 
 interface ProjectCardProps {
     project: Project;
@@ -206,6 +207,13 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
                                     error={error || undefined}
                                     parsedError={parsedError || undefined}
                                 />
+
+                                {/* Git Status Display for Git projects */}
+                                {project.type === 'git' && (
+                                    <div className="pt-2 border-t border-border/50">
+                                        <GitStatusDisplay projectPath={project.path} />
+                                    </div>
+                                )}
 
                                 <Button
                                     className="w-full font-serif"

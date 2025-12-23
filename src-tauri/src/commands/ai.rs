@@ -271,7 +271,7 @@ pub async fn generate_context(
 
     // Build attribution data from git context and DEVLOG
     let commit_count = git_context.commits.len();
-    let file_count = git_context.status.modified_files.len();
+    let file_count = git_context.status.uncommitted_files as usize;
     let has_devlog = devlog.is_some();
     let devlog_lines = devlog.as_ref().map(|d| d.lines_read);
 
