@@ -146,7 +146,7 @@ All acceptance criteria met:
 - ✅ Displays branch, uncommitted count, unpushed count, last commit time
 - ✅ Performance < 1 second (git2 crate is fast)
 - ✅ Icons + text for accessibility (not color-only)
-- ✅ JetBrains Mono font for branch name
+- ✅ JetBrains Mono font for branch name (User requested switch to sans-serif during review)
 - ✅ Edge cases handled (no remote, detached HEAD, empty repo)
 
 ### References
