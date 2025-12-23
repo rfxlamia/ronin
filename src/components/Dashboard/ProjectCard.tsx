@@ -266,8 +266,11 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
 function GitControlsWrapper({ project }: { project: Project }) {
     const { status, refresh } = useGitStatus(project.path);
 
-    // Only show controls if there are uncommitted files
-    if (!status || status.uncommittedFiles === 0) {
+    // Show controls if there are uncommitted files OR unpushed commits
+    // This ensures:
+    // - Commit button appears when there are uncommitted files
+    // - Push button appears when there are unpushed commits
+    if (!status || (status.uncommittedFiles === 0 && status.unpushedCommits === 0)) {
         return null;
     }
 
