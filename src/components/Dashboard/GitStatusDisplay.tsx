@@ -34,7 +34,7 @@ export function GitStatusDisplay({ projectPath }: GitStatusDisplayProps) {
             {/* Branch */}
             <div className="flex items-center gap-2">
                 <GitBranch className="h-4 w-4 text-muted-foreground flex-shrink-0" aria-hidden="true" />
-                <span className="font-mono text-foreground">{status.branch}</span>
+                <span className="font-sans text-foreground">{status.branch}</span>
             </div>
 
             {/* Uncommitted Files */}
