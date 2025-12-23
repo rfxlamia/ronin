@@ -147,7 +147,7 @@ pub async fn add_project(
     // Get database connection
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     // Check if a soft-deleted project exists with this path
     let existing_deleted: Option<i64> = conn
@@ -217,7 +217,7 @@ pub async fn get_projects(
     let mut projects = {
         let conn = pool
             .get()
-            .map_err(|e| format!("Failed to get database connection: {}", e))?;
+            .map_err(|_| "Unable to access application data".to_string())?;
 
         let mut stmt = conn
             .prepare("SELECT id, path, name, type, created_at, updated_at, is_archived, deleted_at FROM projects WHERE deleted_at IS NULL ORDER BY updated_at DESC")
@@ -283,7 +283,7 @@ pub async fn delete_project(
 ) -> Result<(), String> {
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     conn.execute(
         "DELETE FROM projects WHERE id = ?1",
@@ -302,7 +302,7 @@ pub async fn remove_project(
 ) -> Result<(), String> {
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     conn.execute(
         "UPDATE projects SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?1",
@@ -321,7 +321,7 @@ pub async fn archive_project(
 ) -> Result<(), String> {
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     conn.execute(
         "UPDATE projects SET is_archived = 1 WHERE id = ?1",
@@ -340,7 +340,7 @@ pub async fn restore_project(
 ) -> Result<(), String> {
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     conn.execute(
         "UPDATE projects SET is_archived = 0 WHERE id = ?1",
