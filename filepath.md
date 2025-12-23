@@ -2,7 +2,7 @@
 
 **Auto-generated** list of key source files. Excludes: tests, migrations, workflow engine, build artifacts.
 
-## Files (150 total)
+## Files (159 total)
 
 - [`README.md`](file:///home/v/project/ronin/README.md)
 - [`docs/epics.md`](file:///home/v/project/ronin/docs/epics.md)
@@ -85,6 +85,11 @@
 - [`src/components/RoninLoader.tsx`](file:///home/v/project/ronin/src/components/RoninLoader.tsx)
 - [`src/components/RoninOathModal.tsx`](file:///home/v/project/ronin/src/components/RoninOathModal.tsx)
 - [`src/components/WindowControls.tsx`](file:///home/v/project/ronin/src/components/WindowControls.tsx)
+- [`src/components/agent/AgentChat.tsx`](file:///home/v/project/ronin/src/components/agent/AgentChat.tsx)
+- [`src/components/agent/ModeToggle.tsx`](file:///home/v/project/ronin/src/components/agent/ModeToggle.tsx)
+- [`src/components/agent/ProtocolViewer.tsx`](file:///home/v/project/ronin/src/components/agent/ProtocolViewer.tsx)
+- [`src/components/agent/ThinkingIndicator.tsx`](file:///home/v/project/ronin/src/components/agent/ThinkingIndicator.tsx)
+- [`src/components/agent/index.ts`](file:///home/v/project/ronin/src/components/agent/index.ts)
 - [`src/components/devlog/ConflictDialog.tsx`](file:///home/v/project/ronin/src/components/devlog/ConflictDialog.tsx)
 - [`src/components/devlog/DevlogButton.tsx`](file:///home/v/project/ronin/src/components/devlog/DevlogButton.tsx)
 - [`src/components/devlog/DevlogHistory.tsx`](file:///home/v/project/ronin/src/components/devlog/DevlogHistory.tsx)
@@ -111,11 +116,15 @@
 - [`src/components/ui/label.tsx`](file:///home/v/project/ronin/src/components/ui/label.tsx)
 - [`src/components/ui/light-modal.tsx`](file:///home/v/project/ronin/src/components/ui/light-modal.tsx)
 - [`src/components/ui/loader.tsx`](file:///home/v/project/ronin/src/components/ui/loader.tsx)
+- [`src/components/ui/scroll-area.tsx`](file:///home/v/project/ronin/src/components/ui/scroll-area.tsx)
 - [`src/components/ui/select.tsx`](file:///home/v/project/ronin/src/components/ui/select.tsx)
 - [`src/components/ui/skeleton.tsx`](file:///home/v/project/ronin/src/components/ui/skeleton.tsx)
 - [`src/components/ui/streaming-text.tsx`](file:///home/v/project/ronin/src/components/ui/streaming-text.tsx)
 - [`src/components/ui/switch.tsx`](file:///home/v/project/ronin/src/components/ui/switch.tsx)
 - [`src/components/ui/tabs.tsx`](file:///home/v/project/ronin/src/components/ui/tabs.tsx)
+- [`src/components/ui/toggle-group.tsx`](file:///home/v/project/ronin/src/components/ui/toggle-group.tsx)
+- [`src/components/ui/toggle.tsx`](file:///home/v/project/ronin/src/components/ui/toggle.tsx)
+- [`src/hooks/useAgentAnalysis.ts`](file:///home/v/project/ronin/src/hooks/useAgentAnalysis.ts)
 - [`src/hooks/useAiContext.ts`](file:///home/v/project/ronin/src/hooks/useAiContext.ts)
 - [`src/hooks/useCountdown.ts`](file:///home/v/project/ronin/src/hooks/useCountdown.ts)
 - [`src/hooks/useHotkeys.ts`](file:///home/v/project/ronin/src/hooks/useHotkeys.ts)
@@ -134,8 +143,8 @@
 - [`src/lib/utils.ts`](file:///home/v/project/ronin/src/lib/utils.ts)
 - [`src/lib/utils/dateUtils.ts`](file:///home/v/project/ronin/src/lib/utils/dateUtils.ts)
 - [`src/main.tsx`](file:///home/v/project/ronin/src/main.tsx)
+- [`src/pages/Agent.tsx`](file:///home/v/project/ronin/src/pages/Agent.tsx)
 - [`src/pages/Dashboard.tsx`](file:///home/v/project/ronin/src/pages/Dashboard.tsx)
-- [`src/pages/DebugAgent.tsx`](file:///home/v/project/ronin/src/pages/DebugAgent.tsx)
 - [`src/pages/Settings.tsx`](file:///home/v/project/ronin/src/pages/Settings.tsx)
 - [`src/pages/TestContextPanel.tsx`](file:///home/v/project/ronin/src/pages/TestContextPanel.tsx)
 - [`src/stores/aiStore.ts`](file:///home/v/project/ronin/src/stores/aiStore.ts)
@@ -156,4 +165,4 @@
 - [`vitest.config.ts`](file:///home/v/project/ronin/vitest.config.ts)
 
 ---
-*Generated: 2025-12-23T00:38:11.750Z*
+*Generated: 2025-12-23T02:48:54.541Z*

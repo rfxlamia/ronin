@@ -1331,75 +1331,74 @@ So that **I can see what the agent is analyzing and trust its reasoning**.
 
 ---
 
-### Story 4.5.4: Backend Agent Events
+### Story 4.5.4: Agent Execution Integration
 
-**Dependencies:** Story 4.5.2 (tools must exist)
-**Integration Checkpoint:** After completion, verify events appear in Tauri devtools when tools execute
-
-As a **developer**,
-I want **the backend to emit agent progress events**,
-So that **the frontend can display real-time reasoning steps**.
-
-**Acceptance Criteria:**
-
-**Given** a tool is called during agent execution
-**When** the tool executes
-**Then** an `agent-tool-call` event is emitted with:
-- `tool_name`: string (e.g., "read_file")
-- `params`: JSON object (e.g., `{ "path": "package.json" }`)
-- `step_id`: current protocol step (if available)
-
-**Given** a protocol step completes
-**When** the agent moves to the next step
-**Then** an `agent-step-complete` event is emitted with:
-- `step_id`: completed step ID
-- `result`: brief summary of step output
-
-**Technical Notes:**
-- Modify `src-tauri/src/commands/tools.rs` - each tool emits event before returning
-- Add event types to `src-tauri/src/ai/provider.rs`
-- Use Tauri's `window.emit()` pattern (existing in `ai.rs`)
-- Frontend can listen via `listen('agent-tool-call', ...)` (Tauri API)
-- Events work with all providers (OpenRouter, OpenAI, Anthropic, Demo Mode)
-
----
-
-### Story 4.5.5: Frontend Agent Hook
-
-**Dependencies:** Story 4.5.4 (backend events must work)
-**Integration Checkpoint:** After completion, validate full workflow: Analyze Project → Tool calls visible → Steps progress → Report displays
+**Dependencies:** Stories 4.5.2 + 4.5.3 (tools and UI exist)
+**Integration Checkpoint:** Analyze Project → Tool calls visible → Steps progress → Report displays
+**Reference:** [Sprint Change Proposal](file:///home/v/project/ronin/docs/sprint-change-proposal-2025-12-23.md)
 
 As a **user**,
 I want **the agent to actually execute the Project Resurrection protocol**,
 So that **I see real tool calls and receive meaningful analysis**.
+
+**The Missing Integration:** Vercel SDK → call tools → update UI. That's it.
+
+---
+
+#### Sub-task 1: Enhance Tool Wrapper to Emit Events (~2h)
+**Exit Point:** ✅ Events emit, testable with console.log
+
+- Modify `src/lib/ai/tools/wrapper.ts` to emit events after tool execution
+- Use Tauri's `emit()` or window event pattern
+- Events: `agent-tool-call` with `{ tool_name, params, step_id }`
+
+---
+
+#### Sub-task 2: Create useAgentExecution Hook (~2h)
+**Exit Point:** ✅ Hook calls AI with tools, tools execute
+
+- Create `src/hooks/useAgentExecution.ts`
+- Call `generateText` from Vercel AI SDK with `maxSteps: 10`
+- Pass real tool handlers (not mocks)
+- Listen for tool events and update reasoningStore
+
+---
+
+#### Sub-task 3: Connect to UI Components (~1h)
+**Exit Point:** ✅ ProtocolViewer updates live, ThinkingIndicator shows tool calls
+
+- Wire `useAgentExecution` into `AgentChat.tsx`
+- Replace placeholder `useAgentAnalysis` hook
+- ThinkingIndicator reads from reasoningStore.currentToolCalls
+- ProtocolViewer reads from reasoningStore.currentStepId
+
+---
+
+#### Sub-task 4: Testing & Polish (~1h)
+**Exit Point:** ✅ Full flow works, tests pass
+
+- Run full E2E: Dashboard → Expand → Deeper Analysis → Agent View → Analyze → Report
+- Update tests as needed
+- Verify works with all providers (OpenRouter, Demo Mode)
+
+---
 
 **Acceptance Criteria:**
 
 **Given** the user clicks "Analyze Project" in Agent View
 **When** the protocol executes
 **Then**:
-- Calls AI provider via `UnifiedClient` (works with OpenRouter, OpenAI, Anthropic, Demo Mode)
-- Uses Vercel AI SDK `generateText` with `maxSteps: 10`
-- Listens for `agent-tool-call` events and updates ThinkingIndicator
-- Listens for `agent-step-complete` events and updates ProtocolViewer
-- Updates `reasoningStore.currentStepId` as steps progress
-- Displays final synthesis in chat
-
-**Given** a tool call is made
-**When** the event is received
-**Then** ThinkingIndicator shows:
-- "📖 Reading package.json..."
-- "🔍 Analyzing git history..."
-
-**Technical Notes:**
-- Create `src/hooks/useAgentExecution.ts` (replaces placeholder in `useAgentAnalysis.ts`)
-- Listen for Tauri events: `agent-tool-call`, `agent-step-complete`, `ai-chunk`, `ai-complete`
-- Update `useReasoningStore` with step progress
-- Remove placeholder `setTimeout` logic from AgentChat
+- AI provider receives system prompt + tool definitions
+- Tools execute via Tauri commands (read_file, list_dir, git_status, git_log)
+- ThinkingIndicator shows: "📖 Reading package.json...", "🔍 Analyzing git..."
+- ProtocolViewer steps progress from pending → complete
+- Final synthesis displays in chat with attribution
+- Works with all providers (OpenRouter, OpenAI, Anthropic, Demo Mode)
 
 ---
 
 ## Epic 5: Git Operations
+
 
 
 ### Story 5.1: Git Status Display
