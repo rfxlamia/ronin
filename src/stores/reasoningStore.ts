@@ -6,6 +6,7 @@ interface ProjectReasoningState {
     activeMode: AgentMode;
     activeProtocol: string | null;
     currentStepId: string | null;
+    currentToolCalls: string[]; // Live tool calls for current step
     stepHistory: StepHistoryEntry[];
 }
 
@@ -15,6 +16,7 @@ interface ReasoningState {
 
     setMode: (projectId: string, mode: AgentMode) => void;
     startProtocol: (projectId: string, protocolId: string) => void;
+    appendToolCall: (projectId: string, toolCall: string) => void;
     completeStep: (projectId: string, stepId: string, output: string, toolCalls?: string[]) => void;
     reset: (projectId: string) => void;
 }
@@ -23,6 +25,7 @@ const defaultProjectState: ProjectReasoningState = {
     activeMode: 'ronin-flash',
     activeProtocol: null,
     currentStepId: null,
+    currentToolCalls: [],
     stepHistory: []
 };
 
@@ -47,10 +50,24 @@ export const useReasoningStore = create<ReasoningState>()(
                     [projectId]: {
                         ...(state.byProject[projectId] || defaultProjectState),
                         activeProtocol: protocolId,
-                        stepHistory: [] // Reset history when starting new protocol
+                        stepHistory: [], // Reset history
+                        currentToolCalls: [] // Reset tool calls
                     }
                 }
             })),
+
+            appendToolCall: (projectId, toolCall) => set((state) => {
+                const projectState = state.byProject[projectId] || defaultProjectState;
+                return {
+                    byProject: {
+                        ...state.byProject,
+                        [projectId]: {
+                            ...projectState,
+                            currentToolCalls: [...(projectState.currentToolCalls || []), toolCall]
+                        }
+                    }
+                };
+            }),
 
             completeStep: (projectId, stepId, output, toolCalls) => set((state) => {
                 const projectState = state.byProject[projectId] || defaultProjectState;
@@ -59,7 +76,7 @@ export const useReasoningStore = create<ReasoningState>()(
                     stepId,
                     output,
                     timestamp: Date.now(),
-                    toolCallsMade: toolCalls
+                    toolCallsMade: toolCalls || projectState.currentToolCalls || []
                 };
 
                 return {
@@ -68,7 +85,8 @@ export const useReasoningStore = create<ReasoningState>()(
                         [projectId]: {
                             ...projectState,
                             stepHistory: [...projectState.stepHistory, entry],
-                            currentStepId: stepId // Update current step
+                            currentStepId: stepId, // Update current step
+                            currentToolCalls: [] // Reset live tool calls after step completion
                         }
                     }
                 };

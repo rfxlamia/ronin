@@ -28,7 +28,7 @@ export const mockTools = {
     read_file: {
         description: 'Read the contents of a file',
         inputSchema: readFileSchema,
-        execute: async ({ path }: z.infer<typeof readFileSchema>) => {
+        execute: async ({ path }: z.infer<typeof readFileSchema>, _context?: any) => {
             // Mock: Simulate reading a file with realistic latency
             await new Promise(resolve => setTimeout(resolve, 100));
             return `// Mock content for ${path}\nexport default function example() {}`;
@@ -38,7 +38,7 @@ export const mockTools = {
     list_dir: {
         description: 'List contents of a directory',
         inputSchema: listDirSchema,
-        execute: async ({ path }: z.infer<typeof listDirSchema>) => {
+        execute: async ({ path }: z.infer<typeof listDirSchema>, _context?: any) => {
             await new Promise(resolve => setTimeout(resolve, 100));
             // Use path in output to avoid unused variable warning
             const prefix = path.endsWith('/') ? path : path + '/';
@@ -49,7 +49,7 @@ export const mockTools = {
     git_status: {
         description: 'Get current git repository status',
         inputSchema: gitStatusSchema,
-        execute: async () => {
+        execute: async (_args: any, _context?: any) => {
             await new Promise(resolve => setTimeout(resolve, 100));
             return JSON.stringify({ branch: "main", uncommitted: 2 });
         },
@@ -58,7 +58,7 @@ export const mockTools = {
     git_log: {
         description: 'Get recent git commits',
         inputSchema: gitLogSchema,
-        execute: async ({ limit = 5 }: z.infer<typeof gitLogSchema>) => {
+        execute: async ({ limit = 5 }: z.infer<typeof gitLogSchema>, _context?: any) => {
             await new Promise(resolve => setTimeout(resolve, 100));
             const commits = Array.from({ length: Math.min(limit, 5) }, (_, i) => ({
                 hash: `abc${123 + i}`,

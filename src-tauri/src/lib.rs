@@ -50,7 +50,11 @@ pub fn run() {
             commands::devlog::append_devlog,
             commands::devlog::write_devlog,
             commands::devlog::get_devlog_history,
-            commands::devlog::get_devlog_version
+            commands::devlog::get_devlog_version,
+            commands::tools::read_file,
+            commands::tools::list_dir,
+            commands::tools::git_status,
+            commands::tools::git_log
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

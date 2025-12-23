@@ -1,7 +1,10 @@
-
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type { AiChunkEvent, AiErrorEvent, Message, ContextPayload } from '@/types/ai';
+import type { AgentMode } from '@/types/agent';
+import { realTools } from './tools';
+import { wrapToolsWithContext } from './tools/wrapper';
+import { useReasoningStore } from '@/stores/reasoningStore';
 
 /**
  * Custom Tauri-bridged language model for Vercel AI SDK v5.
@@ -11,6 +14,19 @@ export interface TauriLanguageModelConfig {
     provider: string;
     model?: string;
     projectId: number;
+    mode?: AgentMode;
+}
+
+export function getWrappedTools(projectId: string, mode: AgentMode = 'ronin-flash') {
+    return wrapToolsWithContext(realTools, {
+        projectId,
+        mode,
+        getCurrentStepId: () => {
+            // Access store state directly
+            const state = useReasoningStore.getState();
+            return state.byProject[projectId]?.currentStepId || undefined;
+        }
+    });
 }
 
 export const createTauriLanguageModel = (config: TauriLanguageModelConfig) => {
