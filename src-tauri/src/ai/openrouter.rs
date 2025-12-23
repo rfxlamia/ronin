@@ -119,7 +119,7 @@ impl OpenRouterClient {
                     }
 
                     if status == 401 {
-                        let error_msg = "APIERROR:401:API key invalid. Check settings.".to_string();
+                        let error_msg = "Invalid API key. Please check your settings.".to_string();
                         window
                             .emit(
                                 "ai-error",
@@ -132,9 +132,8 @@ impl OpenRouterClient {
                     }
 
                     if !status.is_success() {
-                        // Map 5xx/4xx status codes to APIERROR prefix
-                        let error_msg = format!("APIERROR:{}:Server error", status.as_u16());
-                        last_error = error_msg;
+                        // Server error - continue to next model
+                        last_error = "AI service temporarily unavailable".to_string();
                         continue;
                     }
 
@@ -212,9 +211,9 @@ impl OpenRouterClient {
                 Err(e) => {
                     // Detect network/connection errors
                     if e.is_connect() || e.is_timeout() {
-                        last_error = "OFFLINE:No network connection".to_string();
+                        last_error = "No network connection".to_string();
                     } else {
-                        last_error = format!("APIERROR:0:{}", e);
+                        last_error = "AI service error".to_string();
                     }
                     continue;
                 }

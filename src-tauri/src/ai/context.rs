@@ -3,7 +3,6 @@ use crate::commands::git::GitContext;
 use crate::context::devlog::DevlogContent;
 
 const MAX_PAYLOAD_SIZE: usize = 10 * 1024; // 10KB
-const WARNING_THRESHOLD: usize = 8 * 1024; // 8KB
 const GIT_PRIORITY_SIZE: usize = 6 * 1024; // 6KB reserved for Git context
 
 /// Build AI context from Git repository data
@@ -157,7 +156,6 @@ pub fn enforce_token_budget(
                 
                 if available_for_devlog < 500 {
                     // Not enough space for meaningful DEVLOG content
-                    eprintln!("⚠️  DEVLOG excluded: Git context too large");
                     None
                 } else {
                     // Truncate DEVLOG at section boundaries
@@ -188,12 +186,7 @@ pub fn validate_payload_size(prompt: &str) -> Result<(), String> {
         ));
     }
 
-    if size > WARNING_THRESHOLD {
-        eprintln!(
-            "⚠️  Payload size warning: {} bytes (threshold: {})",
-            size, WARNING_THRESHOLD
-        );
-    }
+    // Payload size is within acceptable limits
 
     Ok(())
 }

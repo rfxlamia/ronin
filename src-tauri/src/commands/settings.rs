@@ -5,7 +5,6 @@ use crate::ai::provider::ProviderInfo;
 use crate::security::{decrypt_api_key, encrypt_api_key};
 use base64::{engine::general_purpose, Engine as _};
 use rusqlite::OptionalExtension;
-use std::time::Duration;
 
 /// Get a setting value from the database
 #[tauri::command]
@@ -15,7 +14,7 @@ pub async fn get_setting(
 ) -> Result<Option<String>, String> {
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     let result: Option<String> = conn
         .query_row(
@@ -38,7 +37,7 @@ pub async fn update_setting(
 ) -> Result<(), String> {
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     conn.execute(
         "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
@@ -56,7 +55,7 @@ pub async fn get_ai_providers(
 ) -> Result<Vec<ProviderInfo>, String> {
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     // Get default provider
     let default_provider: Option<String> = conn
@@ -114,7 +113,7 @@ pub async fn set_default_provider(
 
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     conn.execute(
         "INSERT OR REPLACE INTO settings (key, value) VALUES ('ai_provider_default', ?1)",
@@ -134,7 +133,7 @@ pub async fn save_provider_api_key(
 ) -> Result<(), String> {
     // Validate provider ID (demo doesn't need API keys)
     if provider_id != "openrouter" {
-        return Err(format!("Unknown provider or provider doesn't support API keys: {}", provider_id));
+        return Err("This provider doesn't support custom API keys".to_string());
     }
 
     // Encrypt the API key
@@ -143,7 +142,7 @@ pub async fn save_provider_api_key(
 
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     // Store encrypted key with provider-specific key name
     let setting_key = format!("api_key_{}", provider_id);
@@ -176,14 +175,12 @@ pub async fn get_provider_api_key(
 ) -> Result<Option<String>, String> {
     let reveal = reveal.unwrap_or(false);
     
-    if reveal {
-        // Log security warning when revealing full key
-        eprintln!("[SECURITY WARNING] Full API key requested for provider: {}", provider_id);
-    }
+    // Reveal parameter controls whether to return masked or full key
+    // Full key access is intentionally allowed for provider configuration
 
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     let setting_key = format!("api_key_{}", provider_id);
     let encoded: Option<String> = conn

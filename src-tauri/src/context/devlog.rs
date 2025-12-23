@@ -76,9 +76,8 @@ fn try_read_devlog(path: &Path, source_location: &str) -> Option<DevlogContent> 
     let metadata = match fs::metadata(path) {
         Ok(m) => m,
         Err(e) => {
-            if e.kind() == std::io::ErrorKind::PermissionDenied {
-                eprintln!("DEVLOG permission denied: {}", path.display());
-            }
+            // Silently handle errors - permission denied, file not found, etc.
+            let _ = e; // Suppress unused variable warning
             return None;
         }
     };
@@ -92,9 +91,8 @@ fn try_read_devlog(path: &Path, source_location: &str) -> Option<DevlogContent> 
     let file = match File::open(path) {
         Ok(f) => f,
         Err(e) => {
-            if e.kind() == std::io::ErrorKind::PermissionDenied {
-                eprintln!("DEVLOG permission denied: {}", path.display());
-            }
+            // Silently handle errors - permission denied, file not found, etc.
+            let _ = e; // Suppress unused variable warning
             return None;
         }
     };
@@ -124,9 +122,8 @@ fn read_entire_file(file: File) -> Option<(String, usize, bool)> {
     for line_result in reader.lines() {
         match line_result {
             Ok(line) => lines.push(line),
-            Err(e) => {
-                // Handle non-UTF8 data gracefully
-                eprintln!("Non-UTF8 data detected in DEVLOG: {}", e);
+            Err(_e) => {
+                // Handle non-UTF8 data gracefully - skip invalid lines
                 continue;
             }
         }
@@ -154,25 +151,18 @@ fn read_tail_of_file(mut file: File, file_size: u64) -> Option<(String, usize, b
     // Seek to near the end
     let seek_position = file_size.saturating_sub(MAX_DEVLOG_SIZE);
 
-    if let Err(e) = file.seek(SeekFrom::Start(seek_position)) {
-        eprintln!("Failed to seek in DEVLOG: {}", e);
+    if file.seek(SeekFrom::Start(seek_position)).is_err() {
         return None;
     }
 
     // Read remaining bytes
     let mut buffer = Vec::new();
-    if let Err(e) = file.read_to_end(&mut buffer) {
-        eprintln!("Failed to read DEVLOG: {}", e);
+    if file.read_to_end(&mut buffer).is_err() {
         return None;
     }
 
     // Convert to string, handling non-UTF8 gracefully
     let text = String::from_utf8_lossy(&buffer);
-
-    // Check if lossy conversion occurred
-    if text.contains('\u{FFFD}') {
-        eprintln!("Non-UTF8 data detected in DEVLOG");
-    }
 
     // If we seeked into the middle of a line, skip to next newline
     let text = if seek_position > 0 {

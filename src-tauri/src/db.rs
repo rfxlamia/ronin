@@ -218,7 +218,7 @@ fn migrate_to_multi_provider(
         )
         .map_err(|e| format!("Migration delete failed: {}", e))?;
 
-        eprintln!("✅ Migrated API key to multi-provider format");
+        // Migration completed successfully
     } else {
         // Fresh install or already migrated
         // Set default provider if not set

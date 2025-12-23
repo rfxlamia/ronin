@@ -29,7 +29,7 @@ pub async fn set_api_key(
 
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     // Store in new multi-provider format (Story 4.25-1)
     conn.execute(
@@ -64,7 +64,7 @@ pub async fn get_api_key(
 ) -> Result<Option<String>, String> {
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     // Try new location first (after Story 4.25-1 migration)
     let new_key: Option<String> = conn
@@ -111,7 +111,7 @@ pub async fn get_api_key(
 pub async fn delete_api_key(pool: tauri::State<'_, crate::db::DbPool>) -> Result<(), String> {
     let conn = pool
         .get()
-        .map_err(|e| format!("Failed to get database connection: {}", e))?;
+        .map_err(|_| "Unable to access application data".to_string())?;
 
     conn.execute(
         "DELETE FROM settings WHERE key = 'openrouter_api_key_encrypted'",
@@ -180,7 +180,7 @@ pub async fn generate_context(
     let git_context = match get_git_context(project_path.clone()).await {
         Ok(ctx) => ctx,
         Err(_e) => {
-            let error_msg = "APIERROR:0:Couldn't access git repository".to_string();
+            let error_msg = "Unable to access project repository".to_string();
             window
                 .emit(
                     "ai-error",
@@ -208,7 +208,7 @@ pub async fn generate_context(
 
     // Validate payload size
     if let Err(_e) = validate_payload_size(&system_prompt) {
-        let error_msg = "APIERROR:0:Context too large to process".to_string();
+        let error_msg = "Project context is too large to process".to_string();
         window
             .emit(
                 "ai-error",
@@ -255,7 +255,7 @@ pub async fn generate_context(
                 Some(decrypted)
             }
             None => {
-                let error_msg = "APIERROR:0:API key not configured".to_string();
+                let error_msg = "Please configure your API key in settings".to_string();
                 window
                     .emit(
                         "ai-error",
@@ -304,7 +304,7 @@ pub async fn generate_context(
             Box::new(DemoProvider::new(lambda_url))
         }
         _ => {
-            let error_msg = format!("APIERROR:0:Unknown provider: {}", default_provider);
+            let error_msg = "AI provider is not available".to_string();
             window
                 .emit(
                     "ai-error",

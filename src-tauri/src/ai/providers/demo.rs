@@ -45,8 +45,7 @@ impl DemoProvider {
                 // Take first 32 chars of hex digest
                 format!("{:x}", result)[..32].to_string()
             }
-            Err(e) => {
-                eprintln!("Failed to get machine ID, using fallback: {}", e);
+            Err(_e) => {
                 // Fallback to random fingerprint (less stable but works)
                 use rand::Rng;
                 let random_bytes: [u8; 16] = rand::thread_rng().gen();
