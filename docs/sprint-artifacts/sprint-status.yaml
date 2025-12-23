@@ -82,12 +82,14 @@ development_status:
   4.25-3-provider-settings-ui-multi-key-storage: done
   epic-4.25-retrospective: done
 
-  epic-4.5: backlog
-  4.5-1-reasoning-foundation-schemas-store: backlog
-  4.5-2-agent-route-thinking-ui: backlog
-  4.5-3-project-resurrection-protocol: backlog
-  4.5-4-persona-migration-architect-dev: backlog
-  epic-4.5-retrospective: optional
+  epic-4.5: deferred  # Architectural gap discovered - requires significant re-architecture
+  # Epic 4.5 research and planning archived to docs/archive/epic-4.5/
+  # Implementation reverted at commit c42adc1 (2025-12-23)
+  4.5-1-reasoning-foundation-schemas-store: deferred
+  4.5-2-agent-route-thinking-ui: deferred
+  4.5-3-project-resurrection-protocol: deferred
+  4.5-4-persona-migration-architect-dev: deferred
+  epic-4.5-retrospective: deferred
 
   epic-5: backlog
   5-1-git-status-display: backlog
