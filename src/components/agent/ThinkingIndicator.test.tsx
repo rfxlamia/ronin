@@ -9,13 +9,14 @@ describe('ThinkingIndicator', () => {
   const mockProjectId = 'test-project-123';
 
   it('should not render when no active protocol', () => {
-    // @ts-expect-error - Mocking zustand store
+
     vi.mocked(useReasoningStore).mockReturnValue({
       byProject: {},
       setMode: vi.fn(),
       startProtocol: vi.fn(),
       appendToolCall: vi.fn(),
       completeStep: vi.fn(),
+      setActiveStep: vi.fn(),
       reset: vi.fn(),
     });
 
@@ -38,10 +39,10 @@ describe('ThinkingIndicator', () => {
       startProtocol: vi.fn(),
       appendToolCall: vi.fn(),
       completeStep: vi.fn(),
+      setActiveStep: vi.fn(),
       reset: vi.fn(),
     };
 
-    // @ts-expect-error - Mocking zustand store
     vi.mocked(useReasoningStore).mockReturnValue(mockStore);
 
     render(<ThinkingIndicator projectId={mockProjectId} />);
@@ -63,10 +64,10 @@ describe('ThinkingIndicator', () => {
       startProtocol: vi.fn(),
       appendToolCall: vi.fn(),
       completeStep: vi.fn(),
+      setActiveStep: vi.fn(),
       reset: vi.fn(),
     };
 
-    // @ts-expect-error - Mocking zustand store
     vi.mocked(useReasoningStore).mockReturnValue(mockStore);
 
     render(<ThinkingIndicator projectId={mockProjectId} />);
@@ -88,10 +89,10 @@ describe('ThinkingIndicator', () => {
       startProtocol: vi.fn(),
       appendToolCall: vi.fn(),
       completeStep: vi.fn(),
+      setActiveStep: vi.fn(),
       reset: vi.fn(),
     };
 
-    // @ts-expect-error - Mocking zustand store
     vi.mocked(useReasoningStore).mockReturnValue(mockStore);
 
     render(<ThinkingIndicator projectId={mockProjectId} />);
@@ -114,10 +115,10 @@ describe('ThinkingIndicator', () => {
       startProtocol: vi.fn(),
       appendToolCall: vi.fn(),
       completeStep: vi.fn(),
+      setActiveStep: vi.fn(),
       reset: vi.fn(),
     };
 
-    // @ts-expect-error - Mocking zustand store
     vi.mocked(useReasoningStore).mockReturnValue(mockStore);
 
     const { container } = render(<ThinkingIndicator projectId={mockProjectId} />);

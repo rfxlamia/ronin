@@ -32,6 +32,7 @@ export function getWrappedTools(projectId: string, mode: AgentMode = 'ronin-flas
 export const createTauriLanguageModel = (config: TauriLanguageModelConfig) => {
     return {
         specificationVersion: 'v2' as const,
+        supportedUrls: [],
         provider: 'tauri',
         modelId: config.model || config.provider,
         defaultObjectGenerationMode: 'json' as const,

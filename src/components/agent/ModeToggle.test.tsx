@@ -11,13 +11,14 @@ describe('ModeToggle', () => {
   const mockProjectId = 'test-project-123';
 
   it('should render both Flash and Thinking mode options', () => {
-    // @ts-expect-error - Mocking zustand store
+
     vi.mocked(useReasoningStore).mockReturnValue({
       byProject: {},
       setMode: vi.fn(),
       startProtocol: vi.fn(),
       appendToolCall: vi.fn(),
       completeStep: vi.fn(),
+      setActiveStep: vi.fn(),
       reset: vi.fn(),
     });
 
@@ -42,10 +43,10 @@ describe('ModeToggle', () => {
       startProtocol: vi.fn(),
       appendToolCall: vi.fn(),
       completeStep: vi.fn(),
+      setActiveStep: vi.fn(),
       reset: vi.fn(),
     };
 
-    // @ts-expect-error - Mocking zustand store
     vi.mocked(useReasoningStore).mockReturnValue(mockStore);
 
     render(<ModeToggle projectId={mockProjectId} />);
@@ -72,10 +73,10 @@ describe('ModeToggle', () => {
       startProtocol: vi.fn(),
       appendToolCall: vi.fn(),
       completeStep: vi.fn(),
+      setActiveStep: vi.fn(),
       reset: vi.fn(),
     };
 
-    // @ts-expect-error - Mocking zustand store
     vi.mocked(useReasoningStore).mockReturnValue(mockStore);
 
     render(<ModeToggle projectId={mockProjectId} />);
@@ -101,13 +102,13 @@ describe('ModeToggle', () => {
       startProtocol: vi.fn(),
       appendToolCall: vi.fn(),
       completeStep: vi.fn(),
+      setActiveStep: vi.fn(),
       reset: vi.fn(),
     };
 
-    // @ts-expect-error - Mocking zustand store
     vi.mocked(useReasoningStore).mockReturnValue(mockStore);
 
-    const { container } = render(<ModeToggle projectId={mockProjectId} />);
+    render(<ModeToggle projectId={mockProjectId} />);
 
     // Check for flash mode styling (this will depend on implementation)
     const flashButton = screen.getByLabelText('Flash Mode');
@@ -130,13 +131,13 @@ describe('ModeToggle', () => {
       startProtocol: vi.fn(),
       appendToolCall: vi.fn(),
       completeStep: vi.fn(),
+      setActiveStep: vi.fn(),
       reset: vi.fn(),
     };
 
-    // @ts-expect-error - Mocking zustand store
     vi.mocked(useReasoningStore).mockReturnValue(mockStore);
 
-    const { container } = render(<ModeToggle projectId={mockProjectId} />);
+    render(<ModeToggle projectId={mockProjectId} />);
 
     const thinkingButton = screen.getByLabelText('Thinking Mode');
     expect(thinkingButton).toHaveAttribute('data-state', 'on');

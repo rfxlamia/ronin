@@ -63,7 +63,7 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
 
     const handleDeeperAnalysis = () => {
         // Set mode to Thinking and navigate to Agent page
-        setMode(project.id, 'ronin-thinking');
+        setMode(project.id.toString(), 'ronin-thinking');
         navigate(`/agent/${project.id}`);
     };
 
@@ -224,7 +224,7 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
                                         onClick={handleDeeperAnalysis}
                                     >
                                         <Brain className="h-4 w-4" />
-                                        🧠 Deeper Analysis
+                                        Deeper Analysis
                                     </Button>
 
                                     <Button

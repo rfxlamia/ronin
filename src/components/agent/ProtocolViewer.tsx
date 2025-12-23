@@ -1,5 +1,4 @@
 import { Check, Circle, CircleDot } from 'lucide-react';
-import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useReasoningStore } from '@/stores/reasoningStore';
 import { PROJECT_RESURRECTION_PROTOCOL } from '@/lib/ai/protocols/project-resurrection';

@@ -18,6 +18,7 @@ interface ReasoningState {
     startProtocol: (projectId: string, protocolId: string) => void;
     appendToolCall: (projectId: string, toolCall: string) => void;
     completeStep: (projectId: string, stepId: string, output: string, toolCalls?: string[]) => void;
+    setActiveStep: (projectId: string, stepId: string) => void;
     reset: (projectId: string) => void;
 }
 
@@ -87,6 +88,19 @@ export const useReasoningStore = create<ReasoningState>()(
                             stepHistory: [...projectState.stepHistory, entry],
                             currentStepId: stepId, // Update current step
                             currentToolCalls: [] // Reset live tool calls after step completion
+                        }
+                    }
+                };
+            }),
+
+            setActiveStep: (projectId, stepId) => set((state) => {
+                const projectState = state.byProject[projectId] || defaultProjectState;
+                return {
+                    byProject: {
+                        ...state.byProject,
+                        [projectId]: {
+                            ...projectState,
+                            currentStepId: stepId
                         }
                     }
                 };

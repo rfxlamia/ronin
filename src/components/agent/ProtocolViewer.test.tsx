@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ProtocolViewer } from './ProtocolViewer';
 import { useReasoningStore } from '@/stores/reasoningStore';
-import { PROJECT_RESURRECTION_PROTOCOL } from '@/lib/ai/protocols/project-resurrection';
 
 vi.mock('@/stores/reasoningStore');
 
@@ -10,7 +9,7 @@ describe('ProtocolViewer', () => {
   const mockProjectId = 'test-project-123';
 
   it('should render all protocol steps', () => {
-    // @ts-expect-error - Mocking zustand store
+
     vi.mocked(useReasoningStore).mockReturnValue({
       byProject: {},
       setMode: vi.fn(),
@@ -48,10 +47,10 @@ describe('ProtocolViewer', () => {
       reset: vi.fn(),
     };
 
-    // @ts-expect-error - Mocking zustand store
+
     vi.mocked(useReasoningStore).mockReturnValue(mockStore);
 
-    const { container } = render(<ProtocolViewer projectId={mockProjectId} />);
+    render(<ProtocolViewer projectId={mockProjectId} />);
 
     // Step 2 should be highlighted
     const step2 = screen.getByText(/Read Project Metadata/i).closest('[data-step-id]');
@@ -89,7 +88,7 @@ describe('ProtocolViewer', () => {
       reset: vi.fn(),
     };
 
-    // @ts-expect-error - Mocking zustand store
+
     vi.mocked(useReasoningStore).mockReturnValue(mockStore);
 
     render(<ProtocolViewer projectId={mockProjectId} />);
@@ -127,7 +126,7 @@ describe('ProtocolViewer', () => {
       reset: vi.fn(),
     };
 
-    // @ts-expect-error - Mocking zustand store
+
     vi.mocked(useReasoningStore).mockReturnValue(mockStore);
 
     render(<ProtocolViewer projectId={mockProjectId} />);
