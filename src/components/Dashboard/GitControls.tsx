@@ -155,19 +155,23 @@ export function GitControls({ project, onSuccess, status }: GitControlsProps) {
     };
 
     const hasUnpushedCommits = status && status.unpushedCommits > 0;
+    const hasUncommittedFiles = status && status.uncommittedFiles > 0;
 
     if (mode === 'idle') {
         return (
             <div className="pt-2 space-y-2">
-                <Button
-                    onClick={() => setMode('editing')}
-                    variant="outline"
-                    size="sm"
-                    className="w-full font-serif"
-                >
-                    <GitCommitHorizontal className="h-4 w-4 mr-2" />
-                    Commit Changes
-                </Button>
+                {/* Commit button - only visible when there are uncommitted files */}
+                {hasUncommittedFiles && (
+                    <Button
+                        onClick={() => setMode('editing')}
+                        variant="outline"
+                        size="sm"
+                        className="w-full font-serif"
+                    >
+                        <GitCommitHorizontal className="h-4 w-4 mr-2" />
+                        Commit Changes
+                    </Button>
+                )}
 
                 {/* Push button - only visible when there are unpushed commits */}
                 {hasUnpushedCommits && (
