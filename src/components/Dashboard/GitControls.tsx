@@ -68,16 +68,9 @@ export function GitControls({ project, onSuccess }: GitControlsProps) {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        // Enter without Shift: submit
+        // Enter without Shift (includes Cmd/Ctrl+Enter): submit
+        // Shift+Enter is NOT prevented, allowing new lines
         if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            if (message.trim()) {
-                handleCommit();
-            }
-        }
-
-        // Cmd/Ctrl + Enter: submit
-        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
             e.preventDefault();
             if (message.trim()) {
                 handleCommit();

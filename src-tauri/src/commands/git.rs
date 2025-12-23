@@ -317,11 +317,27 @@ pub async fn get_git_context(path: String) -> Result<GitContext, String> {
 /// - Pre-commit hooks execute (e.g., husky, pre-commit)
 /// - GPG signing works with user's configured agent
 /// - Respects user's global Git configuration
+///
+/// Automatically stages all changes with `git add -A` before committing
+/// to provide true "one-click commit" functionality.
 #[tauri::command]
 pub async fn commit_changes(project_path: String, message: String) -> Result<(), String> {
     // Validate message is not empty or whitespace
     if message.trim().is_empty() {
         return Err("Commit message cannot be empty".to_string());
+    }
+
+    // Stage all changes (new, modified, deleted files)
+    let add_output = Command::new("git")
+        .arg("add")
+        .arg("-A")
+        .current_dir(&project_path)
+        .output()
+        .map_err(|e| format!("Failed to execute git add: {}", e))?;
+
+    if !add_output.status.success() {
+        let stderr = String::from_utf8_lossy(&add_output.stderr).to_string();
+        return Err(format!("Failed to stage changes: {}", stderr));
     }
 
     // Execute git commit via system CLI
@@ -331,7 +347,7 @@ pub async fn commit_changes(project_path: String, message: String) -> Result<(),
         .arg(&message)
         .current_dir(&project_path)
         .output()
-        .map_err(|e| format!("Failed to execute git command: {}", e))?;
+        .map_err(|e| format!("Failed to execute git commit: {}", e))?;
 
     // Check if commit was successful
     if !output.status.success() {

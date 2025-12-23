@@ -93,7 +93,7 @@ development_status:
 
   epic-5: in-progress
   5-1-git-status-display: done
-  5-2-one-click-commit: review
+  5-2-one-click-commit: done
   5-3-one-click-push-with-guardrails: backlog
   5-4-edge-case-handling: backlog
   5-5-distinguish-git-vs-folder-projects: backlog
