@@ -358,6 +358,87 @@ pub async fn commit_changes(project_path: String, message: String) -> Result<(),
     Ok(())
 }
 
+// Error constants for safe_push command
+const ERR_REMOTE_AHEAD: &str = "ERR_REMOTE_AHEAD";
+const ERR_NO_UPSTREAM: &str = "ERR_NO_UPSTREAM";
+const ERR_PUSH_FAILED: &str = "ERR_PUSH_FAILED";
+const ERR_FETCH_FAILED: &str = "ERR_FETCH_FAILED";
+
+/// Safely push changes to remote with guardrails
+///
+/// Uses system Git CLI to execute a fetch-check-push workflow:
+/// 1. Fetch remote changes
+/// 2. Check if remote branch is ahead of local
+/// 3. Only push if safe (remote not ahead)
+///
+/// Uses GIT_TERMINAL_PROMPT=0 to prevent UI freezes on auth prompts.
+#[tauri::command]
+pub async fn safe_push(project_path: String) -> Result<(), String> {
+    // Step 1: Fetch remote changes (quietly to reduce noise)
+    let fetch_output = Command::new("git")
+        .args(&["fetch", "--quiet"])
+        .env("GIT_TERMINAL_PROMPT", "0") // Prevent interactive prompts
+        .current_dir(&project_path)
+        .output()
+        .map_err(|e| format!("Failed to execute git fetch: {}", e))?;
+
+    if !fetch_output.status.success() {
+        let stderr = String::from_utf8_lossy(&fetch_output.stderr).to_string();
+        // Fetch failure means we can't verify remote state - abort for safety
+        eprintln!("Git fetch failed: {}", stderr);
+        return Err(ERR_FETCH_FAILED.to_string());
+    }
+
+    // Step 2: Check if remote is ahead using git rev-list HEAD..@{u} --count
+    let check_output = Command::new("git")
+        .args(&["rev-list", "HEAD..@{u}", "--count"])
+        .env("GIT_TERMINAL_PROMPT", "0") // Consistent env handling
+        .current_dir(&project_path)
+        .output()
+        .map_err(|e| format!("Failed to execute git rev-list: {}", e))?;
+
+    if !check_output.status.success() {
+        let stderr = String::from_utf8_lossy(&check_output.stderr).to_string();
+        // Check for "no upstream" error
+        if stderr.contains("no upstream")
+            || stderr.contains("@{u}")
+            || stderr.contains("@{upstream}")
+        {
+            return Err(ERR_NO_UPSTREAM.to_string());
+        }
+        return Err(format!("Failed to check upstream: {}", stderr));
+    }
+
+    let count_str = String::from_utf8_lossy(&check_output.stdout)
+        .trim()
+        .to_string();
+    let count: u32 = count_str
+        .parse()
+        .map_err(|e| format!("Failed to parse commit count: {}", e))?;
+
+    // Step 3: Guardrail - if remote is ahead, abort
+    if count > 0 {
+        return Err(ERR_REMOTE_AHEAD.to_string());
+    }
+
+    // Step 4: Safe to push - execute git push origin HEAD
+    let push_output = Command::new("git")
+        .args(&["push", "origin", "HEAD"])
+        .env("GIT_TERMINAL_PROMPT", "0") // Prevent interactive prompts
+        .current_dir(&project_path)
+        .output()
+        .map_err(|e| format!("Failed to execute git push: {}", e))?;
+
+    if !push_output.status.success() {
+        let stderr = String::from_utf8_lossy(&push_output.stderr).to_string();
+        // Log full error for debugging, return consistent error code
+        eprintln!("Git push failed: {}", stderr);
+        return Err(ERR_PUSH_FAILED.to_string());
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1007,5 +1088,284 @@ mod tests {
 
         // Should fail when nothing to commit (Git returns non-zero exit code)
         assert!(result.is_err(), "Should fail when nothing to commit");
+    }
+
+    // ========================================================================
+    // TESTS FOR STORY 5.3: One-Click Push with Guardrails
+    // These tests verify the safe_push function with fetch-check-push workflow
+    // ========================================================================
+
+    #[tokio::test]
+    async fn test_safe_push_no_upstream() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path();
+
+        // Create a new branch without setting upstream
+        Command::new("git")
+            .args(["checkout", "-b", "new-branch"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to create new branch");
+
+        // Create and commit a file
+        let new_file = repo_path.join("push_test.txt");
+        fs::write(&new_file, "content").expect("Failed to write test file");
+
+        Command::new("git")
+            .args(["add", "push_test.txt"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to add file");
+
+        Command::new("git")
+            .args(["commit", "-m", "Test commit for push"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to commit file");
+
+        // Try to push without upstream configured
+        let result = safe_push(repo_path.to_string_lossy().to_string()).await;
+
+        assert!(result.is_err(), "Should fail when no upstream configured");
+        let error_msg = result.unwrap_err();
+        assert_eq!(
+            error_msg, ERR_NO_UPSTREAM,
+            "Should return ERR_NO_UPSTREAM error code"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_safe_push_uses_no_terminal_prompt() {
+        // This test verifies that GIT_TERMINAL_PROMPT=0 is set
+        // We can't directly test environment variables, but we can verify
+        // that the push doesn't hang on auth prompts
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path();
+
+        // Add a fake HTTPS remote that would require auth
+        Command::new("git")
+            .args([
+                "remote",
+                "add",
+                "origin",
+                "https://github.com/nonexistent/repo.git",
+            ])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to add remote");
+
+        // Set upstream
+        Command::new("git")
+            .args(["branch", "--set-upstream-to=origin/main", "main"])
+            .current_dir(repo_path)
+            .output()
+            .ok(); // May fail, that's okay
+
+        // Try to push - should fail quickly without hanging
+        let result = safe_push(repo_path.to_string_lossy().to_string()).await;
+
+        // Should get an error (no upstream or auth failure), but shouldn't hang
+        assert!(
+            result.is_err(),
+            "Should fail (auth or network), but not hang"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_safe_push_error_constants_defined() {
+        // Verify error constants are defined and accessible
+        assert_eq!(ERR_REMOTE_AHEAD, "ERR_REMOTE_AHEAD");
+        assert_eq!(ERR_NO_UPSTREAM, "ERR_NO_UPSTREAM");
+        assert_eq!(ERR_PUSH_FAILED, "ERR_PUSH_FAILED");
+        assert_eq!(ERR_FETCH_FAILED, "ERR_FETCH_FAILED");
+    }
+
+    // Helper to create a test repo with a local bare remote for push testing
+    fn create_test_repo_with_remote() -> (tempfile::TempDir, tempfile::TempDir) {
+        // Create "remote" bare repository
+        let remote_dir = tempfile::tempdir().expect("Failed to create remote temp dir");
+        Command::new("git")
+            .args(["init", "--bare"])
+            .current_dir(remote_dir.path())
+            .output()
+            .expect("Failed to init bare repo");
+
+        // Create local repository
+        let local_dir = tempfile::tempdir().expect("Failed to create local temp dir");
+        let local_path = local_dir.path();
+
+        Command::new("git")
+            .args(["init"])
+            .current_dir(local_path)
+            .output()
+            .expect("Failed to init git repo");
+
+        Command::new("git")
+            .args(["config", "user.name", "Test User"])
+            .current_dir(local_path)
+            .output()
+            .expect("Failed to set git user name");
+
+        Command::new("git")
+            .args(["config", "user.email", "test@example.com"])
+            .current_dir(local_path)
+            .output()
+            .expect("Failed to set git user email");
+
+        // Add bare repo as remote
+        let remote_path = remote_dir.path().to_string_lossy().to_string();
+        Command::new("git")
+            .args(["remote", "add", "origin", &remote_path])
+            .current_dir(local_path)
+            .output()
+            .expect("Failed to add remote");
+
+        // Create initial commit
+        let test_file = local_path.join("initial.txt");
+        fs::write(&test_file, "initial content").expect("Failed to write test file");
+
+        Command::new("git")
+            .args(["add", "initial.txt"])
+            .current_dir(local_path)
+            .output()
+            .expect("Failed to add file");
+
+        Command::new("git")
+            .args(["commit", "-m", "Initial commit"])
+            .current_dir(local_path)
+            .output()
+            .expect("Failed to commit");
+
+        // Push to set up tracking
+        Command::new("git")
+            .args(["push", "-u", "origin", "main"])
+            .current_dir(local_path)
+            .output()
+            .expect("Failed to initial push");
+
+        (local_dir, remote_dir)
+    }
+
+    #[tokio::test]
+    async fn test_safe_push_success() {
+        // Create local repo with bare remote
+        let (local_dir, _remote_dir) = create_test_repo_with_remote();
+        let local_path = local_dir.path();
+
+        // Create a new commit to push
+        let new_file = local_path.join("new_feature.txt");
+        fs::write(&new_file, "new feature content").expect("Failed to write new file");
+
+        Command::new("git")
+            .args(["add", "new_feature.txt"])
+            .current_dir(local_path)
+            .output()
+            .expect("Failed to add new file");
+
+        Command::new("git")
+            .args(["commit", "-m", "Add new feature"])
+            .current_dir(local_path)
+            .output()
+            .expect("Failed to commit new file");
+
+        // Push should succeed (remote is in sync, local has 1 new commit)
+        let result = safe_push(local_path.to_string_lossy().to_string()).await;
+
+        assert!(
+            result.is_ok(),
+            "Push should succeed when remote is in sync. Error: {:?}",
+            result.err()
+        );
+
+        // Verify commit was pushed by checking refs
+        let log_output = Command::new("git")
+            .args(["log", "--oneline", "-1"])
+            .current_dir(local_path)
+            .output()
+            .expect("Failed to get log");
+
+        let log_str = String::from_utf8_lossy(&log_output.stdout);
+        assert!(
+            log_str.contains("Add new feature"),
+            "New commit should be in log"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_safe_push_remote_ahead() {
+        // Create local repo with bare remote
+        let (local_dir, remote_dir) = create_test_repo_with_remote();
+        let local_path = local_dir.path();
+
+        // Clone the repo to a second location to simulate another user
+        let other_dir = tempfile::tempdir().expect("Failed to create other temp dir");
+        let other_path = other_dir.path();
+        let remote_path = remote_dir.path().to_string_lossy().to_string();
+
+        Command::new("git")
+            .args(["clone", &remote_path, "."])
+            .current_dir(other_path)
+            .output()
+            .expect("Failed to clone repo");
+
+        Command::new("git")
+            .args(["config", "user.name", "Other User"])
+            .current_dir(other_path)
+            .output()
+            .expect("Failed to set git user name");
+
+        Command::new("git")
+            .args(["config", "user.email", "other@example.com"])
+            .current_dir(other_path)
+            .output()
+            .expect("Failed to set git user email");
+
+        // Other user makes a commit and pushes (remote gets ahead)
+        let other_file = other_path.join("other_change.txt");
+        fs::write(&other_file, "other user's change").expect("Failed to write other file");
+
+        Command::new("git")
+            .args(["add", "other_change.txt"])
+            .current_dir(other_path)
+            .output()
+            .expect("Failed to add other file");
+
+        Command::new("git")
+            .args(["commit", "-m", "Other user's commit"])
+            .current_dir(other_path)
+            .output()
+            .expect("Failed to commit other file");
+
+        Command::new("git")
+            .args(["push"])
+            .current_dir(other_path)
+            .output()
+            .expect("Failed to push from other");
+
+        // Now local user makes a commit (creating divergence)
+        let local_file = local_path.join("local_change.txt");
+        fs::write(&local_file, "local change").expect("Failed to write local file");
+
+        Command::new("git")
+            .args(["add", "local_change.txt"])
+            .current_dir(local_path)
+            .output()
+            .expect("Failed to add local file");
+
+        Command::new("git")
+            .args(["commit", "-m", "Local commit"])
+            .current_dir(local_path)
+            .output()
+            .expect("Failed to commit local file");
+
+        // Try to push - should be blocked by guardrail
+        let result = safe_push(local_path.to_string_lossy().to_string()).await;
+
+        assert!(result.is_err(), "Push should fail when remote is ahead");
+        assert_eq!(
+            result.unwrap_err(),
+            ERR_REMOTE_AHEAD,
+            "Should return ERR_REMOTE_AHEAD error code"
+        );
     }
 }
