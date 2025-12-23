@@ -13,6 +13,11 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { HealthBadge } from './HealthBadge';
 import { ContextPanel } from '@/components/ContextPanel';
 import { calculateDaysSince, formatDaysSince } from '@/lib/utils/dateUtils';
@@ -166,10 +171,20 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
                                     <div className="flex items-start gap-4">
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <TypeIcon
-                                                    className="h-4 w-4 text-muted-foreground flex-shrink-0"
-                                                    data-icon={project.type === 'git' ? 'git-branch' : 'folder'}
-                                                />
+                                                <Tooltip>
+                                                    <TooltipTrigger
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        aria-label={project.type === 'git' ? 'Git repository' : 'Folder'}
+                                                    >
+                                                        <TypeIcon
+                                                            className="h-4 w-4 text-muted-foreground flex-shrink-0"
+                                                            data-icon={project.type === 'git' ? 'git-branch' : 'folder'}
+                                                        />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>{project.type === 'git' ? 'Git repository' : 'Folder (not Git)'}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
                                                 <h3 className="font-serif font-bold text-lg truncate">
                                                     {project.name}
                                                 </h3>

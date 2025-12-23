@@ -33,6 +33,8 @@ pub struct ProjectResponse {
     pub file_count: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "lastActivityAt")]
     pub last_activity: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "gitBranch")]
+    pub git_branch: Option<String>,
 }
 
 /// Detect if a directory contains a Git repository
@@ -117,6 +119,39 @@ pub fn extract_folder_name<P: AsRef<Path>>(path: P) -> Result<String, String> {
         .ok_or_else(|| "Invalid path: cannot extract folder name".to_string())
 }
 
+/// Get the current Git branch name (lightweight - just a ref lookup)
+/// Returns None if not a Git repo or on error
+pub fn get_branch_name<P: AsRef<Path>>(path: P) -> Option<String> {
+    use git2::Repository;
+
+    let repo = Repository::open(path.as_ref()).ok()?;
+
+    // Get branch name and return immediately to avoid lifetime issues
+    let result = match repo.head() {
+        Ok(head) => {
+            if head.is_branch() {
+                head.shorthand().map(|s| s.to_string())
+            } else {
+                // Detached HEAD - return short SHA
+                head.target().map(|oid| {
+                    let sha = oid.to_string();
+                    sha.chars().take(7).collect()
+                })
+            }
+        }
+        Err(e) => {
+            // Empty repository (no commits yet)
+            if e.code() == git2::ErrorCode::UnbornBranch || e.code() == git2::ErrorCode::NotFound {
+                Some("main".to_string()) // Default branch name
+            } else {
+                None
+            }
+        }
+    };
+
+    result
+}
+
 /// Add a new project to the database
 /// If a soft-deleted project exists with the same path, restore it instead
 /// Returns the newly created or restored Project struct
@@ -189,17 +224,28 @@ pub async fn add_project(
             "SELECT id, path, name, type, created_at, updated_at, is_archived, deleted_at FROM projects WHERE id = ?1",
             rusqlite::params![project_id],
             |row| {
+                let project_type: String = row.get(3)?;
+                let path: String = row.get(1)?;
+                
+                // Populate git_branch for Git projects
+                let git_branch = if project_type == "git" {
+                    get_branch_name(&path)
+                } else {
+                    None
+                };
+                
                 Ok(ProjectResponse {
                     id: row.get(0)?,
-                    path: row.get(1)?,
+                    path,
                     name: row.get(2)?,
-                    r#type: row.get(3)?,
+                    r#type: project_type,
                     created_at: row.get::<_, Option<String>>(4)?.unwrap_or_default(),
                     updated_at: row.get::<_, Option<String>>(5)?.unwrap_or_default(),
                     is_archived: row.get(6)?,
                     deleted_at: row.get(7)?,
                     file_count: None,
                     last_activity: None,
+                    git_branch,
                 })
             },
         )
@@ -236,6 +282,7 @@ pub async fn get_projects(
                     deleted_at: row.get(7)?,
                     file_count: None,
                     last_activity: None,
+                    git_branch: None, // Will be populated later for Git projects
                 })
             })
             .map_err(|e| format!("Failed to query projects: {}", e))?
@@ -249,8 +296,11 @@ pub async fn get_projects(
     // Git projects will use git commit history once Task 2.2 (git integration) is complete
     for project in &mut projects {
         if project.r#type == "git" {
-            // Get last commit date for Git projects (lightweight - no full history scan)
+            // Populate git_branch for Git projects (lightweight ref lookup)
             let path = project.path.clone();
+            project.git_branch = get_branch_name(&path);
+            
+            // Get last commit date for Git projects (lightweight - no full history scan)
             let last_activity = tokio::task::spawn_blocking(move || {
                 crate::commands::git::get_last_commit_date(&path)
             })
@@ -742,6 +792,193 @@ mod tests {
             last_activity.is_none(),
             "Nonexistent path should have no last activity"
         );
+    }
+
+    // ========================================================================
+    // TESTS FOR STORY 5.5: Distinguish Git vs Folder Projects
+    // These tests verify the git_branch field population
+    // ========================================================================
+
+    #[test]
+    fn test_get_branch_name_for_git_repo() {
+        use std::process::Command;
+
+        // Create a temporary git repository with commits
+        let temp_dir = std::env::temp_dir().join(format!("test_git_branch_{}", std::process::id()));
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        // Initialize git repo
+        Command::new("git")
+            .args(["init"])
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Failed to init git repo");
+
+        Command::new("git")
+            .args(["config", "user.name", "Test User"])
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Failed to set git user name");
+
+        Command::new("git")
+            .args(["config", "user.email", "test@example.com"])
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Failed to set git user email");
+
+        // Create and commit a test file
+        let test_file = temp_dir.join("test.txt");
+        fs::write(&test_file, "test content").unwrap();
+
+        Command::new("git")
+            .args(["add", "test.txt"])
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Failed to add test file");
+
+        Command::new("git")
+            .args(["commit", "-m", "Initial commit"])
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Failed to commit test file");
+
+        // Test get_branch_name
+        let branch_name = get_branch_name(&temp_dir);
+        assert!(branch_name.is_some(), "Should return branch name for Git repo");
+        
+        // Default branch is typically "main" or "master"
+        let branch = branch_name.unwrap();
+        assert!(
+            branch == "main" || branch == "master",
+            "Branch should be main or master, got: {}",
+            branch
+        );
+
+        // Cleanup
+        fs::remove_dir_all(temp_dir).ok();
+    }
+
+    #[test]
+    fn test_get_branch_name_for_non_git_folder() {
+        // Create a non-git folder
+        let temp_dir = std::env::temp_dir().join(format!("test_non_git_{}", std::process::id()));
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        // Test get_branch_name on non-git folder
+        let branch_name = get_branch_name(&temp_dir);
+        assert!(
+            branch_name.is_none(),
+            "Should return None for non-Git folder"
+        );
+
+        // Cleanup
+        fs::remove_dir_all(temp_dir).ok();
+    }
+
+    #[test]
+    fn test_get_branch_name_empty_repo() {
+        use std::process::Command;
+
+        // Create an empty git repository (no commits)
+        let temp_dir = std::env::temp_dir().join(format!("test_empty_git_{}", std::process::id()));
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        // Initialize git repo but don't make any commits
+        Command::new("git")
+            .args(["init"])
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Failed to init git repo");
+
+        // Test get_branch_name on empty repo
+        let branch_name = get_branch_name(&temp_dir);
+        assert!(
+            branch_name.is_some(),
+            "Should return Some for empty Git repo (default branch)"
+        );
+        assert_eq!(
+            branch_name.unwrap(),
+            "main",
+            "Empty repo should return 'main' as default branch"
+        );
+
+        // Cleanup
+        fs::remove_dir_all(temp_dir).ok();
+    }
+
+    #[test]
+    fn test_get_branch_name_detached_head() {
+        use std::process::Command;
+
+        // Create a git repository with commits, then detach HEAD
+        let temp_dir = std::env::temp_dir().join(format!("test_detached_head_{}", std::process::id()));
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        // Initialize git repo
+        Command::new("git")
+            .args(["init"])
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Failed to init git repo");
+
+        Command::new("git")
+            .args(["config", "user.name", "Test User"])
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Failed to set git user name");
+
+        Command::new("git")
+            .args(["config", "user.email", "test@example.com"])
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Failed to set git user email");
+
+        // Create and commit a test file
+        let test_file = temp_dir.join("test.txt");
+        fs::write(&test_file, "test content").unwrap();
+
+        Command::new("git")
+            .args(["add", "test.txt"])
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Failed to add test file");
+
+        Command::new("git")
+            .args(["commit", "-m", "Initial commit"])
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Failed to commit test file");
+
+        // Get the commit SHA before detaching
+        let sha_output = Command::new("git")
+            .args(["rev-parse", "HEAD"])
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Failed to get HEAD SHA");
+        let full_sha = String::from_utf8_lossy(&sha_output.stdout).trim().to_string();
+        let short_sha: String = full_sha.chars().take(7).collect();
+
+        // Detach HEAD by checking out the commit directly
+        Command::new("git")
+            .args(["checkout", "--detach", "HEAD"])
+            .current_dir(&temp_dir)
+            .output()
+            .expect("Failed to detach HEAD");
+
+        // Test get_branch_name returns short SHA for detached HEAD
+        let branch_name = get_branch_name(&temp_dir);
+        assert!(
+            branch_name.is_some(),
+            "Should return Some for detached HEAD"
+        );
+        assert_eq!(
+            branch_name.unwrap(),
+            short_sha,
+            "Detached HEAD should return short SHA (7 chars)"
+        );
+
+        // Cleanup
+        fs::remove_dir_all(temp_dir).ok();
     }
 }
 

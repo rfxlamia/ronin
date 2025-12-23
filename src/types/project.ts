@@ -2,7 +2,7 @@ export interface Project {
   id: number;
   path: string;
   name: string;
-  type: string;
+  type: 'git' | 'folder';
   created_at: string;
   updated_at: string;
   isArchived?: boolean;

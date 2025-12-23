@@ -96,7 +96,7 @@ development_status:
   5-2-one-click-commit: done
   5-3-one-click-push-with-guardrails: done
   5-4-edge-case-handling: done
-  5-5-distinguish-git-vs-folder-projects: backlog
+  5-5-distinguish-git-vs-folder-projects: done
   epic-5-retrospective: optional
 
   epic-6: backlog
