@@ -24,6 +24,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from 'sonner';
 import { useAiContext } from '@/hooks/useAiContext';
 import { GitStatusDisplay } from './GitStatusDisplay';
+import { GitControls } from './GitControls';
+import { useGitStatus } from '@/hooks/useGitStatus';
 
 interface ProjectCardProps {
     project: Project;
@@ -215,6 +217,11 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
                                     </div>
                                 )}
 
+                                {/* Git Controls for Git projects with uncommitted changes */}
+                                {project.type === 'git' && (
+                                    <GitControlsWrapper project={project} />
+                                )}
+
                                 <Button
                                     className="w-full font-serif"
                                     disabled
@@ -254,3 +261,15 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
         </>
     );
 });
+
+// Wrapper component to use useGitStatus hook and conditionally render GitControls
+function GitControlsWrapper({ project }: { project: Project }) {
+    const { status, refresh } = useGitStatus(project.path);
+
+    // Only show controls if there are uncommitted files
+    if (!status || status.uncommittedFiles === 0) {
+        return null;
+    }
+
+    return <GitControls project={project} onSuccess={refresh} />;
+}

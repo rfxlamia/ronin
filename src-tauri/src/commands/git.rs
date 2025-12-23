@@ -3,6 +3,7 @@
 /// Provides get_git_history and other git-related operations
 use git2::{Oid, Repository};
 use serde::{Deserialize, Serialize};
+use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GitCommit {
@@ -308,6 +309,37 @@ pub async fn get_git_context(path: String) -> Result<GitContext, String> {
         status,
         commits,
     })
+}
+
+/// Commit changes using system Git CLI
+///
+/// Uses std::process::Command instead of git2 to ensure:
+/// - Pre-commit hooks execute (e.g., husky, pre-commit)
+/// - GPG signing works with user's configured agent
+/// - Respects user's global Git configuration
+#[tauri::command]
+pub async fn commit_changes(project_path: String, message: String) -> Result<(), String> {
+    // Validate message is not empty or whitespace
+    if message.trim().is_empty() {
+        return Err("Commit message cannot be empty".to_string());
+    }
+
+    // Execute git commit via system CLI
+    let output = Command::new("git")
+        .arg("commit")
+        .arg("-m")
+        .arg(&message)
+        .current_dir(&project_path)
+        .output()
+        .map_err(|e| format!("Failed to execute git command: {}", e))?;
+
+    // Check if commit was successful
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        return Err(stderr);
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -791,5 +823,173 @@ mod tests {
             status.last_commit_timestamp <= now + 60,
             "Timestamp should not be in the future (allowing 60s clock skew)"
         );
+    }
+
+    // ========================================================================
+    // TESTS FOR STORY 5.2: One-Click Commit
+    // These tests verify the commit_changes function using System Git CLI
+    // ========================================================================
+
+    #[tokio::test]
+    async fn test_commit_changes_success() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path();
+
+        // Create a new file and stage it
+        let new_file = repo_path.join("commit_test.txt");
+        fs::write(&new_file, "test content for commit").expect("Failed to write test file");
+
+        Command::new("git")
+            .args(["add", "commit_test.txt"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to add file");
+
+        // Commit using our command
+        let result = commit_changes(
+            repo_path.to_string_lossy().to_string(),
+            "Test commit from commit_changes".to_string(),
+        )
+        .await;
+
+        assert!(result.is_ok(), "Commit should succeed");
+
+        // Verify commit was created
+        let log_output = Command::new("git")
+            .args(["log", "-1", "--format=%s"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to get git log");
+
+        let commit_message = String::from_utf8_lossy(&log_output.stdout);
+        assert_eq!(
+            commit_message.trim(),
+            "Test commit from commit_changes",
+            "Commit message should match"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_commit_changes_empty_message() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path();
+
+        // Create and stage a file
+        let new_file = repo_path.join("empty_msg_test.txt");
+        fs::write(&new_file, "content").expect("Failed to write test file");
+
+        Command::new("git")
+            .args(["add", "empty_msg_test.txt"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to add file");
+
+        // Try to commit with empty message
+        let result = commit_changes(repo_path.to_string_lossy().to_string(), "".to_string()).await;
+
+        assert!(result.is_err(), "Should fail with empty message");
+        assert!(
+            result.unwrap_err().contains("cannot be empty"),
+            "Error should mention empty message"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_commit_changes_whitespace_only_message() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path();
+
+        // Create and stage a file
+        let new_file = repo_path.join("whitespace_test.txt");
+        fs::write(&new_file, "content").expect("Failed to write test file");
+
+        Command::new("git")
+            .args(["add", "whitespace_test.txt"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to add file");
+
+        // Try to commit with whitespace-only message
+        let result = commit_changes(
+            repo_path.to_string_lossy().to_string(),
+            "   \n\t  ".to_string(),
+        )
+        .await;
+
+        assert!(result.is_err(), "Should fail with whitespace-only message");
+    }
+
+    #[tokio::test]
+    async fn test_commit_changes_pre_commit_hook_failure() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path();
+
+        // Create a failing pre-commit hook
+        let hooks_dir = repo_path.join(".git/hooks");
+        let pre_commit_hook = hooks_dir.join("pre-commit");
+
+        #[cfg(unix)]
+        {
+            fs::write(
+                &pre_commit_hook,
+                "#!/bin/sh\necho 'Pre-commit hook failed'\nexit 1",
+            )
+            .expect("Failed to write pre-commit hook");
+
+            // Make hook executable
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&pre_commit_hook)
+                .expect("Failed to get metadata")
+                .permissions();
+            perms.set_mode(0o755);
+            fs::set_permissions(&pre_commit_hook, perms).expect("Failed to set permissions");
+        }
+
+        // For Windows, create a .bat file
+        #[cfg(windows)]
+        {
+            fs::write(
+                &pre_commit_hook.with_extension("bat"),
+                "@echo off\necho Pre-commit hook failed\nexit 1",
+            )
+            .expect("Failed to write pre-commit hook");
+        }
+
+        // Create and stage a file
+        let new_file = repo_path.join("hook_test.txt");
+        fs::write(&new_file, "content").expect("Failed to write test file");
+
+        Command::new("git")
+            .args(["add", "hook_test.txt"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to add file");
+
+        // Try to commit (should fail due to hook)
+        let result = commit_changes(
+            repo_path.to_string_lossy().to_string(),
+            "This commit should fail".to_string(),
+        )
+        .await;
+
+        assert!(result.is_err(), "Should fail due to pre-commit hook");
+        let error_msg = result.unwrap_err();
+        assert!(
+            error_msg.contains("Pre-commit hook failed") || error_msg.contains("hook"),
+            "Error should contain hook failure message, got: {}",
+            error_msg
+        );
+    }
+
+    #[tokio::test]
+    async fn test_commit_changes_nothing_to_commit() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path().to_string_lossy().to_string();
+
+        // Try to commit when there's nothing staged
+        let result = commit_changes(repo_path, "Nothing to commit".to_string()).await;
+
+        // Should fail when nothing to commit (Git returns non-zero exit code)
+        assert!(result.is_err(), "Should fail when nothing to commit");
     }
 }

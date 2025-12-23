@@ -57,5 +57,5 @@ export function useGitStatus(projectPath: string | null) {
         };
     }, [projectPath, fetchStatus]);
 
-    return { status, loading, error };
+    return { status, loading, error, refresh: fetchStatus };
 }
