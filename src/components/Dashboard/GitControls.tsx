@@ -74,17 +74,23 @@ export function GitControls({ project, onSuccess, status }: GitControlsProps) {
         }
     }, [project.path, onSuccess]);
 
+    // Calculate what states make push available
+    const hasUnpushedCommits = status && status.unpushedCommits > 0;
+    const hasUncommittedFiles = status && status.uncommittedFiles > 0;
+    const hasConflicts = status?.hasConflicts ?? false;
+    const canPush = hasUnpushedCommits && status?.hasRemote && !status?.isEmpty && !status?.isDetached;
+
     // Keyboard shortcut for push: Cmd/Ctrl+Shift+P
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Only trigger if not in editing mode and there are unpushed commits
+            // Use same canPush logic as button
             if (
                 mode === 'idle' &&
                 (e.metaKey || e.ctrlKey) &&
                 e.shiftKey &&
                 e.key === 'P' &&
-                status &&
-                status.unpushedCommits > 0
+                canPush &&
+                !isPushing
             ) {
                 e.preventDefault();
                 handlePush();
@@ -93,7 +99,7 @@ export function GitControls({ project, onSuccess, status }: GitControlsProps) {
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [mode, status?.unpushedCommits, handlePush]);
+    }, [mode, canPush, isPushing, handlePush]);
 
     const handleCommit = async () => {
         const trimmedMessage = message.trim();
@@ -142,7 +148,7 @@ export function GitControls({ project, onSuccess, status }: GitControlsProps) {
         // Shift+Enter is NOT prevented, allowing new lines
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            if (message.trim()) {
+            if (message.trim() && !status?.hasConflicts) {  // Don't submit if conflicts exist
                 handleCommit();
             }
         }
@@ -154,33 +160,43 @@ export function GitControls({ project, onSuccess, status }: GitControlsProps) {
         }
     };
 
-    const hasUnpushedCommits = status && status.unpushedCommits > 0;
-    const hasUncommittedFiles = status && status.uncommittedFiles > 0;
+    // Generate tooltip for push button based on state
+    const getPushTooltip = () => {
+        if (!status) return '';
+        if (status.isDetached) return 'Cannot push in detached HEAD state';
+        if (status.isEmpty) return 'No commits to push yet';
+        if (!status.hasRemote) return 'No remote configured';
+        if (!hasUnpushedCommits) return 'No unpushed commits';
+        return 'Push to remote (⌘⇧P)';
+    };
 
     if (mode === 'idle') {
         return (
             <div className="pt-2 space-y-2">
-                {/* Commit button - only visible when there are uncommitted files */}
+                {/* Commit button - only visible when there are uncommitted files, disabled if conflicts */}
                 {hasUncommittedFiles && (
                     <Button
                         onClick={() => setMode('editing')}
                         variant="outline"
                         size="sm"
                         className="w-full font-serif"
+                        disabled={hasConflicts}
+                        title={hasConflicts ? 'Resolve conflicts first' : 'Commit changes'}
                     >
                         <GitCommitHorizontal className="h-4 w-4 mr-2" />
-                        Commit Changes
+                        {hasConflicts ? 'Resolve Conflicts' : 'Commit Changes'}
                     </Button>
                 )}
 
-                {/* Push button - only visible when there are unpushed commits */}
-                {hasUnpushedCommits && (
+                {/* Push button - only visible when appropriate */}
+                {canPush && (
                     <Button
                         onClick={handlePush}
                         disabled={isPushing}
                         variant="outline"
                         size="sm"
                         className="w-full font-serif"
+                        title={getPushTooltip()}
                     >
                         {isPushing ? (
                             <>
@@ -216,6 +232,11 @@ export function GitControls({ project, onSuccess, status }: GitControlsProps) {
         );
     }
 
+    // Commit editor mode
+    const placeholderText = hasConflicts
+        ? 'Resolve conflicts in terminal before committing'
+        : 'Commit message (Enter to submit, Shift+Enter for new line, Esc to cancel)';
+
     return (
         <div className="pt-2 space-y-2">
             <Textarea
@@ -223,16 +244,17 @@ export function GitControls({ project, onSuccess, status }: GitControlsProps) {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Commit message (Enter to submit, Shift+Enter for new line, Esc to cancel)"
+                placeholder={placeholderText}
                 className="min-h-[60px] font-sans text-sm resize-none"
-                disabled={mode === 'submitting'}
+                disabled={mode === 'submitting' || hasConflicts}
             />
             <div className="flex gap-2">
                 <Button
                     onClick={handleCommit}
-                    disabled={!message.trim() || mode === 'submitting'}
+                    disabled={!message.trim() || mode === 'submitting' || hasConflicts}
                     size="sm"
                     className="flex-1 font-serif"
+                    title={hasConflicts ? 'Cannot commit with conflicts' : ''}
                 >
                     {mode === 'submitting' ? (
                         <>

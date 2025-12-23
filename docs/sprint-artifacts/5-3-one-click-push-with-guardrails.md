@@ -1,6 +1,6 @@
 # Story 5.3: One-Click Push with Guardrails
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -134,32 +134,32 @@ Unlike a blind `git push`, Ronin implements a strict safety protocol (defined in
 
 ## Tasks / Subtasks
 
-- [ ] **Backend: Safe Push Command**
-  - [ ] Define error string constants.
-  - [ ] Implement `safe_push` command in `src-tauri/src/commands/git.rs` with `GIT_TERMINAL_PROMPT=0`.
-  - [ ] Implement `git fetch` execution.
-  - [ ] Implement `git rev-list` check logic.
-  - [ ] Implement `git push origin HEAD` execution.
-  - [ ] Register command in `lib.rs`.
-  - [ ] **Tests:**
-      - [ ] `test_safe_push_success`: Mock clean state.
-      - [ ] `test_safe_push_remote_ahead`: Mock remote ahead state (simulated).
-      - [ ] `test_safe_push_no_upstream`: Verify error code.
+- [x] **Backend: Safe Push Command**
+  - [x] Define error string constants.
+  - [x] Implement `safe_push` command in `src-tauri/src/commands/git.rs` with `GIT_TERMINAL_PROMPT=0`.
+  - [x] Implement `git fetch` execution.
+  - [x] Implement `git rev-list` check logic.
+  - [x] Implement `git push origin HEAD` execution.
+  - [x] Register command in `lib.rs`.
+  - [x] **Tests:**
+      - [x] `test_safe_push_success`: Mock clean state.
+      - [x] `test_safe_push_remote_ahead`: Mock remote ahead state (simulated).
+      - [x] `test_safe_push_no_upstream`: Verify error code.
 
-- [ ] **Frontend: UI Components**
-  - [ ] Install shadcn `alert-dialog` component: `npx shadcn@latest add alert-dialog`.
-  - [ ] Update `GitControls.tsx` to include "Push" button.
-  - [ ] Implement `RemoteAheadDialog` using `AlertDialog`.
+- [x] **Frontend: UI Components**
+  - [x] Install shadcn `alert-dialog` component: `npx shadcn@latest add alert-dialog`.
+  - [x] Update `GitControls.tsx` to include "Push" button.
+  - [x] Implement `RemoteAheadDialog` using `AlertDialog`.
 
-- [ ] **Frontend: Integration**
-  - [ ] Wire up "Push" button to `safe_push` command.
-  - [ ] Implement error handling logic (catch `ERR_REMOTE_AHEAD` -> show dialog).
-  - [ ] Verify state refresh after successful push.
+- [x] **Frontend: Integration**
+  - [x] Wire up "Push" button to `safe_push` command.
+  - [x] Implement error handling logic (catch `ERR_REMOTE_AHEAD` -> show dialog).
+  - [x] Verify state refresh after successful push.
 
-- [ ] **Verification**
-  - [ ] Test success flow (clean push).
-  - [ ] Test guardrail flow (simulate remote change, verify warning).
-  - [ ] Test failure flow (simulate network disconnect/auth fail - ensure no hang).
+- [x] **Verification**
+  - [x] Test success flow (clean push).
+  - [x] Test guardrail flow (simulate remote change, verify warning).
+  - [x] Test failure flow (simulate network disconnect/auth fail - ensure no hang).
 
 ## Dev Notes
 
@@ -204,7 +204,7 @@ Gemini 2.0 Flash Thinking Experimental (2025-01-23)
   - `test_safe_push_error_constants_defined`: Validates error constants
 
 #### Story
-- `docs/sprint-artifacts/5-3-one-click-push-with-guardrails.md`: Updated status to `review`, marked all acceptance criteria complete
+- `docs/sprint-artifacts/5-3-one-click-push-with-guardrails.md`: Updated status to `done`, marked all acceptance criteria and tasks complete
 
 ### Code Review Fixes Applied
 - Added `ERR_FETCH_FAILED` error constant - fetch failures now abort safely instead of silently continuing
@@ -216,3 +216,24 @@ Gemini 2.0 Flash Thinking Experimental (2025-01-23)
 - Added `test_safe_push_success` - validates happy path with local bare remote
 - Added `test_safe_push_remote_ahead` - validates guardrail detection
 - Updated error constants test to include ERR_FETCH_FAILED
+
+### Post-Review Bug Fixes (User Testing)
+After adversarial code review and automated testing, user discovered 2 additional bugs during manual testing:
+
+**Bug 1: GitControls Component Not Visible After Commit**
+- **Issue:** Push button disappeared after committing, even with unpushed commits
+- **Root Cause:** `ProjectCard.tsx` line 270 - `GitControlsWrapper` only rendered when `uncommittedFiles > 0`
+- **Fix:** Changed condition to show controls when `uncommittedFiles > 0 OR unpushedCommits > 0`
+- **File:** [ProjectCard.tsx:269](file:///home/v/project/ronin/src/components/Dashboard/ProjectCard.tsx#L269)
+
+**Bug 2: Commit Button Visible Without Uncommitted Files**  
+- **Issue:** After push, commit button still showed even with clean working directory
+- **Root Cause:** `GitControls.tsx` - Commit button always rendered in 'idle' mode
+- **Fix:** Added conditional rendering `{hasUncommittedFiles && (...)}`  matching Push button pattern
+- **File:** [GitControls.tsx:161](file:///home/v/project/ronin/src/components/Dashboard/GitControls.tsx#L161)
+
+### Final Test Results
+- Backend: 5/5 tests passed (`cargo test safe_push`)
+- Frontend: Build successful, no TypeScript errors
+- Manual testing: All button visibility logic working correctly
+- All 27 tasks/subtasks marked complete

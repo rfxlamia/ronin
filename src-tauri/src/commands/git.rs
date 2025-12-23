@@ -22,6 +22,10 @@ pub struct GitStatus {
     pub unpushed_commits: u32,
     pub last_commit_timestamp: i64,
     pub has_remote: bool,
+    // Edge case detection flags (Story 5.4)
+    pub is_detached: bool,
+    pub has_conflicts: bool,
+    pub is_empty: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -159,6 +163,23 @@ pub async fn get_git_status(path: String) -> Result<GitStatus, String> {
     let repo = Repository::open(&path)
         .map_err(|e| format!("Not a git repository or failed to open: {}", e))?;
 
+    // Detect if repository is empty (no commits yet)
+    let is_empty = match repo.head() {
+        Err(e) => {
+            e.code() == git2::ErrorCode::UnbornBranch || e.code() == git2::ErrorCode::NotFound
+        }
+        _ => false,
+    };
+
+    // Detect detached HEAD state
+    let is_detached = repo.head_detached().unwrap_or(false);
+
+    // Detect merge conflicts
+    let has_conflicts = repo
+        .index()
+        .map(|index| index.has_conflicts())
+        .unwrap_or(false);
+
     // Get branch name (handle detached HEAD)
     let branch = match repo.head() {
         Ok(head) => {
@@ -257,6 +278,9 @@ pub async fn get_git_status(path: String) -> Result<GitStatus, String> {
         unpushed_commits,
         last_commit_timestamp,
         has_remote,
+        is_detached,
+        has_conflicts,
+        is_empty,
     })
 }
 
@@ -325,6 +349,16 @@ pub async fn commit_changes(project_path: String, message: String) -> Result<(),
     // Validate message is not empty or whitespace
     if message.trim().is_empty() {
         return Err("Commit message cannot be empty".to_string());
+    }
+
+    // Safety check: prevent commit if conflicts exist
+    let repo =
+        Repository::open(&project_path).map_err(|e| format!("Failed to open repository: {}", e))?;
+
+    if let Ok(index) = repo.index() {
+        if index.has_conflicts() {
+            return Err("Cannot commit with unresolved conflicts".to_string());
+        }
     }
 
     // Stage all changes (new, modified, deleted files)
@@ -1366,6 +1400,223 @@ mod tests {
             result.unwrap_err(),
             ERR_REMOTE_AHEAD,
             "Should return ERR_REMOTE_AHEAD error code"
+        );
+    }
+
+    // ========================================================================
+    // TESTS FOR STORY 5.4: Edge Case Handling
+    // These tests verify the new edge case detection fields in GitStatus
+    // ========================================================================
+
+    #[tokio::test]
+    async fn test_git_status_detached_sets_flag() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path();
+
+        // Checkout first commit to create detached HEAD
+        Command::new("git")
+            .args(["checkout", "HEAD~1"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to checkout first commit");
+
+        let result = get_git_status(repo_path.to_string_lossy().to_string()).await;
+        assert!(result.is_ok(), "Should successfully get status");
+
+        let status = result.unwrap();
+        assert!(
+            status.is_detached,
+            "is_detached should be true in detached HEAD state"
+        );
+        // Branch should show short SHA
+        assert!(
+            status.branch.len() >= 7 && status.branch.len() <= 40,
+            "Branch should be commit SHA in detached HEAD state, got: {}",
+            status.branch
+        );
+    }
+
+    #[tokio::test]
+    async fn test_git_status_conflicts_sets_flag() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path();
+
+        // Create a conflict scenario
+        // 1. Create and checkout a new branch
+        Command::new("git")
+            .args(["checkout", "-b", "conflict-branch"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to create conflict branch");
+
+        // 2. Modify test.txt on the branch
+        let test_file = repo_path.join("test.txt");
+        fs::write(&test_file, "conflict content from branch")
+            .expect("Failed to write conflict content");
+
+        Command::new("git")
+            .args(["add", "test.txt"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to add file");
+
+        Command::new("git")
+            .args(["commit", "-m", "Branch change"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to commit on branch");
+
+        // 3. Go back to main and make a different change
+        Command::new("git")
+            .args(["checkout", "main"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to checkout main");
+
+        fs::write(&test_file, "conflict content from main").expect("Failed to write main content");
+
+        Command::new("git")
+            .args(["add", "test.txt"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to add file on main");
+
+        Command::new("git")
+            .args(["commit", "-m", "Main change"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to commit on main");
+
+        // 4. Try to merge - this will create conflicts
+        let _ = Command::new("git")
+            .args(["merge", "conflict-branch"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to merge (expected conflict)");
+
+        // Now check status
+        let result = get_git_status(repo_path.to_string_lossy().to_string()).await;
+        assert!(
+            result.is_ok(),
+            "Should successfully get status even with conflicts"
+        );
+
+        let status = result.unwrap();
+        assert!(
+            status.has_conflicts,
+            "has_conflicts should be true when merge conflicts exist"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_git_status_empty_sets_flag() {
+        let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+        let repo_path = temp_dir.path();
+
+        // Initialize empty git repo with no commits
+        Command::new("git")
+            .args(["init"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to init git repo");
+
+        Command::new("git")
+            .args(["config", "user.name", "Test User"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to set git user name");
+
+        Command::new("git")
+            .args(["config", "user.email", "test@example.com"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to set git user email");
+
+        let result = get_git_status(repo_path.to_string_lossy().to_string()).await;
+        assert!(
+            result.is_ok(),
+            "Should successfully get status for empty repo"
+        );
+
+        let status = result.unwrap();
+        assert!(
+            status.is_empty,
+            "is_empty should be true for repository with no commits"
+        );
+        assert_eq!(
+            status.last_commit_timestamp, 0,
+            "Empty repo should have 0 for last commit timestamp"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_commit_changes_blocked_by_conflicts() {
+        let temp_repo = create_test_repo();
+        let repo_path = temp_repo.path();
+
+        // Create a conflict scenario using same setup as test_git_status_conflicts_sets_flag
+        Command::new("git")
+            .args(["checkout", "-b", "conflict-branch"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to create conflict branch");
+
+        let test_file = repo_path.join("test.txt");
+        fs::write(&test_file, "conflict content from branch")
+            .expect("Failed to write conflict content");
+
+        Command::new("git")
+            .args(["add", "test.txt"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to add file");
+
+        Command::new("git")
+            .args(["commit", "-m", "Branch change"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to commit on branch");
+
+        Command::new("git")
+            .args(["checkout", "main"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to checkout main");
+
+        fs::write(&test_file, "conflict content from main").expect("Failed to write main content");
+
+        Command::new("git")
+            .args(["add", "test.txt"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to add file on main");
+
+        Command::new("git")
+            .args(["commit", "-m", "Main change"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to commit on main");
+
+        // Create conflict
+        let _ = Command::new("git")
+            .args(["merge", "conflict-branch"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to merge (expected conflict)");
+
+        // Try to commit - should be blocked
+        let result = commit_changes(
+            repo_path.to_string_lossy().to_string(),
+            "This should fail".to_string(),
+        )
+        .await;
+
+        assert!(result.is_err(), "Commit should fail when conflicts exist");
+        let error_msg = result.unwrap_err();
+        assert!(
+            error_msg.contains("unresolved conflicts"),
+            "Error should mention unresolved conflicts, got: {}",
+            error_msg
         );
     }
 }
