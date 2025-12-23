@@ -13,27 +13,13 @@ pub fn build_git_context(git_context: &GitContext) -> String {
     context.push_str(&format!("**Current Branch:** {}\n\n", git_context.branch));
 
     // Status information
-    if git_context.status.is_clean {
+    if git_context.status.uncommitted_files == 0 {
         context.push_str("**Working Directory:** Clean (no uncommitted changes)\n\n");
     } else {
         context.push_str(&format!(
-            "**Working Directory:** {} uncommitted file(s)\n",
-            git_context.status.modified_files.len()
+            "**Working Directory:** {} uncommitted file(s)\n\n",
+            git_context.status.uncommitted_files
         ));
-
-        // Show first 5 modified files
-        let display_count = git_context.status.modified_files.len().min(5);
-        for file in git_context.status.modified_files.iter().take(display_count) {
-            context.push_str(&format!("  - {}\n", file));
-        }
-
-        if git_context.status.modified_files.len() > 5 {
-            context.push_str(&format!(
-                "  ... and {} more\n",
-                git_context.status.modified_files.len() - 5
-            ));
-        }
-        context.push('\n');
     }
 
     // Recent commits
@@ -125,7 +111,7 @@ fn build_context_sources(git_context_str: &str, devlog: Option<&DevlogContent>) 
         sources.push_str("<devlog>\n");
         sources.push_str(&devlog_content.content);
         sources.push_str("\n</devlog>");
-        
+
         if devlog_content.truncated {
             sources.push_str("\n(Note: DEVLOG was truncated to last ~500 lines)");
         }
@@ -140,34 +126,35 @@ pub fn enforce_token_budget(
     devlog: Option<DevlogContent>,
 ) -> Option<DevlogContent> {
     let git_size = git_context_str.len();
-    
+
     match devlog {
         None => None,
         Some(mut devlog_content) => {
             let combined_size = git_size + devlog_content.content.len();
-            
+
             if combined_size <= MAX_PAYLOAD_SIZE {
                 // Fits within budget
                 Some(devlog_content)
             } else {
                 // Need to truncate DEVLOG
                 // Priority 1: Keep Git (reserve GIT_PRIORITY_SIZE)
-                let available_for_devlog = MAX_PAYLOAD_SIZE.saturating_sub(git_size.max(GIT_PRIORITY_SIZE));
-                
+                let available_for_devlog =
+                    MAX_PAYLOAD_SIZE.saturating_sub(git_size.max(GIT_PRIORITY_SIZE));
+
                 if available_for_devlog < 500 {
                     // Not enough space for meaningful DEVLOG content
                     None
                 } else {
                     // Truncate DEVLOG at section boundaries
-                    let (truncated_content, was_truncated) = 
+                    let (truncated_content, was_truncated) =
                         crate::context::devlog::truncate_at_section_boundary(
                             &devlog_content.content,
                             available_for_devlog,
                         );
-                    
+
                     devlog_content.content = truncated_content;
                     devlog_content.truncated = devlog_content.truncated || was_truncated;
-                    
+
                     Some(devlog_content)
                 }
             }
@@ -201,8 +188,11 @@ mod tests {
         let context = GitContext {
             branch: "main".to_string(),
             status: GitStatus {
-                is_clean: true,
-                modified_files: vec![],
+                branch: "main".to_string(),
+                uncommitted_files: 0,
+                unpushed_commits: 0,
+                last_commit_timestamp: 0,
+                has_remote: false,
             },
             commits: vec![GitCommit {
                 sha: "abc123def456".to_string(),
@@ -226,8 +216,11 @@ mod tests {
         let context = GitContext {
             branch: "feature-branch".to_string(),
             status: GitStatus {
-                is_clean: false,
-                modified_files: vec!["src/main.rs".to_string(), "src/lib.rs".to_string()],
+                branch: "feature-branch".to_string(),
+                uncommitted_files: 2,
+                unpushed_commits: 0,
+                last_commit_timestamp: 0,
+                has_remote: false,
             },
             commits: vec![],
         };
@@ -235,8 +228,6 @@ mod tests {
         let result = build_git_context(&context);
         assert!(result.contains("feature-branch"));
         assert!(result.contains("2 uncommitted file(s)"));
-        assert!(result.contains("src/main.rs"));
-        assert!(result.contains("src/lib.rs"));
     }
 
     #[test]
@@ -306,7 +297,7 @@ mod tests {
             truncated: false,
             source_path: "DEVLOG.md".to_string(),
         };
-        
+
         let result = enforce_token_budget(git_str, Some(devlog));
         assert!(result.is_some());
         let result = result.unwrap();
@@ -323,7 +314,7 @@ mod tests {
             truncated: false,
             source_path: "DEVLOG.md".to_string(),
         };
-        
+
         let result = enforce_token_budget(&git_str, Some(devlog));
         assert!(result.is_some());
         let result = result.unwrap();
@@ -359,8 +350,11 @@ mod tests {
         let context = GitContext {
             branch: "main".to_string(),
             status: GitStatus {
-                is_clean: true,
-                modified_files: vec![],
+                branch: "main".to_string(),
+                uncommitted_files: 0,
+                unpushed_commits: 0,
+                last_commit_timestamp: 0,
+                has_remote: false,
             },
             commits: vec![GitCommit {
                 sha: "abc123".to_string(),

@@ -116,7 +116,7 @@ Ronin is not enterprise-scale (no multi-tenancy, distributed systems, or regulat
 1. **Dashboard UI** - React/TypeScript, card grid with expand/collapse, streaming AI context display
 2. **Context Aggregator** - Rust, CORE intelligence: merges Git + DEVLOG + behavioral data, detects stuck patterns, temporal correlation, summarizes to <10KB
 3. **Silent Observer** - Rust, X11 (D-Bus) + Wayland GNOME (Shell Extension), window title + file modification tracking, SQLite logging
-4. **Git Operations Layer** - Rust, shell commands (`git`) in MVP, migrate to git2-rs in 3-month for branch switching
+4. **Git Operations Layer** - Rust, git2 crate (libgit2 bindings) for type-safety and performance
 5. **AI Consultant Client** - Rust, OpenRouter API integration, streaming response handling, error recovery
 6. **DEVLOG Editor** - React component, markdown editor with file sync, history view
 7. **Settings Manager** - Rust backend + React UI, encrypted API key storage, user preferences
@@ -143,7 +143,7 @@ Ronin is not enterprise-scale (no multi-tenancy, distributed systems, or regulat
 - **AI Integration:** OpenRouter API (cloud LLM), future: local SLM option (12-month vision)
 - **Database:** SQLite with WAL mode (local-first, ACID guarantees)
 - **File Watching:** notify crate (cross-platform, inotify on Linux)
-- **Git:** Shell commands in MVP (`git` CLI), migrate to git2-rs (libgit2 bindings) in 3-month
+- **Git:** git2 crate (libgit2 bindings) for type-safety and performance
 
 **Performance Budget Constraints:**
 - **GUI Memory:** <200MB RSS (enforced through profiling)
@@ -1378,17 +1378,13 @@ fn should_track(title: &str, process: &str, config: &PrivacyConfig) -> bool {
 
 #### Execution Strategy
 
-**MVP: Shell Commands (`git` CLI)**
+**Decision: `git2` crate (libgit2)**
 
-**Rationale (礼 Rei - Use System Tools):**
-- System `git` is already configured (credentials, SSH keys)
-- No credential storage in Ronin (NFR15)
-- Simple, works everywhere
-- Well-tested error messages
-
-**Post-MVP (3-month): Migrate to `git2-rs`**
-- Reason: Branch switching support
-- Trade-off: More complex, but richer API
+**Rationale (Safety & Performance):**
+- **Type Safety:** Strong typing for commits, branches, and status (vs parsing string output)
+- **Performance:** Direct C-library bindings, no shell spawning overhead
+- **Consistency:** Existing codebase already uses `git2`
+- **Migration:** Skipped "Shell MVP" phase to align with current implementation
 
 ---
 
@@ -1625,7 +1621,7 @@ match error.kind {
 | ADR-4 | 5-minute correlation window | ✅ Adopted | Tight confidence (智 Chi) |
 | ADR-5 | Whitelist privacy approach | ✅ Adopted | Transparent (義 Gi) |
 | ADR-6 | Separate observer daemon | ✅ Adopted | Easy disable, stability |
-| ADR-7 | Shell git CLI (MVP) | ✅ Adopted | System integration (礼 Rei) |
+| ADR-7 | git2 crate (libgit2) | ✅ Adopted | Type safety, performance, code consistency |
 | ADR-8 | Virtual scrolling for dashboard | ✅ Adopted | Handles 100+ projects (NFR28) |
 | ADR-9 | SQLite WAL mode | ✅ Adopted | Crash resistance (NFR17) |
 | ADR-10 | 30-day log retention | ✅ Adopted | Prevents unbounded growth |
