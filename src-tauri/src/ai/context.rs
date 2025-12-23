@@ -193,6 +193,9 @@ mod tests {
                 unpushed_commits: 0,
                 last_commit_timestamp: 0,
                 has_remote: false,
+                is_detached: false,
+                has_conflicts: false,
+                is_empty: false,
             },
             commits: vec![GitCommit {
                 sha: "abc123def456".to_string(),
@@ -221,6 +224,9 @@ mod tests {
                 unpushed_commits: 0,
                 last_commit_timestamp: 0,
                 has_remote: false,
+                is_detached: false,
+                has_conflicts: false,
+                is_empty: false,
             },
             commits: vec![],
         };
@@ -355,6 +361,9 @@ mod tests {
                 unpushed_commits: 0,
                 last_commit_timestamp: 0,
                 has_remote: false,
+                is_detached: false,
+                has_conflicts: false,
+                is_empty: false,
             },
             commits: vec![GitCommit {
                 sha: "abc123".to_string(),
