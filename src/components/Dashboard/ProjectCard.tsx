@@ -271,5 +271,5 @@ function GitControlsWrapper({ project }: { project: Project }) {
         return null;
     }
 
-    return <GitControls project={project} onSuccess={refresh} />;
+    return <GitControls project={project} onSuccess={refresh} status={status} />;
 }
