@@ -5,11 +5,11 @@ import { RoninLoader } from '@/components/RoninLoader';
 import { AppShell } from '@/components/AppShell';
 import { Dashboard } from '@/pages/Dashboard';
 import { Settings } from '@/pages/Settings';
+import { Agent } from '@/pages/Agent';
 import { TestContextPanel } from '@/pages/TestContextPanel';
 import { DevlogButton } from '@/components/devlog/DevlogButton';
 import { DevlogModal } from '@/components/devlog/DevlogModal';
 import { Toaster } from 'sonner';
-import DebugAgent from '@/pages/DebugAgent';
 
 function App() {
   const [loadingComplete, setLoadingComplete] = useState(false);
@@ -40,12 +40,10 @@ function App() {
         <AppShell>
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/agent/:id" element={<Agent />} />
             <Route path="/settings" element={<Settings />} />
             {import.meta.env.DEV && (
               <Route path="/test/context-panel" element={<TestContextPanel />} />
-            )}
-            {import.meta.env.DEV && (
-              <Route path="/debug/agent" element={<DebugAgent />} />
             )}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

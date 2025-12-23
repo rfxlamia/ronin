@@ -1,5 +1,5 @@
 import { useState, memo, useRef, useEffect } from 'react';
-import { GitBranch, Folder, MoreVertical, Trash2 } from 'lucide-react';
+import { GitBranch, Folder, MoreVertical, Trash2, Brain } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +23,8 @@ import { useProjectStore } from '@/stores/projectStore';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useAiContext } from '@/hooks/useAiContext';
+import { useNavigate } from 'react-router-dom';
+import { useReasoningStore } from '@/stores/reasoningStore';
 
 interface ProjectCardProps {
     project: Project;
@@ -31,6 +33,8 @@ interface ProjectCardProps {
 export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+    const navigate = useNavigate();
+    const { setMode } = useReasoningStore();
 
     // Use AI Context Hook
     const { contextState, contextText, attribution, error, parsedError, retry } = useAiContext(
@@ -55,6 +59,12 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
         await removeProject(project.id);
         setShowRemoveDialog(false);
         toast.success('Project removed from tracking');
+    };
+
+    const handleDeeperAnalysis = () => {
+        // Set mode to Thinking and navigate to Agent page
+        setMode(project.id, 'ronin-thinking');
+        navigate(`/agent/${project.id}`);
     };
 
     const handleOpenChange = (open: boolean) => {
@@ -207,13 +217,25 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
                                     parsedError={parsedError || undefined}
                                 />
 
-                                <Button
-                                    className="w-full font-serif"
-                                    disabled
-                                    title="IDE integration coming soon"
-                                >
-                                    Open in IDE
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button
+                                        className="flex-1 font-serif gap-2"
+                                        variant="default"
+                                        onClick={handleDeeperAnalysis}
+                                    >
+                                        <Brain className="h-4 w-4" />
+                                        🧠 Deeper Analysis
+                                    </Button>
+
+                                    <Button
+                                        className="flex-1 font-serif"
+                                        variant="outline"
+                                        disabled
+                                        title="IDE integration coming soon"
+                                    >
+                                        Open in IDE
+                                    </Button>
+                                </div>
                             </div>
                         </CollapsibleContent>
                     </Collapsible>

@@ -2,7 +2,7 @@
 
 **Auto-generated** list of key source files. Excludes: tests, migrations, workflow engine, build artifacts.
 
-## Files (142 total)
+## Files (150 total)
 
 - [`README.md`](file:///home/v/project/ronin/README.md)
 - [`docs/epics.md`](file:///home/v/project/ronin/docs/epics.md)
@@ -33,11 +33,14 @@
 - [`docs/sprint-artifacts/4.25-2-aws-lambda-demo-mode-proxy.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4.25-2-aws-lambda-demo-mode-proxy.md)
 - [`docs/sprint-artifacts/4.25-3-provider-settings-ui-multi-key-storage.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4.25-3-provider-settings-ui-multi-key-storage.md)
 - [`docs/sprint-artifacts/4.5-1-agent-core-system-prompt.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4.5-1-agent-core-system-prompt.md)
+- [`docs/sprint-artifacts/4.5-2-tool-implementation-protocol-execution.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4.5-2-tool-implementation-protocol-execution.md)
+- [`docs/sprint-artifacts/4.5-3-agent-route-ui.md`](file:///home/v/project/ronin/docs/sprint-artifacts/4.5-3-agent-route-ui.md)
 - [`docs/sprint-artifacts/epic-1-retro-2025-12-18.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-1-retro-2025-12-18.md)
 - [`docs/sprint-artifacts/epic-2-retro-2025-12-20.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-2-retro-2025-12-20.md)
 - [`docs/sprint-artifacts/epic-3-retro-2025-12-21.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-3-retro-2025-12-21.md)
 - [`docs/sprint-artifacts/epic-4-retro-2025-12-22.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-4-retro-2025-12-22.md)
 - [`docs/sprint-artifacts/epic-4.25-retro-2025-12-22.md`](file:///home/v/project/ronin/docs/sprint-artifacts/epic-4.25-retro-2025-12-22.md)
+- [`docs/sprint-artifacts/validation-report-20251222-205544.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-20251222-205544.md)
 - [`docs/sprint-artifacts/validation-report-4.5-1-2025-12-22.md`](file:///home/v/project/ronin/docs/sprint-artifacts/validation-report-4.5-1-2025-12-22.md)
 - [`package.json`](file:///home/v/project/ronin/package.json)
 - [`serverless/demo-proxy/.aws-sam/build.toml`](file:///home/v/project/ronin/serverless/demo-proxy/.aws-sam/build.toml)
@@ -57,6 +60,7 @@
 - [`src-tauri/src/commands/mod.rs`](file:///home/v/project/ronin/src-tauri/src/commands/mod.rs)
 - [`src-tauri/src/commands/projects.rs`](file:///home/v/project/ronin/src-tauri/src/commands/projects.rs)
 - [`src-tauri/src/commands/settings.rs`](file:///home/v/project/ronin/src-tauri/src/commands/settings.rs)
+- [`src-tauri/src/commands/tools.rs`](file:///home/v/project/ronin/src-tauri/src/commands/tools.rs)
 - [`src-tauri/src/context/devlog.rs`](file:///home/v/project/ronin/src-tauri/src/context/devlog.rs)
 - [`src-tauri/src/context/mod.rs`](file:///home/v/project/ronin/src-tauri/src/context/mod.rs)
 - [`src-tauri/src/db.rs`](file:///home/v/project/ronin/src-tauri/src/db.rs)
@@ -118,10 +122,14 @@
 - [`src/hooks/useWindowSize.ts`](file:///home/v/project/ronin/src/hooks/useWindowSize.ts)
 - [`src/lib/ai/client.ts`](file:///home/v/project/ronin/src/lib/ai/client.ts)
 - [`src/lib/ai/prompts/ronin-thinking.ts`](file:///home/v/project/ronin/src/lib/ai/prompts/ronin-thinking.ts)
+- [`src/lib/ai/protocols/project-resurrection.ts`](file:///home/v/project/ronin/src/lib/ai/protocols/project-resurrection.ts)
 - [`src/lib/ai/registry.ts`](file:///home/v/project/ronin/src/lib/ai/registry.ts)
 - [`src/lib/ai/tools/index.ts`](file:///home/v/project/ronin/src/lib/ai/tools/index.ts)
+- [`src/lib/ai/tools/logger.ts`](file:///home/v/project/ronin/src/lib/ai/tools/logger.ts)
 - [`src/lib/ai/tools/mock/index.ts`](file:///home/v/project/ronin/src/lib/ai/tools/mock/index.ts)
 - [`src/lib/ai/tools/schemas.ts`](file:///home/v/project/ronin/src/lib/ai/tools/schemas.ts)
+- [`src/lib/ai/tools/types.ts`](file:///home/v/project/ronin/src/lib/ai/tools/types.ts)
+- [`src/lib/ai/tools/wrapper.ts`](file:///home/v/project/ronin/src/lib/ai/tools/wrapper.ts)
 - [`src/lib/logic/projectHealth.ts`](file:///home/v/project/ronin/src/lib/logic/projectHealth.ts)
 - [`src/lib/utils.ts`](file:///home/v/project/ronin/src/lib/utils.ts)
 - [`src/lib/utils/dateUtils.ts`](file:///home/v/project/ronin/src/lib/utils/dateUtils.ts)
@@ -148,4 +156,4 @@
 - [`vitest.config.ts`](file:///home/v/project/ronin/vitest.config.ts)
 
 ---
-*Generated: 2025-12-22T13:45:00.729Z*
+*Generated: 2025-12-23T00:38:11.750Z*

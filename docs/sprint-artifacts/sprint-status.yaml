@@ -85,7 +85,9 @@ development_status:
   epic-4.5: in-progress
   4.5-1-agent-core-system-prompt: done
   4.5-2-tool-implementation-protocol-execution: done
-  4.5-3-agent-route-ui: backlog
+  4.5-3-agent-route-ui: done
+  4.5-4-backend-agent-events: backlog
+  4.5-5-frontend-agent-hook: backlog
   epic-4.5-retrospective: optional
 
   epic-5: backlog

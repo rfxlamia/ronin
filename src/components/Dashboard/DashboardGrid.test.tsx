@@ -1,11 +1,19 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { DashboardGrid } from './DashboardGrid';
 import type { Project } from '@/types/project';
 
 // Mock useWindowSize hook
 vi.mock('@/hooks/useWindowSize', () => ({
     useWindowSize: vi.fn(() => ({ width: 1024, height: 768 })),
+}));
+
+// Mock reasoningStore for ProjectCard
+vi.mock('@/stores/reasoningStore', () => ({
+    useReasoningStore: () => ({
+        setMode: vi.fn(),
+    }),
 }));
 
 describe('DashboardGrid', () => {
@@ -23,7 +31,11 @@ describe('DashboardGrid', () => {
     });
 
     it('should render projects in a grid', () => {
-        const { container } = render(<DashboardGrid projects={mockProjects} />);
+        const { container } = render(
+            <MemoryRouter>
+                <DashboardGrid projects={mockProjects} />
+            </MemoryRouter>
+        );
 
         // Should render grid container
         const gridContainer = container.querySelector('[data-testid="dashboard-grid"]');
@@ -31,7 +43,11 @@ describe('DashboardGrid', () => {
     });
 
     it('should show empty state when no projects', () => {
-        render(<DashboardGrid projects={[]} />);
+        render(
+            <MemoryRouter>
+                <DashboardGrid projects={[]} />
+            </MemoryRouter>
+        );
 
         // Should show empty state component
         expect(screen.getByText(/your journey begins/i)).toBeInTheDocument();
@@ -41,7 +57,11 @@ describe('DashboardGrid', () => {
         const { useWindowSize } = await import('@/hooks/useWindowSize');
         vi.mocked(useWindowSize).mockReturnValue({ width: 1024, height: 768 });
 
-        const { container } = render(<DashboardGrid projects={mockProjects} />);
+        const { container } = render(
+            <MemoryRouter>
+                <DashboardGrid projects={mockProjects} />
+            </MemoryRouter>
+        );
 
         // Should have grid with 2 columns (900-1200px range)
         const gridContainer = container.querySelector('[data-testid="dashboard-grid"]');
@@ -53,7 +73,11 @@ describe('DashboardGrid', () => {
         const { useWindowSize } = await import('@/hooks/useWindowSize');
         vi.mocked(useWindowSize).mockReturnValue({ width: 800, height: 600 });
 
-        const { container } = render(<DashboardGrid projects={mockProjects} />);
+        const { container } = render(
+            <MemoryRouter>
+                <DashboardGrid projects={mockProjects} />
+            </MemoryRouter>
+        );
 
         const gridContainer = container.querySelector('[data-testid="dashboard-grid"]');
         expect(gridContainer).toBeInTheDocument();
@@ -64,7 +88,11 @@ describe('DashboardGrid', () => {
         const { useWindowSize } = await import('@/hooks/useWindowSize');
         vi.mocked(useWindowSize).mockReturnValue({ width: 1400, height: 900 });
 
-        const { container } = render(<DashboardGrid projects={mockProjects} />);
+        const { container } = render(
+            <MemoryRouter>
+                <DashboardGrid projects={mockProjects} />
+            </MemoryRouter>
+        );
 
         const gridContainer = container.querySelector('[data-testid="dashboard-grid"]');
         expect(gridContainer).toBeInTheDocument();
@@ -81,7 +109,11 @@ describe('DashboardGrid', () => {
             updated_at: new Date().toISOString(),
         }));
 
-        const { container } = render(<DashboardGrid projects={largeProjectList} />);
+        const { container } = render(
+            <MemoryRouter>
+                <DashboardGrid projects={largeProjectList} />
+            </MemoryRouter>
+        );
 
         // Should have grid container
         const gridContainer = container.querySelector('[data-testid="dashboard-grid"]');

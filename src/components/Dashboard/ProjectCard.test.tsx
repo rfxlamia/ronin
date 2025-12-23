@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { ProjectCard } from './ProjectCard';
 import type { Project } from '@/types/project';
 
@@ -65,6 +66,12 @@ vi.mock('@/stores/projectStore', () => ({
     }
 }));
 
+vi.mock('@/stores/reasoningStore', () => ({
+    useReasoningStore: () => ({
+        setMode: vi.fn(),
+    }),
+}));
+
 describe('ProjectCard', () => {
     beforeEach(() => {
         vi.useFakeTimers();
@@ -94,7 +101,11 @@ describe('ProjectCard', () => {
 
     describe('Card Display', () => {
         it('renders project name in serif font', () => {
-            render(<ProjectCard project={mockGitProject} />);
+            render(
+                <MemoryRouter>
+                    <ProjectCard project={mockGitProject} />
+                </MemoryRouter>
+            );
             const name = screen.getByText('Test Project');
             expect(name).toBeInTheDocument();
             expect(name).toHaveClass('font-serif');
@@ -106,7 +117,11 @@ describe('ProjectCard', () => {
             // Set mock to streaming state
             mockContextState = 'streaming';
 
-            render(<ProjectCard project={mockGitProject} />);
+            render(
+                <MemoryRouter>
+                    <ProjectCard project={mockGitProject} />
+                </MemoryRouter>
+            );
 
             const trigger = screen.getByText('Test Project').closest('button');
             if (!trigger) throw new Error('Trigger not found');
@@ -124,7 +139,11 @@ describe('ProjectCard', () => {
         });
 
         it('shows "Open in IDE" button when expanded', async () => {
-            render(<ProjectCard project={mockGitProject} />);
+            render(
+                <MemoryRouter>
+                    <ProjectCard project={mockGitProject} />
+                </MemoryRouter>
+            );
 
             const trigger = screen.getByText('Test Project').closest('button');
             if (!trigger) throw new Error('Trigger not found');
@@ -146,7 +165,11 @@ describe('ProjectCard', () => {
             mockContextText = '## Context\nYou were working on auth.';
             mockAttribution = { commits: 12, files: 2, sources: ['git'] };
 
-            render(<ProjectCard project={mockGitProject} />);
+            render(
+                <MemoryRouter>
+                    <ProjectCard project={mockGitProject} />
+                </MemoryRouter>
+            );
 
             const trigger = screen.getByText('Test Project').closest('button');
             if (!trigger) throw new Error('Trigger not found');
@@ -167,7 +190,11 @@ describe('ProjectCard', () => {
             // Set mock to streaming state for this test
             mockContextState = 'streaming';
 
-            render(<ProjectCard project={mockGitProject} />);
+            render(
+                <MemoryRouter>
+                    <ProjectCard project={mockGitProject} />
+                </MemoryRouter>
+            );
 
             const trigger = screen.getByRole('button', { name: /test project/i });
 
@@ -190,7 +217,11 @@ describe('ProjectCard', () => {
 
     describe('Remove Project Dialog', () => {
         it('shows Remove option in dropdown menu', async () => {
-            render(<ProjectCard project={mockGitProject} />);
+            render(
+                <MemoryRouter>
+                    <ProjectCard project={mockGitProject} />
+                </MemoryRouter>
+            );
 
             const menuButton = screen.getByRole('button', { name: /project menu/i });
 

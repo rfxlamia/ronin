@@ -351,3 +351,8 @@ try {
 
 _Last updated: 2025-12-21_
 _Source: PRD, Architecture, UX Spec, Philosophy, Epic 3 Retrospective_
+
+when you creating story 4.5-4 and 4.5-5 its important to read this document = docs/sprint-change-proposal-2025-12-23.md
+
+_Last updated: 2025-12-23_
+_Source: docs/sprint-change-proposal-2025-12-23.md_
