@@ -9,9 +9,6 @@
 **⚠️ Alpha Release** - Basic functionality working, expect rough edges and bugs.
 ---
 
-## Overview
-
-R
 ## What Problem Does This Solve?
 
 You have 5+ side projects. You return to one after 3 weeks. You spend 2 hours re-reading your own code just to remember *why* you wrote it that way and *what* you were planning next.

@@ -31,6 +31,7 @@ import { useAiContext } from '@/hooks/useAiContext';
 import { GitStatusDisplay } from './GitStatusDisplay';
 import { GitControls } from './GitControls';
 import { useGitStatus } from '@/hooks/useGitStatus';
+import { invoke } from '@tauri-apps/api/core';
 
 interface ProjectCardProps {
     project: Project;
@@ -39,6 +40,7 @@ interface ProjectCardProps {
 export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+    const [isOpeningIDE, setIsOpeningIDE] = useState(false);
 
     // Use AI Context Hook
     const { contextState, contextText, attribution, error, parsedError, retry } = useAiContext(
@@ -63,6 +65,18 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
         await removeProject(project.id);
         setShowRemoveDialog(false);
         toast.success('Project removed from tracking');
+    };
+
+    const handleOpenInIDE = async () => {
+        setIsOpeningIDE(true);
+        try {
+            await invoke('open_in_ide', { path: project.path });
+            toast.success('Opened in IDE');
+        } catch (error) {
+            toast.error(`Failed to open: ${error}`);
+        } finally {
+            setIsOpeningIDE(false);
+        }
     };
 
     const handleOpenChange = (open: boolean) => {
@@ -239,10 +253,10 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
 
                                 <Button
                                     className="w-full font-serif"
-                                    disabled
-                                    title="IDE integration coming soon"
+                                    onClick={handleOpenInIDE}
+                                    disabled={isOpeningIDE}
                                 >
-                                    Open in IDE
+                                    {isOpeningIDE ? 'Opening...' : 'Open in IDE'}
                                 </Button>
                             </div>
                         </CollapsibleContent>
