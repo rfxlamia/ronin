@@ -1,6 +1,6 @@
 # Story 5.6: v0.1.0-alpha Release Bundle
 
-Status: in-progress
+Status: review
 
 ## Story
 
@@ -32,9 +32,9 @@ So that **users can download and try the v0.1.0-alpha release**.
 - [x] Add LICENSE (MPL-2.0)
 - [x] Verify brand icons are correctly bundled (check `src-tauri/tauri.conf.json` path)
 - [x] Run full test suite and linting locally
-- [ ] Tag `v0.1.0-alpha` and push
-- [ ] Verify GitHub Release artifacts
-- [ ] Smoke test AppImage locally
+- [x] Tag `v0.1.0-alpha` and push
+- [ ] Verify GitHub Release artifacts (CI in progress)
+- [ ] Smoke test AppImage locally (after CI completes)
 
 ## Dev Notes
 
