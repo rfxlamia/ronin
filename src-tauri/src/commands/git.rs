@@ -481,9 +481,9 @@ mod tests {
         let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
         let repo_path = temp_dir.path();
 
-        // Initialize git repo
+        // Initialize git repo with main as default branch (compatible with both old and new git)
         Command::new("git")
-            .args(["init"])
+            .args(["init", "-b", "main"])
             .current_dir(repo_path)
             .output()
             .expect("Failed to init git repo");
@@ -1226,7 +1226,7 @@ mod tests {
         let local_path = local_dir.path();
 
         Command::new("git")
-            .args(["init"])
+            .args(["init", "-b", "main"])
             .current_dir(local_path)
             .output()
             .expect("Failed to init git repo");
