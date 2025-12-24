@@ -41,6 +41,7 @@ pub fn run() {
             commands::git::get_git_context,
             commands::git::commit_changes,
             commands::git::safe_push,
+            commands::ide::open_in_ide,
             commands::ai::set_api_key,
             commands::ai::get_api_key,
             commands::ai::delete_api_key,
