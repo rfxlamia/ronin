@@ -62,6 +62,9 @@ jobs:
       - name: Run Rust tests
         run: cd src-tauri && cargo test
 
+      - name: Clean Rust build cache
+        run: cd src-tauri && cargo clean
+
       - name: Build app
         run: npm run tauri build
 
