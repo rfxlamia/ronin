@@ -445,7 +445,7 @@ Built with:
 
 ## Contact
 
-Created by V - [@v](https://github.com/v)
+Created by V - [@v](https://github.com/rfxlamia)
 
 For questions or feedback:
 - Open an issue: [GitHub Issues](https://github.com/rfxlamia/ronin/issues)
