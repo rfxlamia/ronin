@@ -107,7 +107,7 @@ All preparation tasks complete. Release automation ready. Story successfully imp
 - `src-tauri/tauri.conf.json` - Version bump to 0.1.0-alpha
 - `src-tauri/src/ai/providers/demo.rs` - Fixed clippy warning
 - `src-tauri/src/commands/devlog.rs` - Fixed clippy warning
-- `src-tauri/src/commands/git.rs` - Fixed 5 clippy warnings
+- `src-tauri/src/commands/git.rs` - Fixed 5 clippy warnings + flaky CI test fix
 - `docs/sprint-artifacts/sprint-status.yaml` - Marked story in-progress
 - `docs/sprint-artifacts/5-6-release-bundle.md` - This story file
 
