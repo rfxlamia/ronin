@@ -240,7 +240,8 @@ pub async fn get_git_status(path: String) -> Result<GitStatus, String> {
                             match repo.head() {
                                 Ok(head_ref) => {
                                     if let Some(head_oid) = head_ref.target() {
-                                        count_commits_between(&repo, upstream_oid, head_oid).unwrap_or_default()
+                                        count_commits_between(&repo, upstream_oid, head_oid)
+                                            .unwrap_or_default()
                                     } else {
                                         0
                                     }
@@ -1388,6 +1389,34 @@ mod tests {
             .current_dir(local_path)
             .output()
             .expect("Failed to commit local file");
+
+        // Manually fetch to ensure our local refs are updated before safe_push
+        // This is needed because safe_push's internal fetch might have timing issues in CI
+        let fetch_result = Command::new("git")
+            .args(["fetch", "origin"])
+            .current_dir(local_path)
+            .output()
+            .expect("Manual fetch failed");
+        assert!(
+            fetch_result.status.success(),
+            "Pre-test fetch should succeed"
+        );
+
+        // Verify that we can see the remote is ahead (debug helper for CI)
+        let rev_list_output = Command::new("git")
+            .args(["rev-list", "HEAD..origin/main", "--count"])
+            .current_dir(local_path)
+            .output()
+            .expect("Rev-list check failed");
+        let ahead_count = String::from_utf8_lossy(&rev_list_output.stdout)
+            .trim()
+            .parse::<u32>()
+            .unwrap_or(0);
+        assert!(
+            ahead_count > 0,
+            "Sanity check: remote should be ahead by {} commits after other user pushed",
+            ahead_count
+        );
 
         // Try to push - should be blocked by guardrail
         let result = safe_push(local_path.to_string_lossy().to_string()).await;
