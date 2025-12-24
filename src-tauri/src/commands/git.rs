@@ -223,7 +223,7 @@ pub async fn get_git_status(path: String) -> Result<GitStatus, String> {
     // Check if remote exists
     let has_remote = repo
         .remotes()
-        .map(|remotes| remotes.len() > 0)
+        .map(|remotes| !remotes.is_empty())
         .unwrap_or(false);
 
     // Count unpushed commits (commits ahead of upstream)
@@ -240,10 +240,7 @@ pub async fn get_git_status(path: String) -> Result<GitStatus, String> {
                             match repo.head() {
                                 Ok(head_ref) => {
                                     if let Some(head_oid) = head_ref.target() {
-                                        match count_commits_between(&repo, upstream_oid, head_oid) {
-                                            Ok(count) => count,
-                                            Err(_) => 0, // If error counting, assume 0
-                                        }
+                                        count_commits_between(&repo, upstream_oid, head_oid).unwrap_or_default()
                                     } else {
                                         0
                                     }
@@ -410,7 +407,7 @@ const ERR_FETCH_FAILED: &str = "ERR_FETCH_FAILED";
 pub async fn safe_push(project_path: String) -> Result<(), String> {
     // Step 1: Fetch remote changes (quietly to reduce noise)
     let fetch_output = Command::new("git")
-        .args(&["fetch", "--quiet"])
+        .args(["fetch", "--quiet"])
         .env("GIT_TERMINAL_PROMPT", "0") // Prevent interactive prompts
         .current_dir(&project_path)
         .output()
@@ -425,7 +422,7 @@ pub async fn safe_push(project_path: String) -> Result<(), String> {
 
     // Step 2: Check if remote is ahead using git rev-list HEAD..@{u} --count
     let check_output = Command::new("git")
-        .args(&["rev-list", "HEAD..@{u}", "--count"])
+        .args(["rev-list", "HEAD..@{u}", "--count"])
         .env("GIT_TERMINAL_PROMPT", "0") // Consistent env handling
         .current_dir(&project_path)
         .output()
@@ -457,7 +454,7 @@ pub async fn safe_push(project_path: String) -> Result<(), String> {
 
     // Step 4: Safe to push - execute git push origin HEAD
     let push_output = Command::new("git")
-        .args(&["push", "origin", "HEAD"])
+        .args(["push", "origin", "HEAD"])
         .env("GIT_TERMINAL_PROMPT", "0") // Prevent interactive prompts
         .current_dir(&project_path)
         .output()

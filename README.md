@@ -2,9 +2,9 @@
 
 > A Personal Project Development Manager for Linux developers who struggle with project abandonment due to context loss.
 
-[![CI](https://github.com/rfxlamia/ronin/actions/workflows/ci.yml/badge.svg)](https://github.com/v/ronin/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
-![License](https://img.shields.io/badge/license-private-lightgrey)
+[![CI](https://github.com/rfxlamia/ronin/actions/workflows/ci.yml/badge.svg)](https://github.com/rfxlamia/ronin/actions/workflows/ci.yml)
+![Version](https://img.shields.io/badge/version-0.1.0--alpha-blue)
+![License](https://img.shields.io/badge/license-MPL--2.0-blue)
 
 ---
 
@@ -66,7 +66,53 @@ See [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md) for full philosophy documentation.
 
 ## Installation
 
-### Prerequisites
+### For Users (Recommended)
+
+Download the latest release from [GitHub Releases](https://github.com/rfxlamia/ronin/releases).
+
+#### Option 1: Debian/Ubuntu (.deb package)
+
+```bash
+# Download the .deb file from releases
+wget https://github.com/rfxlamia/ronin/releases/download/v0.1.0-alpha/ronin_0.1.0-alpha_amd64.deb
+
+# Install
+sudo dpkg -i ronin_0.1.0-alpha_amd64.deb
+
+# Fix dependencies if needed
+sudo apt-get install -f
+
+# Launch
+ronin
+```
+
+**Supported Distributions:**
+- Ubuntu 22.04+ ✅
+- Debian 11+ ✅
+- Linux Mint 21+ ✅
+- Pop!_OS 22.04+ ✅
+
+#### Option 2: AppImage (Distro-Agnostic)
+
+```bash
+# Download the AppImage from releases
+wget https://github.com/rfxlamia/ronin/releases/download/v0.1.0-alpha/ronin_0.1.0-alpha_amd64.AppImage
+
+# Make executable
+chmod +x ronin_0.1.0-alpha_amd64.AppImage
+
+# Run
+./ronin_0.1.0-alpha_amd64.AppImage
+```
+
+**Works on:**
+- Any Linux distribution (Ubuntu, Fedora, Arch, etc.)
+- No installation or admin privileges required
+- Portable and self-contained
+
+### For Developers
+
+#### Prerequisites
 
 - **Linux** (X11 or Wayland with GNOME Shell)
 - **Node.js** 20+ and npm
@@ -86,11 +132,11 @@ sudo apt install libwebkit2gtk-4.1-dev \
   librsvg2-dev
 ```
 
-### Development Setup
+#### Development Setup
 
 ```bash
 # Clone repository
-git clone https://github.com/v/ronin.git
+git clone https://github.com/rfxlamia/ronin.git
 cd ronin
 
 # Install frontend dependencies
@@ -103,7 +149,7 @@ npm install -D @tauri-apps/cli
 npm run tauri dev
 ```
 
-### Building for Production
+#### Building for Production
 
 ```bash
 # Build optimized binary
@@ -374,7 +420,15 @@ Planned process:
 
 ## License
 
-Private - All rights reserved (v0.1.0)
+This project is licensed under the **Mozilla Public License 2.0 (MPL-2.0)**.
+
+See [LICENSE](LICENSE) for full text.
+
+**Summary:**
+- ✅ Free to use, modify, and distribute
+- ✅ Can be used in proprietary software
+- ✅ File-level copyleft (modifications to MPL files must remain MPL)
+- ✅ Patent grant included
 
 ---
 
@@ -394,7 +448,7 @@ Built with:
 Created by V - [@v](https://github.com/v)
 
 For questions or feedback:
-- Open an issue: [GitHub Issues](https://github.com/v/ronin/issues)
+- Open an issue: [GitHub Issues](https://github.com/rfxlamia/ronin/issues)
 - Check documentation: [docs/](docs/)
 - Read the philosophy: [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md)
 

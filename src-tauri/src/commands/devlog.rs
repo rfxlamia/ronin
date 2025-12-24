@@ -187,7 +187,7 @@ pub async fn get_devlog_history(project_path: String) -> Result<Vec<DevlogCommit
 
     let output = Command::new("git")
         .current_dir(path)
-        .args(&[
+        .args([
             "log",
             "-n",
             "50",

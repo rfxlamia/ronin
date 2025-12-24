@@ -49,7 +49,7 @@ impl DemoProvider {
                 // Fallback to random fingerprint (less stable but works)
                 use rand::Rng;
                 let random_bytes: [u8; 16] = rand::thread_rng().gen();
-                format!("{:x}", Sha256::digest(&random_bytes))[..32].to_string()
+                format!("{:x}", Sha256::digest(random_bytes))[..32].to_string()
             }
         }
     }
