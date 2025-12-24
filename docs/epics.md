@@ -1458,6 +1458,33 @@ So that **I know which features are available for each project type**.
 
 ---
 
+### Story 5.6: v0.1.0-alpha Release Bundle
+
+As a **project maintainer**,
+I want **to bundle and publish Ronin for public testing**,
+So that **users can download and try the v0.1.0-alpha release**.
+
+**Acceptance Criteria:**
+
+**Given** Epic 5 is complete and all tests pass
+**When** a version tag (e.g., `v0.1.0-alpha`) is pushed to GitHub
+**Then** GitHub Actions automatically:
+- Builds `.deb` package for Debian/Ubuntu
+- Builds `.AppImage` for universal Linux
+- Creates GitHub Release with both artifacts
+**And** README.md updated with installation instructions and download links
+**And** CHANGELOG.md created with v0.1.0-alpha release notes
+**And** LICENSE file added (MPL-2.0)
+**And** pre-release checklist completed (tests pass, smoke test on Ubuntu)
+
+**Technical Notes:**
+- GitHub Actions workflow from `docs/DISTRIBUTION.md`
+- CI builds on Ubuntu 22.04 for max glibc compatibility
+- Tag format: `v0.1.0-alpha` (semver with pre-release identifier)
+- Files to create/update: README.md, CHANGELOG.md, LICENSE, .github/workflows/release.yml
+
+---
+
 ## Epic 6: Silent Observer & AI Integration
 
 ### Story 6.1: Window Title Tracking (X11)
