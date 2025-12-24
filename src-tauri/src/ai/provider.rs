@@ -87,6 +87,7 @@ impl std::fmt::Display for AiError {
 impl std::error::Error for AiError {}
 
 /// AI chunk event for streaming
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiChunkEvent {
     pub content: String,
