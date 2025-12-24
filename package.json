@@ -1,7 +1,7 @@
 {
   "name": "ronin",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.0-alpha",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.1",
