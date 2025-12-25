@@ -151,6 +151,44 @@ pub(crate) fn run_migrations(
         .map_err(|e| format!("Failed to create ai_cache table: {}", e))?;
     }
 
+    // Check if observer_events table exists (Story 6.1)
+    let observer_events_exists: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='observer_events'",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("Failed to check observer_events table: {}", e))?;
+
+    if observer_events_exists == 0 {
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS observer_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp INTEGER NOT NULL,
+                event_type TEXT NOT NULL,
+                window_title TEXT,
+                process_name TEXT,
+                project_id INTEGER,
+                FOREIGN KEY (project_id) REFERENCES projects(id)
+            )",
+            [],
+        )
+        .map_err(|e| format!("Failed to create observer_events table: {}", e))?;
+
+        // Add indexes for better query performance
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_observer_events_timestamp ON observer_events(timestamp)",
+            [],
+        )
+        .map_err(|e| format!("Failed to create timestamp index: {}", e))?;
+
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_observer_events_project_id ON observer_events(project_id)",
+            [],
+        )
+        .map_err(|e| format!("Failed to create project_id index: {}", e))?;
+    }
+
     Ok(())
 }
 
