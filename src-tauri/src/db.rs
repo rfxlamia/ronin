@@ -187,6 +187,29 @@ pub(crate) fn run_migrations(
             [],
         )
         .map_err(|e| format!("Failed to create project_id index: {}", e))?;
+
+        // Create view for duration calculation (Story 6.1 - Option 1)
+        // This view uses LEAD window function to calculate how long user stayed in each window
+        conn.execute(
+            "CREATE VIEW IF NOT EXISTS observer_events_with_duration AS
+             SELECT 
+                 id,
+                 timestamp,
+                 event_type,
+                 window_title,
+                 process_name,
+                 project_id,
+                 (LEAD(timestamp) OVER (ORDER BY timestamp) - timestamp) AS duration_ms,
+                 (LEAD(timestamp) OVER (ORDER BY timestamp) - timestamp) / 1000 AS duration_seconds,
+                 CASE 
+                     WHEN LEAD(timestamp) OVER (ORDER BY timestamp) IS NULL THEN 1
+                     ELSE 0
+                 END AS is_current_window
+             FROM observer_events
+             ORDER BY timestamp DESC",
+            [],
+        )
+        .map_err(|e| format!("Failed to create observer duration view: {}", e))?;
     }
 
     Ok(())
