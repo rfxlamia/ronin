@@ -125,8 +125,21 @@ async fn get_active_window_info(
         .unwrap_or_else(|| "Unknown".to_string());
 
     // Get WM_CLASS (application name)
+    // WM_CLASS returns two null-separated strings: instance\0class
+    // We want the class name (second part) for consistency
     let app_class = get_string_property(conn, window_id, atoms.wm_class, atoms.utf8_string)
         .await
+        .and_then(|s| {
+            // WM_CLASS format: "instance\0ClassName"
+            // Split by null byte and take the second part (class name)
+            let parts: Vec<&str> = s.split('\0').collect();
+            if parts.len() >= 2 {
+                Some(parts[1].to_string())
+            } else {
+                // Fallback to first part if no null byte found
+                parts.first().map(|s| s.to_string())
+            }
+        })
         .unwrap_or_else(|| "Unknown".to_string());
 
     Some((title, app_class))
