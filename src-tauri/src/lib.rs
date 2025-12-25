@@ -2,7 +2,7 @@ mod ai;
 mod commands;
 mod context;
 mod db;
-mod observer;
+pub mod observer;
 mod security;
 
 use tauri::Manager;

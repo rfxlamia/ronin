@@ -102,7 +102,7 @@ development_status:
 
   epic-6: in-progress
   6-1-window-title-tracking-x11: done
-  6-2-window-title-tracking-wayland-gnome: ready-for-dev
+  6-2-window-title-tracking-wayland-gnome: done
   6-3-file-modification-tracking: backlog
   6-4-context-aggregator: backlog
   6-5-privacy-controls: backlog

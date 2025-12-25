@@ -5,6 +5,7 @@ description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
 default-run = "ronin"
+autobins = false  # Prevent auto-discovery of observer_x11.rs and observer_wayland.rs as separate binaries
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -14,6 +15,10 @@ default-run = "ronin"
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "ronin_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "ronin"
+path = "src/main.rs"
 
 [[bin]]
 name = "ronin-observer"
@@ -56,6 +61,7 @@ which = "6.0"
 x11rb = "0.13"
 x11rb-async = "0.13"
 libc = "0.2"
+zbus = { version = "4", features = ["tokio"] }
 
 [dev-dependencies]
 tempfile = "3"
