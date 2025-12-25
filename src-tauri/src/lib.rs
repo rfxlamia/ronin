@@ -2,7 +2,10 @@ mod ai;
 mod commands;
 mod context;
 mod db;
+mod observer;
 mod security;
+
+use tauri::Manager;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -15,10 +18,15 @@ pub fn run() {
     // Initialize database
     let db_pool = db::init_db().expect("Failed to initialize database");
 
+    // Initialize observer manager
+    let observer_manager =
+        std::sync::Arc::new(tokio::sync::Mutex::new(observer::ObserverManager::new()));
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(db_pool)
+        .manage(observer_manager)
         .invoke_handler(tauri::generate_handler![
             greet,
             commands::projects::add_project,
@@ -53,8 +61,31 @@ pub fn run() {
             commands::devlog::append_devlog,
             commands::devlog::write_devlog,
             commands::devlog::get_devlog_history,
-            commands::devlog::get_devlog_version
+            commands::devlog::get_devlog_version,
+            commands::observer::start_observer,
+            commands::observer::stop_observer,
+            commands::observer::get_observer_status
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            if let tauri::RunEvent::Exit = event {
+                // Stop observer daemon on app exit (Story 6.1, AC #6)
+                let manager = app_handle
+                    .state::<std::sync::Arc<tokio::sync::Mutex<observer::ObserverManager>>>();
+                let manager_clone = manager.inner().clone();
+
+                // Use block_on since we're in the exit handler
+                if let Ok(runtime) = tokio::runtime::Runtime::new() {
+                    runtime.block_on(async {
+                        let mgr = manager_clone.lock().await;
+                        if let Err(e) = mgr.stop_daemon().await {
+                            eprintln!("[app] Failed to stop observer daemon on exit: {}", e);
+                        } else {
+                            eprintln!("[app] Observer daemon stopped on exit");
+                        }
+                    });
+                }
+            }
+        });
 }

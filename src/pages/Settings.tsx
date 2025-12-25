@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { RoninOathModal } from '@/components/RoninOathModal';
 import { ModeToggle } from '@/components/mode-toggle';
 import { AiProviderSettings } from '@/components/settings/AiProviderSettings';
+import { ObserverDebugControls } from '@/components/settings/ObserverDebugControls';
 
 export function Settings() {
     const [showOath, setShowOath] = useState(false);
@@ -30,6 +31,15 @@ export function Settings() {
                     <span className="text-sm font-sans">Theme:</span>
                     <ModeToggle />
                 </div>
+            </section>
+
+            {/* Silent Observer Section (DEBUG - Story 6.1) */}
+            <section className="mb-8">
+                <h3 className="text-xl font-serif font-bold mb-3">Silent Observer</h3>
+                <p className="text-muted-foreground mb-4">
+                    Debug controls for window tracking daemon (Story 6.1 - X11 only).
+                </p>
+                <ObserverDebugControls />
             </section>
 
             {/* Philosophy Section */}
