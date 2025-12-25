@@ -1,0 +1,22 @@
+{
+  "name": "Ronin Brand",
+  "colors": {
+    "primary": "#CC785C",
+    "secondary": "#828179",
+    "background": "#F0EFEA",
+    "text": "#141413",
+    "surface": "#FFFFFF",
+    "accent": "#CC785C",
+    "success": "#4B5320",
+    "warning": "#E9C46A",
+    "error": "#E76F51"
+  },
+  "chart": {
+    "componentFill": "#F0EFEA",
+    "componentStroke": "#CC785C",
+    "databaseFill": "#F0EFEA", 
+    "databaseStroke": "#828179",
+    "externalFill": "#FFFFFF",
+    "externalStroke": "#141413"
+  }
+}

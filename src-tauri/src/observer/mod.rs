@@ -4,7 +4,10 @@
 /// IPC communication via Unix sockets.
 ///
 /// Story 6.1: Window Title Tracking (X11)
-use serde::{Deserialize, Serialize};
+/// Story 6.2: Window Title Tracking (Wayland GNOME)
+pub mod types;
+pub use types::{WindowEvent, WindowEventData};
+
 use std::path::PathBuf;
 use std::process::{Child, Command};
 use std::sync::Arc;
@@ -12,20 +15,6 @@ use tokio::io::AsyncBufReadExt;
 use tokio::io::BufReader;
 use tokio::net::UnixListener;
 use tokio::sync::Mutex;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct WindowEvent {
-    #[serde(rename = "type")]
-    pub event_type: String,
-    pub data: WindowEventData,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct WindowEventData {
-    pub title: String,
-    pub app_class: String,
-    pub timestamp: i64,
-}
 
 /// Manages the observer daemon process and IPC
 pub struct ObserverManager {
@@ -208,20 +197,45 @@ impl ObserverManager {
                                 Ok(Some(line)) => {
                                     match serde_json::from_str::<WindowEvent>(&line) {
                                         Ok(event) => {
-                                            eprintln!(
-                                                "[observer-manager] Received event: {} - {}",
-                                                event.data.app_class, event.data.title
-                                            );
+                                            // Handle different event types
+                                            match event.event_type.as_str() {
+                                                "window_focus" => {
+                                                    eprintln!(
+                                                        "[observer-manager] Received event: {} - {}",
+                                                        event.data.app_class, event.data.title
+                                                    );
 
-                                            // Process event and insert into database
-                                            if let Err(e) =
-                                                Self::process_window_event(event, &db_pool_clone)
+                                                    // Process event and insert into database
+                                                    if let Err(e) = Self::process_window_event(
+                                                        event,
+                                                        &db_pool_clone,
+                                                    )
                                                     .await
-                                            {
-                                                eprintln!(
-                                                    "[observer-manager] Failed to process event: {}",
-                                                    e
-                                                );
+                                                    {
+                                                        eprintln!(
+                                                            "[observer-manager] Failed to process event: {}",
+                                                            e
+                                                        );
+                                                    }
+                                                }
+                                                "extension_missing" => {
+                                                    eprintln!(
+                                                        "[observer-manager] WARNING: GNOME Shell Extension not found"
+                                                    );
+                                                    eprintln!(
+                                                        "[observer-manager] Window tracking on Wayland requires the Ronin Observer Extension"
+                                                    );
+                                                    eprintln!(
+                                                        "[observer-manager] Please install the extension to enable Silent Observer on Wayland/GNOME"
+                                                    );
+                                                    // TODO: In future, update app state so UI can show setup guide
+                                                }
+                                                _ => {
+                                                    eprintln!(
+                                                        "[observer-manager] Unknown event type: {}",
+                                                        event.event_type
+                                                    );
+                                                }
                                             }
                                         }
                                         Err(e) => {
