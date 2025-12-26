@@ -160,6 +160,7 @@ pub fn get_branch_name<P: AsRef<Path>>(path: P) -> Option<String> {
 pub async fn add_project(
     path: String,
     pool: tauri::State<'_, crate::db::DbPool>,
+    watcher_manager: tauri::State<'_, std::sync::Arc<tokio::sync::Mutex<crate::observer::WatcherManager>>>,
 ) -> Result<ProjectResponse, String> {
     // Validate the path exists
     let project_path = PathBuf::from(&path);
@@ -251,6 +252,18 @@ pub async fn add_project(
             },
         )
         .map_err(|e| format!("Failed to fetch inserted project: {}", e))?;
+
+    // Start watching this project (Story 6.3, AC #6)
+    let path_buf = PathBuf::from(&path);
+    let mut watcher = watcher_manager.lock().await;
+    if let Err(e) = watcher.start_watching(project_id, path_buf) {
+        eprintln!(
+            "[add_project] Warning: Failed to start watching project {}: {}",
+            project_id, e
+        );
+        // Don't fail the entire operation if watcher fails
+    }
+    drop(watcher);
 
     Ok(response)
 }
@@ -350,6 +363,7 @@ pub async fn delete_project(
 pub async fn remove_project(
     project_id: i64,
     pool: tauri::State<'_, crate::db::DbPool>,
+    watcher_manager: tauri::State<'_, std::sync::Arc<tokio::sync::Mutex<crate::observer::WatcherManager>>>,
 ) -> Result<(), String> {
     let conn = pool
         .get()
@@ -360,6 +374,16 @@ pub async fn remove_project(
         rusqlite::params![project_id],
     )
     .map_err(|e| format!("Failed to remove project: {}", e))?;
+
+    // Stop watching this project (Story 6.3, AC #6)
+    let mut watcher = watcher_manager.lock().await;
+    if let Err(e) = watcher.stop_watching(project_id) {
+        eprintln!(
+            "[remove_project] Warning: Failed to stop watching project {}: {}",
+            project_id, e
+        );
+        // Don't fail the entire operation if watcher fails
+    }
 
     Ok(())
 }

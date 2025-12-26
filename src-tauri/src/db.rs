@@ -212,6 +212,23 @@ pub(crate) fn run_migrations(
         .map_err(|e| format!("Failed to create observer duration view: {}", e))?;
     }
 
+    // Check if file_path column exists (Story 6.3)
+    let file_path_exists: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('observer_events') WHERE name='file_path'",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("Failed to check file_path column: {}", e))?;
+
+    if file_path_exists == 0 {
+        conn.execute(
+            "ALTER TABLE observer_events ADD COLUMN file_path TEXT",
+            [],
+        )
+        .map_err(|e| format!("Failed to add file_path column: {}", e))?;
+    }
+
     Ok(())
 }
 
