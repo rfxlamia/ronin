@@ -5,8 +5,12 @@
 ///
 /// Story 6.1: Window Title Tracking (X11)
 /// Story 6.2: Window Title Tracking (Wayland GNOME)
+/// Story 6.3: File Modification Tracking
 pub mod types;
+pub mod watcher;
+
 pub use types::{WindowEvent, WindowEventData};
+pub use watcher::WatcherManager;
 
 use std::path::PathBuf;
 use std::process::{Child, Command};

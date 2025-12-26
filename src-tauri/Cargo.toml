@@ -55,6 +55,8 @@ async-stream = "0.3"
 machine-uid = "0.5"
 sha2 = "0.10"
 which = "6.0"
+notify = "6.1"
+notify-debouncer-mini = "0.4"
 
 # X11 window monitoring (Linux only)
 [target.'cfg(target_os = "linux")'.dependencies]
