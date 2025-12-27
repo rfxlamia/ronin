@@ -26,15 +26,25 @@ pub async fn aggregate_context(
     let devlog = fetchers::fetch_devlog_context(&project_path);
 
     // Fetch behavior context (last 2 hours) - wrapped in spawn_blocking for DB operations
+    // Uses forward context linking to attribute AI windows to the correct project
     let (window_events, file_events) = {
         let db = db_pool.clone();
-        tokio::task::spawn_blocking(move || fetchers::fetch_behavior_context(project_id, 2, &db))
-            .await
-            .map_err(|e| RoninError::Aggregation(format!("Task join error: {}", e)))??
+        let name = project_name.clone();
+        tokio::task::spawn_blocking(move || {
+            fetchers::fetch_behavior_context(project_id, 2, &db, &name)
+        })
+        .await
+        .map_err(|e| RoninError::Aggregation(format!("Task join error: {}", e)))??
     };
 
     // Detect AI tool sessions
     let ai_sessions = patterns::detect_ai_tools(&window_events);
+
+    // Debug: Log AI sessions detected
+    eprintln!(
+        "[aggregator] Detected {} AI tool sessions from window events",
+        ai_sessions.len()
+    );
 
     // Detect patterns
     let mut detected_patterns = Vec::new();

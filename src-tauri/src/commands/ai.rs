@@ -225,7 +225,7 @@ pub async fn generate_context(
             }),
             Err(e) => {
                 // Log error but continue without behavior data (graceful degradation)
-                eprintln!("Failed to aggregate behavior context: {}", e);
+                eprintln!("[ai-context] Failed to aggregate behavior context: {}", e);
                 None
             }
         }
@@ -298,7 +298,7 @@ pub async fn generate_context(
         }
     };
 
-    // Build attribution data from git context and DEVLOG
+    // Build attribution data from git context, DEVLOG, and behavior
     let commit_count = git_context.commits.len();
     let file_count = git_context.status.uncommitted_files as usize;
     let has_devlog = devlog.is_some();
@@ -309,11 +309,18 @@ pub async fn generate_context(
         sources.push("devlog".to_string());
     }
 
+    // Add behavior source if we have AI sessions (Epic 6)
+    let ai_sessions = behavior_context.as_ref().map(|b| b.ai_sessions);
+    if ai_sessions.map(|s| s > 0).unwrap_or(false) {
+        sources.push("behavior".to_string());
+    }
+
     let attribution = Attribution {
         commits: commit_count,
         files: file_count,
         sources,
         devlog_lines,
+        ai_sessions,
     };
 
     // Create provider instance

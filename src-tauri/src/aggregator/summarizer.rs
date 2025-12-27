@@ -42,14 +42,14 @@ pub fn apply_privacy_filter(window_title: &str, process_name: Option<&str>) -> S
 
     // Check if it's an AI tool (always safe to include)
     for tool in AI_TOOLS {
-        if window_title.contains(tool) || process_name.map_or(false, |p| p.contains(tool)) {
+        if window_title.contains(tool) || process_name.is_some_and(|p| p.contains(tool)) {
             return window_title.to_string();
         }
     }
 
     // Check if it's a safe app
     for app in SAFE_APPS {
-        if window_title.contains(app) || process_name.map_or(false, |p| p.contains(app)) {
+        if window_title.contains(app) || process_name.is_some_and(|p| p.contains(app)) {
             return window_title.to_string();
         }
     }
@@ -91,7 +91,7 @@ pub fn generate_attribution(
 
         for (tool, count) in tool_counts {
             let tool_display = tool.replace(".ai", "").replace(".com", "");
-            let tool_display = tool_display.split('/').last().unwrap_or(&tool_display);
+            let tool_display = tool_display.split('/').next_back().unwrap_or(&tool_display);
             parts.push(format!(
                 "🤖 {} {} session{}",
                 count,

@@ -27,6 +27,12 @@ pub struct ObserverManager {
     is_running: Arc<Mutex<bool>>,
 }
 
+impl Default for ObserverManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ObserverManager {
     pub fn new() -> Self {
         Self {

@@ -70,10 +70,15 @@ pub fn fetch_devlog_context(project_path: &Path) -> Option<String> {
 
 /// Fetch behavior context from observer_events table
 /// Returns (window_events, file_events)
+///
+/// Uses "Forward Context Linking": Generic AI windows (Claude, ChatGPT) are only
+/// attributed to a project if a subsequent window (within 5 switches) contains
+/// the project name. This prevents AI sessions from bleeding across all projects.
 pub fn fetch_behavior_context(
     project_id: i64,
     duration_hours: i64,
     db_pool: &DbPool,
+    project_name: &str,
 ) -> Result<(Vec<ObserverEvent>, Vec<FileEvent>), RoninError> {
     let conn = db_pool
         .get()
@@ -81,42 +86,112 @@ pub fn fetch_behavior_context(
 
     let cutoff_time = chrono::Utc::now().timestamp_millis() - (duration_hours * 60 * 60 * 1000);
 
-    // Query window focus events
-    let mut stmt = conn
+    // Step 1: Get project-specific file events (these have explicit project_id)
+    let mut file_stmt = conn
         .prepare(
-            "SELECT timestamp, event_type, window_title, process_name, file_path 
+            "SELECT timestamp, file_path 
              FROM observer_events 
-             WHERE project_id = ?1 AND timestamp > ?2 
+             WHERE project_id = ?1 AND timestamp > ?2 AND file_path IS NOT NULL
              ORDER BY timestamp ASC",
         )
-        .map_err(|e| RoninError::Database(format!("Failed to prepare query: {}", e)))?;
+        .map_err(|e| RoninError::Database(format!("Failed to prepare file query: {}", e)))?;
 
-    let events = stmt
+    let file_events: Vec<FileEvent> = file_stmt
         .query_map(rusqlite::params![project_id, cutoff_time], |row| {
+            Ok(FileEvent {
+                timestamp: row.get(0)?,
+                file_path: row.get(1)?,
+            })
+        })
+        .map_err(|e| RoninError::Database(format!("File query failed: {}", e)))?
+        .filter_map(Result::ok)
+        .collect();
+
+    // Step 2: Get ALL window events (project_id = NULL) for forward context linking
+    let mut window_stmt = conn
+        .prepare(
+            "SELECT timestamp, event_type, window_title, process_name 
+             FROM observer_events 
+             WHERE project_id IS NULL AND timestamp > ?1
+             ORDER BY timestamp ASC",
+        )
+        .map_err(|e| RoninError::Database(format!("Failed to prepare window query: {}", e)))?;
+
+    let all_windows: Vec<ObserverEvent> = window_stmt
+        .query_map(rusqlite::params![cutoff_time], |row| {
             Ok(ObserverEvent {
                 timestamp: row.get(0)?,
                 event_type: row.get(1)?,
                 window_title: row.get(2)?,
                 process_name: row.get(3)?,
-                file_path: row.get(4)?,
+                file_path: None,
             })
         })
-        .map_err(|e| RoninError::Database(format!("Query failed: {}", e)))?
+        .map_err(|e| RoninError::Database(format!("Window query failed: {}", e)))?
         .filter_map(Result::ok)
-        .collect::<Vec<_>>();
-
-    // Separate file events from window events
-    let file_events: Vec<FileEvent> = events
-        .iter()
-        .filter_map(|e| {
-            e.file_path.as_ref().map(|path| FileEvent {
-                timestamp: e.timestamp,
-                file_path: path.clone(),
-            })
-        })
         .collect();
 
-    Ok((events, file_events))
+    // Step 3: Apply forward context linking
+    // For each window, check if it belongs to this project:
+    // - Direct match: window title contains project name
+    // - Forward link: generic AI window followed by project-specific window within 5 switches
+    let linked_windows = apply_forward_context_linking(&all_windows, project_name);
+
+    Ok((linked_windows, file_events))
+}
+
+/// Apply forward context linking algorithm
+///
+/// Rules:
+/// 1. Windows with project name in title → directly attributed
+/// 2. Generic AI windows (Claude, ChatGPT) → check next 5 windows for project match
+/// 3. Other generic windows → not attributed
+fn apply_forward_context_linking(
+    windows: &[ObserverEvent],
+    project_name: &str,
+) -> Vec<ObserverEvent> {
+    use super::patterns::AI_TOOLS;
+
+    let project_lower = project_name.to_lowercase();
+    let mut result = Vec::new();
+
+    for (i, window) in windows.iter().enumerate() {
+        // Handle Option<String> for window_title
+        let title_lower = window
+            .window_title
+            .as_ref()
+            .map(|t| t.to_lowercase())
+            .unwrap_or_default();
+
+        // Rule 1: Direct match - window title contains project name
+        if title_lower.contains(&project_lower) {
+            result.push(window.clone());
+            continue;
+        }
+
+        // Rule 2: Check if this is an AI tool window
+        let is_ai_window = AI_TOOLS
+            .iter()
+            .any(|tool| title_lower.contains(&tool.to_lowercase()));
+
+        if is_ai_window {
+            // Look at next 5 windows for project context
+            let has_project_context = windows.iter().skip(i + 1).take(5).any(|w| {
+                w.window_title
+                    .as_ref()
+                    .map(|t| t.to_lowercase().contains(&project_lower))
+                    .unwrap_or(false)
+            });
+
+            if has_project_context {
+                result.push(window.clone());
+            }
+            // If no project context found within 5 windows, skip this AI window
+        }
+        // Rule 3: Other generic windows (YouTube, etc.) are not attributed
+    }
+
+    result
 }
 
 #[cfg(test)]

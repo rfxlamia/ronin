@@ -3,7 +3,7 @@ import type { ContextPanelProps, AttributionData, ParsedError, ErrorKind } from 
 import { RoninLoader } from './RoninLoader';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { GitCommitHorizontal, FileText, ChevronDown, AlertTriangle, RefreshCw, WifiOff, ServerCrash, Hourglass, CloudOff, NotebookPen } from 'lucide-react';
+import { GitCommitHorizontal, FileText, ChevronDown, AlertTriangle, RefreshCw, WifiOff, ServerCrash, Hourglass, CloudOff, NotebookPen, BrainCircuit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { useCountdown } from '@/hooks/useCountdown';
@@ -58,6 +58,12 @@ function Attribution({ data }: { data?: AttributionData }) {
                                 <NotebookPen className="w-3 h-3" />
                             </div>
                         )}
+                        {data.sources.includes('behavior') && data.aiSessions && data.aiSessions > 0 && (
+                            <div className="flex items-center gap-1" title="AI Tool Sessions (Claude, ChatGPT, etc.)">
+                                <BrainCircuit className="w-3 h-3" />
+                                <span>{data.aiSessions}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
                 <ChevronDown
@@ -85,6 +91,12 @@ function Attribution({ data }: { data?: AttributionData }) {
                         <div className="flex items-center gap-2" title="Based on recent DEVLOG (last ~500 lines)">
                             <NotebookPen className="w-3 h-3" />
                             <span>DEVLOG ({data.devlogLines} lines)</span>
+                        </div>
+                    )}
+                    {data.sources.includes('behavior') && data.aiSessions && data.aiSessions > 0 && (
+                        <div className="flex items-center gap-2" title="AI Tool Sessions from Silent Observer">
+                            <BrainCircuit className="w-3 h-3" />
+                            <span>Behavior ({data.aiSessions} AI tool session{data.aiSessions !== 1 ? 's' : ''})</span>
                         </div>
                     )}
                 </div>
