@@ -5,6 +5,15 @@ use crate::context::devlog::DevlogContent;
 const MAX_PAYLOAD_SIZE: usize = 10 * 1024; // 10KB
 const GIT_PRIORITY_SIZE: usize = 6 * 1024; // 6KB reserved for Git context
 
+/// Behavior context from Silent Observer (Epic 6)
+#[derive(Debug, Clone, Default)]
+pub struct BehaviorContext {
+    pub ai_sessions: usize,
+    pub patterns: Vec<String>,
+    pub stuck_detected: bool,
+    pub last_active_file: Option<String>,
+}
+
 /// Build AI context from Git repository data
 pub fn build_git_context(git_context: &GitContext) -> String {
     let mut context = String::new();
@@ -63,16 +72,13 @@ pub fn build_git_context(git_context: &GitContext) -> String {
 }
 
 /// Build system prompt with Ronin philosophy and context
-pub fn build_system_prompt(git_context_str: &str, devlog: Option<&DevlogContent>) -> String {
-    let context_sources = build_context_sources(git_context_str, devlog);
-    let (based_on, prioritization) = if devlog.is_some() {
-        (
-            "Git history · DEVLOG",
-            "\n**PRIORITIZATION:**\n- Use DEVLOG for user intent, blockers, planned next steps (the \"Why\")\n- Use Git history for actual progress, modified files (the \"What\")\n"
-        )
-    } else {
-        ("Git history", "")
-    };
+pub fn build_system_prompt(
+    git_context_str: &str,
+    devlog: Option<&DevlogContent>,
+    behavior: Option<&BehaviorContext>,
+) -> String {
+    let context_sources = build_context_sources(git_context_str, devlog, behavior);
+    let (based_on, prioritization) = build_attribution_and_priority(devlog, behavior);
 
     format!(
         r#"You are Ronin, a mindful AI consultant analyzing a developer's project context.
@@ -96,8 +102,48 @@ pub fn build_system_prompt(git_context_str: &str, devlog: Option<&DevlogContent>
     )
 }
 
-/// Build combined context sources string with Git history and optional DEVLOG
-fn build_context_sources(git_context_str: &str, devlog: Option<&DevlogContent>) -> String {
+/// Build attribution string and prioritization notes based on available context sources
+fn build_attribution_and_priority(
+    devlog: Option<&DevlogContent>,
+    behavior: Option<&BehaviorContext>,
+) -> (String, String) {
+    let has_devlog = devlog.is_some();
+    let has_behavior = behavior
+        .map(|b| b.ai_sessions > 0 || b.stuck_detected || !b.patterns.is_empty())
+        .unwrap_or(false);
+
+    let mut sources = vec!["Git history"];
+    let mut priority_notes = Vec::new();
+
+    if has_devlog {
+        sources.push("DEVLOG");
+        priority_notes
+            .push("- Use DEVLOG for user intent, blockers, planned next steps (the \"Why\")");
+    }
+
+    if has_behavior {
+        sources.push("Behavior");
+        priority_notes.push("- Use Behavior data for recent activity patterns and AI tool usage");
+    }
+
+    priority_notes.push("- Use Git history for actual progress, modified files (the \"What\")");
+
+    let based_on = sources.join(" · ");
+    let prioritization = if priority_notes.len() > 1 {
+        format!("\n**PRIORITIZATION:**\n{}\n", priority_notes.join("\n"))
+    } else {
+        String::new()
+    };
+
+    (based_on, prioritization)
+}
+
+/// Build combined context sources string with Git history, optional DEVLOG, and behavior
+fn build_context_sources(
+    git_context_str: &str,
+    devlog: Option<&DevlogContent>,
+    behavior: Option<&BehaviorContext>,
+) -> String {
     let mut sources = String::new();
 
     // 1. Git History (always present)
@@ -114,6 +160,38 @@ fn build_context_sources(git_context_str: &str, devlog: Option<&DevlogContent>) 
 
         if devlog_content.truncated {
             sources.push_str("\n(Note: DEVLOG was truncated to last ~500 lines)");
+        }
+    }
+
+    // 3. Behavior Context (Epic 6 - Silent Observer data)
+    if let Some(behavior_ctx) = behavior {
+        if behavior_ctx.ai_sessions > 0
+            || behavior_ctx.stuck_detected
+            || !behavior_ctx.patterns.is_empty()
+        {
+            sources.push_str("\n\n## 3. BEHAVIOR (Silent Observer):\n");
+
+            if behavior_ctx.ai_sessions > 0 {
+                sources.push_str(&format!(
+                    "**AI Tool Sessions:** {} (Claude, ChatGPT, etc.)\n",
+                    behavior_ctx.ai_sessions
+                ));
+            }
+
+            if let Some(ref file) = behavior_ctx.last_active_file {
+                sources.push_str(&format!("**Last Active File:** {}\n", file));
+            }
+
+            if !behavior_ctx.patterns.is_empty() {
+                sources.push_str(&format!(
+                    "**Detected Patterns:** {}\n",
+                    behavior_ctx.patterns.join(", ")
+                ));
+            }
+
+            if behavior_ctx.stuck_detected {
+                sources.push_str("**⚠️ Stuck Pattern Detected:** Developer appears stuck (45+ min same topic, repeated AI queries, no progress signals)\n");
+            }
         }
     }
 
@@ -239,7 +317,7 @@ mod tests {
     #[test]
     fn test_build_system_prompt_without_devlog() {
         let git_str = "Test git context";
-        let prompt = build_system_prompt(git_str, None);
+        let prompt = build_system_prompt(git_str, None, None);
 
         assert!(prompt.contains("Ronin"));
         assert!(prompt.contains("勇 (Yu)"));
@@ -248,7 +326,7 @@ mod tests {
         assert!(prompt.contains("## Context"));
         assert!(prompt.contains("## Next Steps"));
         assert!(prompt.contains("**Based on:** Git history"));
-        // When no devlog, should not mention DEVLOG or PRIORITIZATION
+        // When no devlog or behavior, should not mention DEVLOG or PRIORITIZATION
         assert!(!prompt.contains("DEVLOG"));
         assert!(!prompt.contains("PRIORITIZATION"));
     }
@@ -262,7 +340,7 @@ mod tests {
             truncated: false,
             source_path: "DEVLOG.md".to_string(),
         };
-        let prompt = build_system_prompt(git_str, Some(&devlog));
+        let prompt = build_system_prompt(git_str, Some(&devlog), None);
 
         assert!(prompt.contains("Ronin"));
         assert!(prompt.contains("Test git context"));
@@ -282,7 +360,7 @@ mod tests {
             truncated: true,
             source_path: "DEVLOG.md".to_string(),
         };
-        let prompt = build_system_prompt(git_str, Some(&devlog));
+        let prompt = build_system_prompt(git_str, Some(&devlog), None);
 
         assert!(prompt.contains("truncated to last ~500 lines"));
     }

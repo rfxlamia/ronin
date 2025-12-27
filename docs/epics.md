@@ -1565,6 +1565,9 @@ So that **the AI understands my editing patterns**.
 
 ### Story 6.4: Context Aggregator
 
+**Dependencies:** Story 6.1-6.3 (requires window and file tracking active)
+**Technical Research Source:** [domain-modern-developer-behavior-ai-era-research-2025-12-26.md](file:///home/v/project/ronin/docs/analysis/research/domain-modern-developer-behavior-ai-era-research-2025-12-26.md)
+
 As a **developer**,
 I want **all context sources merged intelligently for the AI**,
 So that **I get accurate context recovery**.
@@ -1576,18 +1579,33 @@ So that **I get accurate context recovery**.
 **Then** the Context Aggregator:
 - Merges Git commits, DEVLOG content, and behavioral logs
 - Summarizes to < 10KB payload (NFR29)
-- Detects stuck patterns: same file edited 5+ times without commit (FR66)
-- Correlates temporal patterns: browser search → file edit within 5 min (FR67)
-- Identifies frustration signals: rapid window switching, long pauses (FR68)
+- **Detects AI tool usage patterns** (Claude, ChatGPT, Cursor, Copilot sessions)
+- **Correlates AI consultation → file edit cycles** (not just browser search)
+- **Identifies prolonged stuck patterns**: 45min+ on same topic without progress (NOT "5 edits without commit")
+- **Detects AI-assisted breakthroughs**: AI session → successful test/compile
 **And** behavioral data enhances accuracy from 80% to 90% (FR69)
-**And** attribution shows all sources used
+**And** attribution shows all sources used, including "🤖 X AI sessions"
 
 **Technical Notes:**
 - This is the CORE intelligence component
+- **CRITICAL:** Old "5 edits without commit = stuck" is OUTDATED. In vibe coding era, rapid iteration is normal.
+- Stack Overflow tracking is obsolete (76% decline since ChatGPT launch)
+- AI tools to detect: `claude.ai`, `chat.openai.com`, `gemini.google.com`, `perplexity.ai`, Cursor, Copilot
 - Requires efficient in-memory data structures
 - Golden test: 5 scenarios with 80% accuracy (NFR30)
 
+**AI-Era Pattern Detection:**
+
+| Pattern | Detection | Meaning |
+|---------|-----------|---------|
+| AI Consultation Session | Claude/ChatGPT window → file edit (5min) | "Iterating with AI on X" |
+| Research-Implement Cycle | AI tab ↔ IDE switches | Healthy AI-assisted flow |
+| Deep Focus Session | Single file + AI for 30+ min | Concentrated work (positive) |
+| Prolonged AI Loop | Same AI topic + same file 45min+ without progress | Potential stuck point |
+| AI-Assisted Breakthrough | Long AI session → successful test | Problem solved with AI help |
+
 ---
+
 
 ### Story 6.5: Privacy Controls
 

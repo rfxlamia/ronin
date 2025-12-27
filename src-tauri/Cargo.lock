@@ -3783,6 +3783,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "tokio-stream",
+ "tracing",
  "walkdir",
  "which",
  "x11rb",

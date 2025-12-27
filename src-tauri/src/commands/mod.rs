@@ -1,3 +1,4 @@
+pub mod aggregator;
 pub mod ai;
 pub mod devlog;
 pub mod git;

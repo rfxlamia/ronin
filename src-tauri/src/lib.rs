@@ -1,7 +1,9 @@
+mod aggregator;
 mod ai;
 mod commands;
 mod context;
 mod db;
+mod error;
 pub mod observer;
 mod security;
 
@@ -85,6 +87,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             greet,
+            commands::aggregator::get_project_context,
             commands::projects::add_project,
             commands::projects::get_projects,
             commands::projects::delete_project,
