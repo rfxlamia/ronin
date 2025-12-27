@@ -6,7 +6,8 @@ export interface AttributionData {
   files: number;
   devlogLines?: number;
   searches?: number;
-  sources: string[]; // 'git', 'devlog'
+  aiSessions?: number; // AI tool sessions from behavior tracking (Epic 6)
+  sources: string[]; // 'git', 'devlog', 'behavior'
 }
 
 export interface ParsedError {

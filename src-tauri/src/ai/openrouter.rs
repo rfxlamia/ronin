@@ -12,6 +12,9 @@ pub struct Attribution {
     pub sources: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub devlog_lines: Option<usize>,
+    /// AI tool sessions count from behavior tracking (Epic 6)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ai_sessions: Option<usize>,
 }
 
 // DEPRECATED: Old implementation, kept for backward compatibility during migration
@@ -257,6 +260,7 @@ mod tests {
             files: 3,
             sources: vec!["git".to_string()],
             devlog_lines: None,
+            ai_sessions: None,
         };
 
         let json = serde_json::to_string(&attribution).expect("Should serialize");
@@ -274,6 +278,7 @@ mod tests {
             files: 3,
             sources: vec!["git".to_string(), "devlog".to_string()],
             devlog_lines: Some(250),
+            ai_sessions: None,
         };
 
         let json = serde_json::to_string(&attribution).expect("Should serialize");
@@ -299,6 +304,7 @@ mod tests {
             files: 0,
             sources: vec![],
             devlog_lines: None,
+            ai_sessions: None,
         };
 
         let json = serde_json::to_string(&attribution).expect("Should serialize");

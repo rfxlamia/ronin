@@ -194,6 +194,7 @@ mod tests {
                 files: 5,
                 sources: vec!["git".to_string()],
                 devlog_lines: None,
+                ai_sessions: None,
             },
         };
 

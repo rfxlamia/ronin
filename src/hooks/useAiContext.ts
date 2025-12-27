@@ -131,17 +131,33 @@ export function useAiContext(projectId: number | null) {
         (event: {
           payload: {
             text: string;
-            attribution: Attribution;
+            attribution: {
+              commits: number;
+              files: number;
+              sources: string[];
+              devlog_lines?: number;
+              ai_sessions?: number;
+            };
             cached?: boolean;
           };
         }) => {
+          // Transform snake_case from backend to camelCase for frontend
+          const attr = event.payload.attribution;
+          const transformedAttribution: Attribution = {
+            commits: attr.commits,
+            files: attr.files,
+            sources: attr.sources,
+            devlogLines: attr.devlog_lines,
+            aiSessions: attr.ai_sessions,
+          };
+
           setState((prev) => ({
             ...prev,
             contextState: 'complete',
             // Keep the accumulated streamed text; only use payload text for cached responses
             // or if no text was accumulated (edge case)
             contextText: prev.contextText || event.payload.text || '',
-            attribution: event.payload.attribution,
+            attribution: transformedAttribution,
             isCached: event.payload.cached || false,
             error: null,
           }));

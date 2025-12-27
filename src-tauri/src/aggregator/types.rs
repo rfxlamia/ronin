@@ -57,6 +57,7 @@ pub struct ObserverEvent {
     pub event_type: String,
     pub window_title: Option<String>,
     pub process_name: Option<String>,
+    #[allow(dead_code)] // Window events don't use file_path (fetched separately as FileEvent)
     pub file_path: Option<String>,
 }
 

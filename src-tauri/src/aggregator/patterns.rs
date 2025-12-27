@@ -21,6 +21,10 @@ pub const AI_TOOLS: &[&str] = &[
     "Cursor",
     "Windsurf",
     "Codeium",
+    "Antigravity", // Google DeepMind's AI IDE
+    // AI-native Terminals
+    "dev.warp.Warp", // Warp Terminal with Gemini AI
+    "Warp",
     // Embedded AI
     "Copilot",
     "GitHub Copilot",
@@ -43,7 +47,7 @@ pub fn detect_ai_tools(events: &[ObserverEvent]) -> Vec<AiToolSession> {
                     || event
                         .process_name
                         .as_ref()
-                        .map_or(false, |p| p.contains(tool))
+                        .is_some_and(|p| p.contains(tool))
             });
 
             if is_ai_tool {

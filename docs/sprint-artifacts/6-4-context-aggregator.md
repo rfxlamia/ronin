@@ -1,6 +1,6 @@
 # Story 6.4: Context Aggregator
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -71,6 +71,7 @@ So that **the AI provides accurate context recovery that understands my AI-assis
   - [x] `fetch_behavior_context(project_id, duration)`: SQL query to `observer_events` for last 2 hours.
     - [x] Use `rusqlite::params![]` macro for clarity.
     - [x] Wrap in `spawn_blocking` to prevent UI freeze.
+    - [x] **Forward Context Linking**: Attribute generic AI windows to project based on subsequent window usage (Context Linking).
 
 - [x] **Implement Pattern Detection Logic**
   - [x] Create `src-tauri/src/aggregator/patterns.rs`.
@@ -149,10 +150,33 @@ const AI_TOOLS: &[&str] = &[
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Gemini 2.0 Flash
 
 ### Debug Log References
 
+- Removed debug logs in `src-tauri/src/commands/ai.rs` and `src-tauri/src/aggregator/mod.rs` before 0.1.0-alpha release.
+
 ### Completion Notes List
 
+- **Full Stack Integration**: Successfully integrated Aggregator service with AI Context generation and Frontend UI.
+- **Behavior Display**: Added "Brain Circuit" icon to Context Panel to visualize AI tool sessions and behavior source.
+- **Forward Context Linking**: Implemented a "Forward Context Linking" algorithm to correctly attribute generic AI windows (like "Claude - Chat") to projects. It looks ahead 5 window switches to find a project-specific window (e.g., IDE with project name) and links the preceding AI session to that project.
+- **Warp Terminal Support**: Added support for Warp terminal (which has built-in AI) and ensured it attributes to project based on window title.
+- **Verification**: Passed 200/200 backend tests and 246/246 frontend tests. Validated with `cargo clippy` and `npm run lint`.
+
 ### File List
+
+- `src-tauri/src/aggregator/mod.rs`
+- `src-tauri/src/aggregator/types.rs`
+- `src-tauri/src/aggregator/fetchers.rs`
+- `src-tauri/src/aggregator/patterns.rs`
+- `src-tauri/src/aggregator/summarizer.rs`
+- `src-tauri/src/commands/aggregator.rs`
+- `src-tauri/src/commands/ai.rs`
+- `src-tauri/src/ai/context.rs`
+- `src-tauri/src/ai/openrouter.rs`
+- `src-tauri/src/error.rs`
+- `src/types/context.ts`
+- `src/components/ContextPanel.tsx`
+- `src/hooks/useAiContext.ts`
+
