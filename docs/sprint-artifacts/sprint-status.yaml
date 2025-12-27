@@ -103,8 +103,8 @@ development_status:
   epic-6: in-progress
   6-1-window-title-tracking-x11: done
   6-2-window-title-tracking-wayland-gnome: done
-  6-3-file-modification-tracking: review
-  6-4-context-aggregator: backlog
+  6-3-file-modification-tracking: done
+  6-4-context-aggregator: review
   6-5-privacy-controls: backlog
   epic-6-retrospective: optional
 

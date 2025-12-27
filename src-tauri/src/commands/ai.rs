@@ -168,11 +168,11 @@ pub async fn generate_context(
         .get()
         .map_err(|e| format!("Database connection failed: {}", e))?;
 
-    let project_path: String = conn
+    let (project_path, project_name): (String, String) = conn
         .query_row(
-            "SELECT path FROM projects WHERE id = ?1",
+            "SELECT path, name FROM projects WHERE id = ?1",
             rusqlite::params![project_id],
-            |row| row.get(0),
+            |row| Ok((row.get(0)?, row.get(1)?)),
         )
         .map_err(|e| format!("Project not found: {}", e))?;
 
@@ -197,14 +197,43 @@ pub async fn generate_context(
     let git_context_str = build_git_context(&git_context);
 
     // Read DEVLOG if available (Story 3.7)
-    let project_path = std::path::Path::new(&project_path);
-    let devlog = read_devlog(project_path);
+    let project_path_ref = std::path::Path::new(&project_path);
+    let devlog = read_devlog(project_path_ref);
 
     // Enforce token budget: truncate DEVLOG if combined > 10KB
     let devlog = enforce_token_budget(&git_context_str, devlog);
 
-    // Build system prompt with Git context and optional DEVLOG
-    let system_prompt = build_system_prompt(&git_context_str, devlog.as_ref());
+    // Fetch behavior context from aggregator (Epic 6 - Story 6.4)
+    let behavior_context = {
+        let db_clone = pool.inner().clone();
+        let path_clone = project_path.clone();
+        let name_clone = project_name.clone();
+
+        match crate::aggregator::aggregate_context(
+            project_id,
+            std::path::PathBuf::from(path_clone),
+            name_clone,
+            db_clone,
+        )
+        .await
+        {
+            Ok(aggregated) => Some(crate::ai::context::BehaviorContext {
+                ai_sessions: aggregated.behavior.ai_sessions,
+                patterns: aggregated.behavior.patterns,
+                stuck_detected: aggregated.behavior.stuck_detected,
+                last_active_file: aggregated.behavior.last_active_file,
+            }),
+            Err(e) => {
+                // Log error but continue without behavior data (graceful degradation)
+                eprintln!("Failed to aggregate behavior context: {}", e);
+                None
+            }
+        }
+    };
+
+    // Build system prompt with Git context, optional DEVLOG, and behavior
+    let system_prompt =
+        build_system_prompt(&git_context_str, devlog.as_ref(), behavior_context.as_ref());
 
     // Validate payload size
     if let Err(_e) = validate_payload_size(&system_prompt) {

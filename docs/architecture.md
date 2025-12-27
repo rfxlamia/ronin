@@ -1200,32 +1200,53 @@ struct AggregatorConfig {
 }
 ```
 
-**Pattern Detection Algorithms:**
+**Pattern Detection Algorithms (Updated for AI-Era 2024-2025):**
 
-1. **Stuck Pattern Detection (FR66):**
-   - Query: File events grouped by path, count between git commits
-   - Threshold: 5 edits without commit = stuck
-   - Rationale: Conservative (仁 Jin - compassion), avoids false positives
+> **IMPORTANT:** Original patterns were designed for pre-AI workflows. Research shows developer
+> behavior has fundamentally changed with AI assistants (76% adoption, 76% Stack Overflow decline).
+> See: [domain-modern-developer-behavior-ai-era-research-2025-12-26.md](file:///home/v/project/ronin/docs/analysis/research/domain-modern-developer-behavior-ai-era-research-2025-12-26.md)
 
-2. **Temporal Correlation (FR67):**
+1. **AI Tool Detection:**
+   - Recognize AI tool windows: `claude.ai`, `chat.openai.com`, `gemini.google.com`, `perplexity.ai`
+   - Recognize AI-native IDEs: Cursor, Windsurf, Codeium
+   - Recognize embedded AI: Copilot, JetBrains AI
+   - Purpose: Track "AI consultation sessions" not Stack Overflow searches
+
+2. **AI Consultation → Edit Correlation (Updated FR67):**
    - Algorithm: Time-indexed sliding window (5 min)
-   - Correlation: Browser search → File edit within window
-   - Example: "Rust lifetime" search at 14:32 + `auth.rs` edit at 14:35 = correlation
-   - Rationale: Tight confidence window (智 Chi - signal over noise)
+   - Correlation: AI tool window → File edit within window
+   - Example: "Claude - Rust lifetime" at 14:32 + `auth.rs` edit at 14:35 = AI-assisted iteration
+   - Rationale: Stack Overflow tracking obsolete (76% decline since ChatGPT)
 
-3. **Frustration Signals (FR68):**
-   - Detection: Window event intervals < 10 seconds = rapid switching
-   - Context: Multiple rapid switches before file edit = frustration indicator
+3. **Stuck Pattern Detection (Updated FR66):**
+   - ❌ OLD: "5 edits without commit = stuck" (OUTDATED - normal in vibe coding)
+   - ✅ NEW: "45min+ on same topic/file WITHOUT progress indicators"
+   - Progress indicators: successful test/compile, commit, new file creation
+   - Rationale: In vibe coding, rapid iteration with AI is the norm, not a problem signal
+
+4. **AI-Assisted Flow Patterns (NEW):**
+   - **Research-Implement Cycle:** AI tab ↔ IDE switches = healthy flow
+   - **Deep Focus Session:** Single file + AI for 30+ min = concentrated work (positive)
+   - **AI-Assisted Breakthrough:** Long AI session → successful test = problem solved
+   - **Prolonged AI Loop:** Same AI topic + same file 45min+ without progress = potential stuck
+
+5. **Frustration Signals (Updated FR68):**
+   - ❌ OLD: Rapid window switching = frustration
+   - ✅ NEW: Only flag if accompanied by:
+     - Repeated same error in AI prompts
+     - Code deletions > additions over 30min period
+     - Multiple failed test/compile cycles
+   - Rationale: Rapid AI-IDE switching is normal in 2024+ workflows
 
 **Layer 3: Summarization (AI Payload Builder)**
 
 **Privacy-Preserving Strategy (義 Gi - Righteous):**
-- **Whitelist approach:** Only include file paths, commit messages, search terms
-- **Exclude:** File contents, tokens, credentials
+- **Whitelist approach:** Only include file paths, commit messages, AI session topics
+- **Exclude:** File contents, tokens, credentials, full AI conversations
 - **User review:** Show payload on first AI call, get approval
 - **Transparency:** Always show attribution sources (FR78)
 
-**Payload Structure:**
+**Updated Payload Structure:**
 ```json
 {
   "project": "chippy",
@@ -1235,16 +1256,17 @@ struct AggregatorConfig {
     "uncommitted_files": 3
   },
   "behavioral_patterns": {
-    "stuck_files": [
-      {"path": "auth.rs", "edits": 15, "no_commit": true}
+    "ai_sessions": [
+      {"tool": "Claude", "topic": "Rust lifetime errors", "duration_min": 15},
+      {"tool": "ChatGPT", "topic": "async Mutex patterns", "duration_min": 8}
     ],
-    "searches": [
-      {"term": "Rust lifetime", "count": 3},
-      {"term": "Arc Mutex", "count": 2}
+    "focus_files": [
+      {"path": "auth.rs", "edits": 15, "ai_assisted": true}
     ],
     "correlations": [
-      "Search 'lifetime' → Edit auth.rs:142 (2min gap)"
-    ]
+      "AI 'lifetime' discussion → Edit auth.rs:142 (2min gap)"
+    ],
+    "breakthroughs": ["auth.rs: AI session → tests passed"]
   },
   "devlog_summary": "Tried approach X (failed). Trying Y...",
   "inference_request": "What was I working on? Where should I continue?",
@@ -1253,20 +1275,23 @@ struct AggregatorConfig {
 ```
 
 **Compression Strategy:**
-- Priority 1: Behavioral patterns (stuck signals, correlations)
+- Priority 1: AI session patterns (most valuable in 2024+)
 - Priority 2: Git context (last 3 commits, branch, status)
 - Priority 3: DEVLOG summary (if exists, truncate to fit)
 - Target: < 10KB (NFR29)
 
-**Decision Summary - Category 2:**
+**Decision Summary - Category 2 (Updated 2025-12-26):**
 
 | Aspect | Decision | Rationale |
 |--------|----------|-----------|
-| Stuck threshold | 5 edits without commit | Conservative, avoids false positives (仁 Jin) |
-| Correlation window | 5 minutes | Tight confidence, clear signal (智 Chi) |
+| AI tool tracking | Detect Claude, ChatGPT, Gemini, Copilot windows | AI replaces Stack Overflow for research (76% SO decline) |
+| Stuck threshold | 45min+ same topic without progress | Old "5 edits" is normal in vibe coding era |
+| Correlation source | AI session → file edit | Stack Overflow tracking obsolete |
+| Attribution | Include "🤖 X AI sessions" | Transparency about AI-assisted work |
 | Privacy approach | Whitelist + user review | Transparent, righteous (義 Gi) |
 | Payload limit | 10KB strict | Privacy + cost + speed (NFR29) |
 | Retention | 30 days auto-prune | Balance history vs storage (智 Chi) |
+
 
 ---
 

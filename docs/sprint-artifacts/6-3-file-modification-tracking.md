@@ -57,42 +57,43 @@ So that **the AI understands my editing patterns and can provide accurate contex
 
 ## Tasks / Subtasks
 
-- [ ] **Dependency Setup** (AC: 1)
-  - [ ] Add `notify = "6.1"` and `notify-debouncer-mini = "0.4"` to `src-tauri/Cargo.toml`.
-  - [ ] Run `cargo build` to verify compatibility.
+- [x] **Dependency Setup** (AC: 1)
+  - [x] Add `notify = "6.1"` and `notify-debouncer-mini = "0.4"` to `src-tauri/Cargo.toml`.
+  - [x] Run `cargo build` to verify compatibility.
 
-- [ ] **Database Migration** (AC: 5)
-  - [ ] Create `src-tauri/migrations/004_add_file_path_to_observer.sql`.
-  - [ ] SQL: `ALTER TABLE observer_events ADD COLUMN file_path TEXT;`
-  - [ ] Verify migration runs on app startup.
+- [x] **Database Migration** (AC: 5)
+  - [x] Create `src-tauri/migrations/004_add_file_path_to_observer.sql`.
+  - [x] SQL: `ALTER TABLE observer_events ADD COLUMN file_path TEXT;`
+  - [x] Verify migration runs on app startup.
 
-- [ ] **Watcher Module Implementation** (AC: 2, 3, 4)
-  - [ ] Create `src-tauri/src/observer/watcher.rs`.
-  - [ ] Define `WatcherManager` struct managing `debouncer`, `project_paths`, and `SqlitePool` reference.
-  - [ ] Implement `start_watching(project_id, path)` with error handling for inotify limits.
-  - [ ] Implement `stop_watching(project_id)`.
-  - [ ] Implement `EventFilter` logic (ignore list).
-  - [ ] Configure `notify-debouncer-mini` with 100ms tick.
+- [x] **Watcher Module Implementation** (AC: 2, 3, 4)
+  - [x] Create `src-tauri/src/observer/watcher.rs`.
+  - [x] Define `WatcherManager` struct managing `debouncer`, `project_paths`, and `SqlitePool` reference.
+  - [x] Implement `start_watching(project_id, path)` with error handling for inotify limits.
+  - [x] Implement `stop_watching(project_id)`.
+  - [x] Implement `EventFilter` logic (ignore list).
+  - [x] Configure `notify-debouncer-mini` with 100ms tick.
 
-- [ ] **Batch Writer Implementation** (AC: 4, 5)
-  - [ ] Create a background Tokio task in `WatcherManager`.
-  - [ ] Buffer events in a `Vec<FileEvent>`.
-  - [ ] Implement `flush_buffer()` method.
-  - [ ] Trigger flush every 5s OR when buffer > 1000 events.
-  - [ ] Create helper `get_relative_path(root, full_path)` using `strip_prefix`.
-  - [ ] Write to `observer_events` table using `AppState`'s DB pool.
+- [x] **Batch Writer Implementation** (AC: 4, 5)
+  - [x] Create a background Tokio task in `WatcherManager`.
+  - [x] Buffer events in a `Vec<FileEvent>`.
+  - [x] Implement `flush_buffer()` method.
+  - [x] Trigger flush every 5s OR when buffer > 1000 events.
+  - [x] Create helper `get_relative_path(root, full_path)` using `strip_prefix`.
+  - [x] Write to `observer_events` table using `AppState`'s DB pool.
 
-- [ ] **Integration with Main App** (AC: 6)
-  - [ ] Initialize `WatcherManager` in `src-tauri/src/lib.rs` state management.
-  - [ ] Call `watcher.start_all(projects)` on startup (load from DB).
-  - [ ] Update `commands::projects::add_project` to call `watcher.start_watching`.
-  - [ ] Update `commands::projects::remove_project` to call `watcher.stop_watching`.
+- [x] **Integration with Main App** (AC: 6)
+  - [x] Initialize `WatcherManager` in `src-tauri/src/lib.rs` state management.
+  - [x] Call `watcher.start_all(projects)` on startup (load from DB).
+  - [x] Update `commands::projects::add_project` to call `watcher.start_watching`.
+  - [x] Update `commands::projects::remove_project` to call `watcher.stop_watching`.
 
-- [ ] **Testing**
-  - [ ] Unit test: Filter logic (ensure node_modules are ignored).
-  - [ ] Unit test: Relative path calculation (including nested/symlink cases).
-  - [ ] Integration test: Create file -> wait 5s -> verify DB record.
-  - [ ] Stress test: Simulate 2000 events -> verify force flush.
+- [x] **Testing**
+  - [x] Unit test: Filter logic (ensure node_modules are ignored).
+  - [x] Unit test: Relative path calculation (including nested/symlink cases).
+  - [x] Integration test: Create file -> wait 5s -> verify DB record.
+  - [x] Stress test: Simulate 2000 events -> verify force flush.
+
 
 ## Dev Notes
 
