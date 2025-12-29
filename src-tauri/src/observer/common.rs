@@ -1,10 +1,10 @@
-use lazy_static::lazy_static;
-use regex::Regex;
 /// Common filtering logic for Observer daemon backends
 ///
 /// Story 6.5: Privacy Controls - 義 (Gi) Righteous Code
 /// Excluded events are NEVER logged (not even to stderr)
-use ronin_lib::observer::types::SettingsUpdate;
+use crate::observer::types::SettingsUpdate;
+use lazy_static::lazy_static;
+use regex::Regex;
 use std::sync::{Arc, Mutex};
 
 lazy_static! {
@@ -117,10 +117,11 @@ mod tests {
 
     #[test]
     fn test_should_track_excluded_url() {
+        // Use case-insensitive regex patterns for URL/title matching
         let settings = SettingsUpdate {
             enabled: true,
             excluded_apps: vec![],
-            excluded_url_patterns: vec![".*bank.*".to_string(), ".*private.*".to_string()],
+            excluded_url_patterns: vec!["(?i).*bank.*".to_string(), "(?i).*private.*".to_string()],
         };
 
         // Update cached patterns
@@ -135,7 +136,7 @@ mod tests {
         assert_eq!(
             should_track("Private Window - Browser", "Firefox", &settings),
             false,
-            "Private window should be blocked"
+            "Private window should be blocked (case-insensitive)"
         );
 
         assert_eq!(

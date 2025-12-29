@@ -19,9 +19,6 @@ mod observer_wayland;
 #[cfg(target_os = "linux")]
 mod observer_x11;
 
-// Common filtering logic (Story 6.5)
-mod observer_common;
-
 /// Detected backend type
 #[cfg(target_os = "linux")]
 #[derive(Debug, PartialEq)]

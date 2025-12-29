@@ -136,7 +136,7 @@ pub async fn run_wayland_observer() -> Result<(), Box<dyn std::error::Error>> {
                     );
 
                     // Update cached regex patterns
-                    crate::observer_common::update_cached_patterns(
+                    ronin_lib::observer::common::update_cached_patterns(
                         &new_settings.excluded_url_patterns,
                     );
 
@@ -180,7 +180,7 @@ pub async fn run_wayland_observer() -> Result<(), Box<dyn std::error::Error>> {
                     // Story 6.5: Apply privacy filter before sending
                     let should_send = {
                         let settings = current_settings.lock().unwrap();
-                        crate::observer_common::should_track(&title, &app_id, &settings)
+                        ronin_lib::observer::common::should_track(&title, &app_id, &settings)
                     };
 
                     // 義 (Gi): If filtered, skip entirely (never log excluded events)

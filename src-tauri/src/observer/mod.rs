@@ -7,10 +7,12 @@
 /// Story 6.2: Window Title Tracking (Wayland GNOME)
 /// Story 6.3: File Modification Tracking
 /// Story 6.5: Privacy Controls
+pub mod common;
 pub mod settings;
 pub mod types;
 pub mod watcher;
 
+pub use common::{should_track, update_cached_patterns};
 pub use types::{WindowEvent, WindowEventData};
 pub use watcher::WatcherManager;
 
