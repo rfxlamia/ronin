@@ -198,17 +198,22 @@ pub async fn run_x11_observer() -> Result<(), Box<dyn std::error::Error>> {
     // Story 6.5: Spawn task to receive settings updates from manager
     let settings_for_reader = current_settings.clone();
     tokio::spawn(async move {
+        eprintln!("[observer-x11] Settings reader task started");
         use tokio::io::AsyncBufReadExt;
         let reader = tokio::io::BufReader::new(socket_read);
         let mut lines = reader.lines();
 
         while let Ok(Some(line)) = lines.next_line().await {
+            eprintln!(
+                "[observer-x11] Received line from manager: {}",
+                &line[..line.len().min(100)]
+            );
             match serde_json::from_str::<ronin_lib::observer::types::SettingsUpdate>(&line) {
                 Ok(new_settings) => {
                     eprintln!(
-                        "[observer-x11] Settings update: enabled={}, apps={}, urls={}",
+                        "[observer-x11] Settings update parsed: enabled={}, apps={:?}, urls={}",
                         new_settings.enabled,
-                        new_settings.excluded_apps.len(),
+                        new_settings.excluded_apps,
                         new_settings.excluded_url_patterns.len()
                     );
 
@@ -219,10 +224,16 @@ pub async fn run_x11_observer() -> Result<(), Box<dyn std::error::Error>> {
 
                     // Update current settings atomically
                     *settings_for_reader.lock().unwrap() = new_settings;
+                    eprintln!("[observer-x11] Settings applied successfully");
                 }
-                Err(e) => eprintln!("[observer-x11] Failed to parse settings: {}", e),
+                Err(e) => eprintln!(
+                    "[observer-x11] Failed to parse settings: {} - line: {}",
+                    e,
+                    &line[..line.len().min(50)]
+                ),
             }
         }
+        eprintln!("[observer-x11] Settings reader task ended");
     });
 
     // Debouncing state
