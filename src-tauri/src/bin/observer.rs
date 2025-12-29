@@ -13,10 +13,12 @@
 /// Story 6.5: Privacy Controls - Filtering logic
 // Import shared types from library
 
-// Backend modules
+// Backend modules (in backends subfolder to avoid Tauri bundler treating them as binaries)
 #[cfg(target_os = "linux")]
+#[path = "backends/observer_wayland.rs"]
 mod observer_wayland;
 #[cfg(target_os = "linux")]
+#[path = "backends/observer_x11.rs"]
 mod observer_x11;
 
 /// Detected backend type
