@@ -5,7 +5,9 @@
 /// Ronin application.
 ///
 /// Story 6.2: Window Title Tracking (Wayland GNOME)
+/// Story 6.5: Privacy Controls
 use ronin_lib::observer::types::{WindowEvent, WindowEventData};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::io::AsyncWriteExt;
 use tokio::net::UnixStream;
@@ -104,7 +106,47 @@ pub async fn run_wayland_observer() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let mut socket = socket.ok_or("Failed to connect to Unix socket after 5 attempts")?;
+    let socket = socket.ok_or("Failed to connect to Unix socket after 5 attempts")?;
+
+    // Story 6.5: Initialize settings state (default: enabled, no exclusions)
+    let current_settings = Arc::new(Mutex::new(ronin_lib::observer::types::SettingsUpdate {
+        enabled: true,
+        excluded_apps: vec![],
+        excluded_url_patterns: vec![],
+    }));
+
+    // Story 6.5: Split socket for bidirectional communication
+    let (socket_read, mut socket_write) = tokio::io::split(socket);
+
+    // Story 6.5: Spawn task to receive settings updates from manager
+    let settings_for_reader = current_settings.clone();
+    tokio::spawn(async move {
+        use tokio::io::AsyncBufReadExt;
+        let reader = tokio::io::BufReader::new(socket_read);
+        let mut lines = reader.lines();
+
+        while let Ok(Some(line)) = lines.next_line().await {
+            match serde_json::from_str::<ronin_lib::observer::types::SettingsUpdate>(&line) {
+                Ok(new_settings) => {
+                    eprintln!(
+                        "[observer-wayland] Settings update: enabled={}, apps={}, urls={}",
+                        new_settings.enabled,
+                        new_settings.excluded_apps.len(),
+                        new_settings.excluded_url_patterns.len()
+                    );
+
+                    // Update cached regex patterns
+                    crate::observer_common::update_cached_patterns(
+                        &new_settings.excluded_url_patterns,
+                    );
+
+                    // Update current settings atomically
+                    *settings_for_reader.lock().unwrap() = new_settings;
+                }
+                Err(e) => eprintln!("[observer-wayland] Failed to parse settings: {}", e),
+            }
+        }
+    });
 
     // Create proxy to receive signals from the GNOME Shell Extension
     let proxy = RoninWindowTrackerProxy::new(&connection).await?;
@@ -135,6 +177,19 @@ pub async fn run_wayland_observer() -> Result<(), Box<dyn std::error::Error>> {
                 if last_window_info.as_ref() != Some(&window_info)
                     && now.duration_since(last_event_time) >= debounce_duration
                 {
+                    // Story 6.5: Apply privacy filter before sending
+                    let should_send = {
+                        let settings = current_settings.lock().unwrap();
+                        crate::observer_common::should_track(&title, &app_id, &settings)
+                    };
+
+                    // 義 (Gi): If filtered, skip entirely (never log excluded events)
+                    if !should_send {
+                        last_event_time = now;
+                        last_window_info = Some(window_info);
+                        continue; // Skip to next signal
+                    }
+
                     // Send event via Unix socket
                     let event = WindowEvent {
                         event_type: "window_focus".to_string(),
@@ -148,19 +203,10 @@ pub async fn run_wayland_observer() -> Result<(), Box<dyn std::error::Error>> {
                     match serde_json::to_string(&event) {
                         Ok(json) => {
                             let message = format!("{}\n", json);
-                            if let Err(e) = socket.write_all(message.as_bytes()).await {
-                                eprintln!("[observer] Failed to write to socket: {}", e);
-                                // Try to reconnect
-                                match UnixStream::connect(socket_path).await {
-                                    Ok(new_socket) => {
-                                        eprintln!("[observer] Reconnected to Unix socket");
-                                        socket = new_socket;
-                                    }
-                                    Err(e) => {
-                                        eprintln!("[observer] Failed to reconnect: {}", e);
-                                        return Err(Box::new(e));
-                                    }
-                                }
+                            if let Err(e) = socket_write.write_all(message.as_bytes()).await {
+                                eprintln!("[observer] Socket write error: {}", e);
+                                // Socket broken - exit gracefully (cannot reconnect with split socket)
+                                return Err(Box::new(e));
                             } else {
                                 eprintln!(
                                     "[observer] Sent event: {} - {}",

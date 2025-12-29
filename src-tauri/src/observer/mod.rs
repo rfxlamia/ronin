@@ -6,6 +6,8 @@
 /// Story 6.1: Window Title Tracking (X11)
 /// Story 6.2: Window Title Tracking (Wayland GNOME)
 /// Story 6.3: File Modification Tracking
+/// Story 6.5: Privacy Controls
+pub mod settings;
 pub mod types;
 pub mod watcher;
 
@@ -25,6 +27,8 @@ pub struct ObserverManager {
     daemon_process: Arc<Mutex<Option<Child>>>,
     socket_path: PathBuf,
     is_running: Arc<Mutex<bool>>,
+    // Story 6.5: Write-half of socket for sending settings to daemon
+    socket_write: Arc<Mutex<Option<tokio::net::unix::OwnedWriteHalf>>>,
 }
 
 impl Default for ObserverManager {
@@ -39,6 +43,7 @@ impl ObserverManager {
             daemon_process: Arc::new(Mutex::new(None)),
             socket_path: PathBuf::from("/tmp/ronin-observer.sock"),
             is_running: Arc::new(Mutex::new(false)),
+            socket_write: Arc::new(Mutex::new(None)), // Story 6.5
         }
     }
 
@@ -94,8 +99,12 @@ impl ObserverManager {
 
         // Start background task to handle IPC messages
         let is_running_clone = self.is_running.clone();
+        let socket_write_clone = self.socket_write.clone();
         tokio::spawn(async move {
-            if let Err(e) = Self::handle_ipc_messages(listener, db_pool, is_running_clone).await {
+            if let Err(e) =
+                Self::handle_ipc_messages(listener, db_pool, is_running_clone, socket_write_clone)
+                    .await
+            {
                 eprintln!("[observer-manager] IPC handler error: {}", e);
             }
         });
@@ -172,11 +181,55 @@ impl ObserverManager {
         *self.is_running.lock().await
     }
 
+    /// Send settings update to daemon (Story 6.5)
+    /// Settings sync happens live without restart
+    pub async fn send_settings_update(
+        &self,
+        settings: crate::observer::types::SettingsUpdate,
+    ) -> Result<(), String> {
+        let mut socket_write_guard = self.socket_write.lock().await;
+
+        if let Some(socket_write) = socket_write_guard.as_mut() {
+            // Serialize settings to JSON with newline delimiter
+            let json = serde_json::to_string(&settings)
+                .map_err(|e| format!("Failed to serialize settings: {}", e))?;
+            let message = format!("{}\n", json);
+
+            // Send to daemon and flush to ensure immediate delivery
+            use tokio::io::AsyncWriteExt;
+            socket_write
+                .write_all(message.as_bytes())
+                .await
+                .map_err(|e| format!("Failed to send settings to daemon: {}", e))?;
+
+            socket_write
+                .flush()
+                .await
+                .map_err(|e| format!("Failed to flush settings to daemon: {}", e))?;
+
+            eprintln!(
+                "[observer-manager] Sent settings update to daemon: enabled={}, apps={}, urls={}",
+                settings.enabled,
+                settings.excluded_apps.len(),
+                settings.excluded_url_patterns.len()
+            );
+
+            Ok(())
+        } else {
+            // Daemon not connected - this is OK (graceful degradation)
+            eprintln!(
+                "[observer-manager] Daemon not connected, settings will apply on next restart"
+            );
+            Ok(())
+        }
+    }
+
     /// Background task to handle IPC messages from daemon
     async fn handle_ipc_messages(
         listener: UnixListener,
         db_pool: crate::db::DbPool,
         is_running: Arc<Mutex<bool>>,
+        socket_write: Arc<Mutex<Option<tokio::net::unix::OwnedWriteHalf>>>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("[observer-manager] IPC handler started, waiting for connections...");
 
@@ -195,11 +248,71 @@ impl ObserverManager {
                 Ok(Ok((stream, _addr))) => {
                     eprintln!("[observer-manager] Daemon connected to IPC");
 
+                    // Story 6.5: Split stream for bidirectional communication
+                    let (read_half, write_half) = stream.into_split();
+
+                    // Store write half for send_settings_update
+                    {
+                        let mut socket_guard = socket_write.lock().await;
+                        *socket_guard = Some(write_half);
+                    }
+
+                    // Story 6.5 AC#3: Send initial settings immediately after connect
+                    {
+                        let settings =
+                            match crate::observer::settings::load_observer_settings(&db_pool) {
+                                Ok(s) => crate::observer::types::SettingsUpdate {
+                                    enabled: s.enabled,
+                                    excluded_apps: s.excluded_apps,
+                                    excluded_url_patterns: s.excluded_url_patterns,
+                                },
+                                Err(e) => {
+                                    eprintln!(
+                                        "[observer-manager] Failed to load initial settings: {}",
+                                        e
+                                    );
+                                    // Use defaults if load fails
+                                    crate::observer::types::SettingsUpdate {
+                                        enabled: true,
+                                        excluded_apps: vec![],
+                                        excluded_url_patterns: vec![],
+                                    }
+                                }
+                            };
+
+                        // Send initial settings to daemon
+                        let mut socket_guard = socket_write.lock().await;
+                        if let Some(ref mut writer) = *socket_guard {
+                            use tokio::io::AsyncWriteExt;
+                            let json = serde_json::to_string(&settings).unwrap_or_default();
+                            let message = format!("{}\n", json);
+                            if let Err(e) = writer.write_all(message.as_bytes()).await {
+                                eprintln!(
+                                    "[observer-manager] Failed to send initial settings: {}",
+                                    e
+                                );
+                            } else if let Err(e) = writer.flush().await {
+                                eprintln!(
+                                    "[observer-manager] Failed to flush initial settings: {}",
+                                    e
+                                );
+                            } else {
+                                eprintln!(
+                                    "[observer-manager] Sent initial settings: enabled={}, apps={}, urls={}",
+                                    settings.enabled,
+                                    settings.excluded_apps.len(),
+                                    settings.excluded_url_patterns.len()
+                                );
+                            }
+                        }
+                    }
+
                     let db_pool_clone = db_pool.clone();
                     let is_running_clone = is_running.clone();
+                    let socket_write_clone = socket_write.clone();
 
                     tokio::spawn(async move {
-                        let reader = BufReader::new(stream);
+                        let reader = BufReader::new(read_half);
                         let mut lines = reader.lines();
 
                         while *is_running_clone.lock().await {
@@ -269,6 +382,11 @@ impl ObserverManager {
                                 }
                             }
                         }
+
+                        // Clear socket_write when daemon disconnects (prevents stale writes)
+                        let mut socket_guard = socket_write_clone.lock().await;
+                        *socket_guard = None;
+                        eprintln!("[observer-manager] Socket write cleared after disconnect");
                     });
                 }
                 Ok(Err(e)) => {

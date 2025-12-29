@@ -104,8 +104,8 @@ development_status:
   6-1-window-title-tracking-x11: done
   6-2-window-title-tracking-wayland-gnome: done
   6-3-file-modification-tracking: done
-  6-4-context-aggregator: review
-  6-5-privacy-controls: backlog
+  6-4-context-aggregator: done
+  6-5-privacy-controls: review  # Code review fixes applied 2025-12-28
   epic-6-retrospective: optional
 
   epic-7: backlog

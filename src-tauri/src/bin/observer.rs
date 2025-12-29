@@ -10,6 +10,7 @@
 ///
 /// Story 6.1: Window Title Tracking (X11)
 /// Story 6.2: Window Title Tracking (Wayland GNOME) - Multi-backend support
+/// Story 6.5: Privacy Controls - Filtering logic
 // Import shared types from library
 
 // Backend modules
@@ -17,6 +18,9 @@
 mod observer_wayland;
 #[cfg(target_os = "linux")]
 mod observer_x11;
+
+// Common filtering logic (Story 6.5)
+mod observer_common;
 
 /// Detected backend type
 #[cfg(target_os = "linux")]

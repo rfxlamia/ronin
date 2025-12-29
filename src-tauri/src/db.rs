@@ -222,11 +222,38 @@ pub(crate) fn run_migrations(
         .map_err(|e| format!("Failed to check file_path column: {}", e))?;
 
     if file_path_exists == 0 {
+        conn.execute("ALTER TABLE observer_events ADD COLUMN file_path TEXT", [])
+            .map_err(|e| format!("Failed to add file_path column: {}", e))?;
+    }
+
+    // Check if Observer settings exist (Story 6.5)
+    let observer_settings_exist: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM settings WHERE key IN ('observer_enabled', 'observer_excluded_apps', 'observer_excluded_urls')",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| format!("Failed to check observer settings: {}", e))?;
+
+    if observer_settings_exist == 0 {
+        // Insert default Observer settings (idempotent with OR IGNORE)
         conn.execute(
-            "ALTER TABLE observer_events ADD COLUMN file_path TEXT",
+            "INSERT OR IGNORE INTO settings (key, value) VALUES ('observer_enabled', 'true')",
             [],
         )
-        .map_err(|e| format!("Failed to add file_path column: {}", e))?;
+        .map_err(|e| format!("Failed to insert observer_enabled setting: {}", e))?;
+
+        conn.execute(
+            "INSERT OR IGNORE INTO settings (key, value) VALUES ('observer_excluded_apps', '[]')",
+            [],
+        )
+        .map_err(|e| format!("Failed to insert observer_excluded_apps setting: {}", e))?;
+
+        conn.execute(
+            "INSERT OR IGNORE INTO settings (key, value) VALUES ('observer_excluded_urls', '[]')",
+            [],
+        )
+        .map_err(|e| format!("Failed to insert observer_excluded_urls setting: {}", e))?;
     }
 
     Ok(())
