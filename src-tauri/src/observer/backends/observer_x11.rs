@@ -5,7 +5,7 @@
 ///
 /// Story 6.1: Window Title Tracking (X11)
 /// Story 6.2: Window Title Tracking (Wayland GNOME) - Extracted from monolithic daemon
-use ronin_lib::observer::types::{WindowEvent, WindowEventData};
+use crate::observer::types::{WindowEvent, WindowEventData};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::io::AsyncWriteExt;
@@ -186,7 +186,7 @@ pub async fn run_x11_observer() -> Result<(), Box<dyn std::error::Error>> {
     let socket = socket.ok_or("Failed to connect to Unix socket after 5 attempts")?;
 
     // Story 6.5: Initialize settings state (default: enabled, no exclusions)
-    let current_settings = Arc::new(Mutex::new(ronin_lib::observer::types::SettingsUpdate {
+    let current_settings = Arc::new(Mutex::new(crate::observer::types::SettingsUpdate {
         enabled: true,
         excluded_apps: vec![],
         excluded_url_patterns: vec![],
@@ -208,7 +208,7 @@ pub async fn run_x11_observer() -> Result<(), Box<dyn std::error::Error>> {
                 "[observer-x11] Received line from manager: {}",
                 &line[..line.len().min(100)]
             );
-            match serde_json::from_str::<ronin_lib::observer::types::SettingsUpdate>(&line) {
+            match serde_json::from_str::<crate::observer::types::SettingsUpdate>(&line) {
                 Ok(new_settings) => {
                     eprintln!(
                         "[observer-x11] Settings update parsed: enabled={}, apps={:?}, urls={}",
@@ -218,7 +218,7 @@ pub async fn run_x11_observer() -> Result<(), Box<dyn std::error::Error>> {
                     );
 
                     // Update cached regex patterns
-                    ronin_lib::observer::common::update_cached_patterns(
+                    crate::observer::common::update_cached_patterns(
                         &new_settings.excluded_url_patterns,
                     );
 
@@ -261,7 +261,7 @@ pub async fn run_x11_observer() -> Result<(), Box<dyn std::error::Error>> {
                 // Story 6.5: Apply privacy filter before sending
                 let should_send = {
                     let settings = current_settings.lock().unwrap();
-                    ronin_lib::observer::common::should_track(&title, &app_class, &settings)
+                    crate::observer::common::should_track(&title, &app_class, &settings)
                 };
 
                 // 義 (Gi): If filtered, skip entirely (never log excluded events)

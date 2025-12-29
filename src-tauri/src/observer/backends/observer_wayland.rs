@@ -6,7 +6,7 @@
 ///
 /// Story 6.2: Window Title Tracking (Wayland GNOME)
 /// Story 6.5: Privacy Controls
-use ronin_lib::observer::types::{WindowEvent, WindowEventData};
+use crate::observer::types::{WindowEvent, WindowEventData};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::io::AsyncWriteExt;
@@ -109,7 +109,7 @@ pub async fn run_wayland_observer() -> Result<(), Box<dyn std::error::Error>> {
     let socket = socket.ok_or("Failed to connect to Unix socket after 5 attempts")?;
 
     // Story 6.5: Initialize settings state (default: enabled, no exclusions)
-    let current_settings = Arc::new(Mutex::new(ronin_lib::observer::types::SettingsUpdate {
+    let current_settings = Arc::new(Mutex::new(crate::observer::types::SettingsUpdate {
         enabled: true,
         excluded_apps: vec![],
         excluded_url_patterns: vec![],
@@ -126,7 +126,7 @@ pub async fn run_wayland_observer() -> Result<(), Box<dyn std::error::Error>> {
         let mut lines = reader.lines();
 
         while let Ok(Some(line)) = lines.next_line().await {
-            match serde_json::from_str::<ronin_lib::observer::types::SettingsUpdate>(&line) {
+            match serde_json::from_str::<crate::observer::types::SettingsUpdate>(&line) {
                 Ok(new_settings) => {
                     eprintln!(
                         "[observer-wayland] Settings update: enabled={}, apps={}, urls={}",
@@ -136,7 +136,7 @@ pub async fn run_wayland_observer() -> Result<(), Box<dyn std::error::Error>> {
                     );
 
                     // Update cached regex patterns
-                    ronin_lib::observer::common::update_cached_patterns(
+                    crate::observer::common::update_cached_patterns(
                         &new_settings.excluded_url_patterns,
                     );
 
@@ -180,7 +180,7 @@ pub async fn run_wayland_observer() -> Result<(), Box<dyn std::error::Error>> {
                     // Story 6.5: Apply privacy filter before sending
                     let should_send = {
                         let settings = current_settings.lock().unwrap();
-                        ronin_lib::observer::common::should_track(&title, &app_id, &settings)
+                        crate::observer::common::should_track(&title, &app_id, &settings)
                     };
 
                     // 義 (Gi): If filtered, skip entirely (never log excluded events)

@@ -11,15 +11,12 @@
 /// Story 6.1: Window Title Tracking (X11)
 /// Story 6.2: Window Title Tracking (Wayland GNOME) - Multi-backend support
 /// Story 6.5: Privacy Controls - Filtering logic
-// Import shared types from library
 
-// Backend modules (in backends subfolder to avoid Tauri bundler treating them as binaries)
+// Import backends from the library crate (moved there to avoid Tauri bundler issues)
 #[cfg(target_os = "linux")]
-#[path = "backends/observer_wayland.rs"]
-mod observer_wayland;
+use ronin_lib::observer::backends::observer_wayland;
 #[cfg(target_os = "linux")]
-#[path = "backends/observer_x11.rs"]
-mod observer_x11;
+use ronin_lib::observer::backends::observer_x11;
 
 /// Detected backend type
 #[cfg(target_os = "linux")]

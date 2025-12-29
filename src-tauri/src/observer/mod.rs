@@ -7,6 +7,8 @@
 /// Story 6.2: Window Title Tracking (Wayland GNOME)
 /// Story 6.3: File Modification Tracking
 /// Story 6.5: Privacy Controls
+#[cfg(target_os = "linux")]
+pub mod backends;
 pub mod common;
 pub mod settings;
 pub mod types;
