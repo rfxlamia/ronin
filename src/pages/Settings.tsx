@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { RoninOathModal } from '@/components/RoninOathModal';
 import { ModeToggle } from '@/components/mode-toggle';
 import { AiProviderSettings } from '@/components/settings/AiProviderSettings';
-import { ObserverDebugControls } from '@/components/settings/ObserverDebugControls';
 import { ExtensionMissingCard } from '@/components/settings/ExtensionMissingCard';
+import { PrivacySettings } from '@/components/settings/PrivacySettings';
 
 // Detect if running in Wayland environment
 function isWaylandEnvironment(): boolean {
@@ -70,15 +70,15 @@ export function Settings() {
                 </div>
             </section>
 
-            {/* Silent Observer Section */}
+            {/* Silent Observer Section (Story 6.5 - consolidated controls) */}
             <section className="mb-8">
                 <h3 className="text-xl font-serif font-bold mb-3">Silent Observer</h3>
                 <p className="text-muted-foreground mb-4">
-                    Controls for the window tracking daemon (X11 and Wayland/GNOME).
+                    Control what the window tracking daemon observes and view collected data.
                 </p>
-                <ObserverDebugControls />
+                <PrivacySettings />
                 {extensionSkipped && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-4">
                         ⚠️ GNOME Extension setup was skipped. Window tracking may be limited on Wayland.
                         <button
                             onClick={() => {

@@ -33,6 +33,9 @@ pub fn run() {
     // Clone for setup hook
     let watcher_for_setup = watcher_manager.clone();
     let db_pool_for_setup = db_pool.clone();
+    let observer_for_setup = observer_manager.clone();
+    let db_pool_for_observer_check = db_pool.clone();
+    let db_pool_for_observer_start = db_pool.clone();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -83,6 +86,46 @@ pub fn run() {
                     Err(e) => eprintln!("[app] Warning: Failed to start watching projects: {}", e),
                 }
             });
+
+            // Story 6.5: Auto-start Observer daemon if enabled=true in settings
+            tauri::async_runtime::spawn(async move {
+                // Load settings to check if Observer should auto-start
+                let settings_result = tokio::task::spawn_blocking(move || {
+                    crate::observer::settings::load_observer_settings(&db_pool_for_observer_check)
+                })
+                .await;
+
+                let should_start = match settings_result {
+                    Ok(Ok(settings)) => {
+                        eprintln!(
+                            "[app] Observer settings: enabled={}, excluded_apps={}, excluded_urls={}",
+                            settings.enabled,
+                            settings.excluded_apps.len(),
+                            settings.excluded_url_patterns.len()
+                        );
+                        settings.enabled
+                    }
+                    Ok(Err(e)) => {
+                        eprintln!("[app] Warning: Failed to load Observer settings: {}", e);
+                        true // Default to enabled on error
+                    }
+                    Err(e) => {
+                        eprintln!("[app] Warning: Failed to spawn settings query: {}", e);
+                        true // Default to enabled on error
+                    }
+                };
+
+                if should_start {
+                    eprintln!("[app] Auto-starting Observer daemon (enabled=true)");
+                    let observer = observer_for_setup.lock().await;
+                    match observer.start_daemon(db_pool_for_observer_start).await {
+                        Ok(()) => eprintln!("[app] Observer daemon auto-started successfully"),
+                        Err(e) => eprintln!("[app] Warning: Failed to auto-start Observer daemon: {}", e),
+                    }
+                } else {
+                    eprintln!("[app] Observer daemon auto-start skipped (enabled=false)");
+                }
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -123,7 +166,12 @@ pub fn run() {
             commands::devlog::get_devlog_version,
             commands::observer::start_observer,
             commands::observer::stop_observer,
-            commands::observer::get_observer_status
+            commands::observer::get_observer_status,
+            // Story 6.5: Privacy Controls
+            commands::observer::get_observer_settings,
+            commands::observer::update_observer_settings,
+            commands::observer::get_observer_data,
+            commands::observer::delete_all_observer_data,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
