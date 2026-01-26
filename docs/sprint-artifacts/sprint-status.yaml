@@ -100,20 +100,21 @@ development_status:
   5-6-release-bundle: done
   epic-5-retrospective: done
 
-  epic-6: in-progress
+  epic-6: done
   6-1-window-title-tracking-x11: done
   6-2-window-title-tracking-wayland-gnome: done
   6-3-file-modification-tracking: done
   6-4-context-aggregator: done
-  6-5-privacy-controls: review  # Code review fixes applied 2025-12-28
-  epic-6-retrospective: optional
+  6-5-privacy-controls: done  # Code review fixes applied 2025-12-28
+  epic-6-retrospective: done  # Strategic pivot identified - see epic-6-retro-2025-12-29.md
 
-  epic-7: backlog
-  7-1-system-tray-icon: backlog
-  7-2-global-hotkey: backlog
-  7-3-desktop-notifications: backlog
-  7-4-settings-panel: backlog
-  7-5-update-check-notification: backlog
-  7-6-local-telemetry-opt-in: backlog
-  7-7-startup-on-boot-toggle: backlog
-  epic-7-retrospective: optional
+  epic-7: deferred  # Strategic pivot - polish deferred until core value (reasoning capture) is built
+  # Epic 7 deferred per epic-6-retro-2025-12-29.md - research BMAD brownfield methodology first
+  7-1-system-tray-icon: deferred
+  7-2-global-hotkey: deferred
+  7-3-desktop-notifications: deferred
+  7-4-settings-panel: deferred
+  7-5-update-check-notification: deferred
+  7-6-local-telemetry-opt-in: deferred
+  7-7-startup-on-boot-toggle: deferred
+  epic-7-retrospective: deferred
