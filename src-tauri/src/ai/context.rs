@@ -38,9 +38,10 @@ pub fn build_git_context(git_context: &GitContext) -> String {
     ));
 
     for commit in &git_context.commits {
-        // Truncate long commit messages to keep payload small
-        let message = if commit.message.len() > 100 {
-            format!("{}...", &commit.message[..100])
+        // Truncate long commit messages to keep payload small (char-based, not byte-based)
+        let message = if commit.message.chars().count() > 100 {
+            let truncated: String = commit.message.chars().take(100).collect();
+            format!("{}...", truncated)
         } else {
             commit.message.clone()
         };
