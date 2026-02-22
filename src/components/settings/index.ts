@@ -8,3 +8,4 @@ export { ProviderSelector } from './ProviderSelector';
 export { ApiKeyInput } from './ApiKeyInput';
 export { ConnectionStatus, type ConnectionState } from './ConnectionStatus';
 export { DemoModeStats } from './DemoModeStats';
+export { ModelSelector } from './ModelSelector';
