@@ -27,7 +27,6 @@ import {
   selectConnectionError,
   selectAvailableModels,
   selectSelectedModelByProvider,
-  selectModelQuery,
   selectIsLoadingModels,
 } from '@/stores/aiStore';
 
@@ -41,7 +40,6 @@ export function AiProviderSettings() {
   const connectionError = useAiStore(selectConnectionError);
   const availableModels = useAiStore(selectAvailableModels);
   const selectedModelByProvider = useAiStore(selectSelectedModelByProvider);
-  const modelQuery = useAiStore(selectModelQuery);
   const isLoadingModels = useAiStore(selectIsLoadingModels);
 
   const loadProviders = useAiStore((s) => s.loadProviders);
