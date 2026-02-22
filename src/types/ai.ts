@@ -81,3 +81,15 @@ export interface DemoQuota {
   remainingDaily: number;
   resetTime: number | null; // Unix timestamp (seconds)
 }
+
+/**
+ * OpenRouter model summary for model selection
+ */
+export interface OpenRouterModelSummary {
+  id: string;
+  name: string;
+  description?: string | null;
+  context_length?: number | null;
+  prompt_price?: string | null;
+  completion_price?: string | null;
+}
