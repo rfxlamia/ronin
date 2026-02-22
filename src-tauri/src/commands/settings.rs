@@ -6,6 +6,43 @@ use crate::security::{decrypt_api_key, encrypt_api_key};
 use base64::{engine::general_purpose, Engine as _};
 use rusqlite::OptionalExtension;
 
+const OPENROUTER_MODEL_KEY: &str = "ai_model_openrouter";
+const DEFAULT_OPENROUTER_MODEL: &str = "xiaomi/mimo-v2-flash:free";
+
+/// Summary of an OpenRouter model for selection UI
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct OpenRouterModelSummary {
+    pub id: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub context_length: Option<u32>,
+    pub prompt_price: Option<String>,
+    pub completion_price: Option<String>,
+}
+
+/// Filter OpenRouter models by query string and limit results
+pub fn filter_openrouter_models(
+    models: Vec<OpenRouterModelSummary>,
+    query: Option<&str>,
+    limit: usize,
+) -> Vec<OpenRouterModelSummary> {
+    let filtered: Vec<OpenRouterModelSummary> = match query {
+        Some(q) if !q.trim().is_empty() => {
+            let q_lower = q.to_lowercase();
+            models
+                .into_iter()
+                .filter(|m| {
+                    m.id.to_lowercase().contains(&q_lower)
+                        || m.name.to_lowercase().contains(&q_lower)
+                })
+                .collect()
+        }
+        _ => models,
+    };
+
+    filtered.into_iter().take(limit).collect()
+}
+
 /// Get a setting value from the database
 #[tauri::command]
 pub async fn get_setting(
@@ -273,6 +310,146 @@ pub async fn test_provider_connection(
             provider_id
         )),
     }
+}
+
+/// Get the selected model for a provider
+#[tauri::command]
+pub async fn get_provider_model(
+    provider_id: String,
+    pool: tauri::State<'_, crate::db::DbPool>,
+) -> Result<String, String> {
+    if provider_id != "openrouter" {
+        return Err("Model selection currently supports OpenRouter only".to_string());
+    }
+
+    let conn = pool.get().map_err(|_| "Unable to access application data".to_string())?;
+
+    let selected: Option<String> = conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = ?1",
+            rusqlite::params![OPENROUTER_MODEL_KEY],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("Failed to query provider model: {}", e))?;
+
+    Ok(selected.unwrap_or_else(|| DEFAULT_OPENROUTER_MODEL.to_string()))
+}
+
+/// Set the selected model for a provider
+#[tauri::command]
+pub async fn set_provider_model(
+    provider_id: String,
+    model_id: String,
+    pool: tauri::State<'_, crate::db::DbPool>,
+) -> Result<(), String> {
+    if provider_id != "openrouter" {
+        return Err("Model selection currently supports OpenRouter only".to_string());
+    }
+    if model_id.trim().is_empty() {
+        return Err("Model ID cannot be empty".to_string());
+    }
+
+    let conn = pool.get().map_err(|_| "Unable to access application data".to_string())?;
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
+        rusqlite::params![OPENROUTER_MODEL_KEY, model_id.trim()],
+    )
+    .map_err(|e| format!("Failed to set provider model: {}", e))?;
+
+    Ok(())
+}
+
+/// Fetch available models from OpenRouter API
+#[tauri::command]
+pub async fn get_openrouter_models(
+    query: Option<String>,
+    limit: Option<u32>,
+    pool: tauri::State<'_, crate::db::DbPool>,
+) -> Result<Vec<OpenRouterModelSummary>, String> {
+    // Get API key for authentication
+    let conn = pool.get().map_err(|_| "Unable to access application data".to_string())?;
+
+    let setting_key = "api_key_openrouter";
+    let encoded: Option<String> = conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = ?1",
+            rusqlite::params![setting_key],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("Failed to query API key: {}", e))?;
+
+    let api_key = match encoded {
+        Some(enc) => {
+            let encrypted = general_purpose::STANDARD
+                .decode(enc)
+                .map_err(|e| format!("Failed to decode base64: {}", e))?;
+            decrypt_api_key(&encrypted)?
+        }
+        None => return Err("API key not configured".to_string()),
+    };
+
+    // Fetch models from OpenRouter
+    let client = reqwest::Client::new();
+    let response = client
+        .get("https://openrouter.ai/api/v1/models")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("HTTP-Referer", "https://ronin.app")
+        .header("X-Title", "Ronin")
+        .timeout(std::time::Duration::from_secs(30))
+        .send()
+        .await
+        .map_err(|e| format!("Failed to fetch models: {}", e))?;
+
+    if !response.status().is_success() {
+        return Err(format!("OpenRouter API error: {}", response.status()));
+    }
+
+    // Parse response
+    #[derive(serde::Deserialize)]
+    struct ModelsResponse {
+        data: Vec<OpenRouterApiModel>,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct OpenRouterApiModel {
+        id: String,
+        name: String,
+        description: Option<String>,
+        context_length: Option<u32>,
+        pricing: Option<ModelPricing>,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct ModelPricing {
+        prompt: Option<String>,
+        completion: Option<String>,
+    }
+
+    let models_resp: ModelsResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse models response: {}", e))?;
+
+    let models: Vec<OpenRouterModelSummary> = models_resp
+        .data
+        .into_iter()
+        .map(|m| OpenRouterModelSummary {
+            id: m.id,
+            name: m.name,
+            description: m.description,
+            context_length: m.context_length,
+            prompt_price: m.pricing.as_ref().and_then(|p| p.prompt.clone()),
+            completion_price: m.pricing.as_ref().and_then(|p| p.completion.clone()),
+        })
+        .collect();
+
+    // Apply filtering
+    let limit = limit.unwrap_or(200) as usize;
+    let filtered = filter_openrouter_models(models, query.as_deref(), limit);
+
+    Ok(filtered)
 }
 
 #[cfg(test)]
@@ -623,5 +800,55 @@ mod tests {
         assert!(is_configured_after, "Should be configured after adding key");
 
         fs::remove_dir_all(test_dir).ok();
+    }
+
+    #[test]
+    fn test_set_and_get_provider_model_roundtrip() {
+        let (test_dir, pool) = create_test_db();
+        let conn = pool.get().unwrap();
+
+        conn.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('ai_model_openrouter', ?1)",
+            rusqlite::params!["z-ai/glm-4.5-air:free"],
+        )
+        .unwrap();
+
+        let selected: Option<String> = conn
+            .query_row(
+                "SELECT value FROM settings WHERE key = 'ai_model_openrouter'",
+                [],
+                |row| row.get(0),
+            )
+            .optional()
+            .unwrap();
+
+        assert_eq!(selected, Some("z-ai/glm-4.5-air:free".to_string()));
+        std::fs::remove_dir_all(test_dir).ok();
+    }
+
+    #[test]
+    fn test_filter_openrouter_models_by_query_and_limit() {
+        let models = vec![
+            OpenRouterModelSummary {
+                id: "z-ai/glm-4.5-air:free".to_string(),
+                name: "GLM 4.5 Air".to_string(),
+                description: Some("fast".to_string()),
+                context_length: Some(128000),
+                prompt_price: Some("0".to_string()),
+                completion_price: Some("0".to_string()),
+            },
+            OpenRouterModelSummary {
+                id: "openai/gpt-oss-20b:free".to_string(),
+                name: "GPT OSS 20B".to_string(),
+                description: Some("oss".to_string()),
+                context_length: Some(131072),
+                prompt_price: Some("0".to_string()),
+                completion_price: Some("0".to_string()),
+            },
+        ];
+
+        let filtered = filter_openrouter_models(models, Some("glm"), 10);
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].id, "z-ai/glm-4.5-air:free");
     }
 }
