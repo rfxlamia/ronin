@@ -12,23 +12,55 @@ use std::time::Duration;
 pub struct OpenRouterProvider {
     api_key: String,
     client: reqwest::Client,
+    preferred_model: Option<String>,
 }
 
 impl OpenRouterProvider {
-    pub fn new(api_key: String) -> Self {
+    pub fn new(api_key: String, preferred_model: Option<String>) -> Self {
         Self {
             api_key,
             client: reqwest::Client::new(),
+            preferred_model,
         }
     }
 
-    /// Get models with fallback logic (free tier models)
+    /// Get default models with fallback logic (free tier models)
+    fn default_models() -> [&'static str;
+        3]
+    {
+        [
+            "xiaomi/mimo-v2-flash:free",
+            "z-ai/glm-4.5-air:free",
+            "openai/gpt-oss-20b:free",
+        ]
+    }
+
+    /// Get models with fallback logic (for backward compatibility)
     fn get_models() -> Vec<&'static str> {
         vec![
             "xiaomi/mimo-v2-flash:free",
             "z-ai/glm-4.5-air:free",
             "openai/gpt-oss-20b:free",
         ]
+    }
+
+    /// Build model candidates list with preferred model first, followed by fallbacks (no duplicates)
+    fn build_model_candidates(preferred_model: Option<&str>) -> Vec<String> {
+        let mut out: Vec<String> = Vec::new();
+
+        if let Some(model) = preferred_model {
+            if !model.trim().is_empty() {
+                out.push(model.trim().to_string());
+            }
+        }
+
+        for fallback in Self::default_models() {
+            if !out.iter().any(|m| m == fallback) {
+                out.push(fallback.to_string());
+            }
+        }
+
+        out
     }
 }
 
@@ -48,7 +80,7 @@ impl AiProvider for OpenRouterProvider {
     ) -> Result<Pin<Box<dyn Stream<Item = String> + Send>>, AiError> {
         let api_key = self.api_key.clone();
         let client = self.client.clone();
-        let models = Self::get_models();
+        let models = Self::build_model_candidates(self.preferred_model.as_deref());
 
         let messages = vec![
             serde_json::json!({
@@ -185,13 +217,13 @@ mod tests {
 
     #[test]
     fn test_provider_id() {
-        let provider = OpenRouterProvider::new("test-key".to_string());
+        let provider = OpenRouterProvider::new("test-key".to_string(), None);
         assert_eq!(provider.id(), "openrouter");
     }
 
     #[test]
     fn test_provider_name() {
-        let provider = OpenRouterProvider::new("test-key".to_string());
+        let provider = OpenRouterProvider::new("test-key".to_string(), None);
         assert_eq!(provider.name(), "OpenRouter");
     }
 
@@ -200,5 +232,18 @@ mod tests {
         let models = OpenRouterProvider::get_models();
         assert_eq!(models.len(), 3);
         assert_eq!(models[0], "xiaomi/mimo-v2-flash:free");
+    }
+
+    #[test]
+    fn test_build_model_candidates_prefers_selected_without_duplicates() {
+        let selected = "z-ai/glm-4.5-air:free";
+        let candidates = OpenRouterProvider::build_model_candidates(Some(selected));
+
+        assert_eq!(candidates.first().unwrap(), selected);
+        assert_eq!(
+            candidates.iter().filter(|m| m.as_str() == selected).count(),
+            1
+        );
+        assert!(candidates.iter().any(|m| m == "xiaomi/mimo-v2-flash:free"));
     }
 }

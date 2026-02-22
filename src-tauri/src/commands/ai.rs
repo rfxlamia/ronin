@@ -260,6 +260,16 @@ pub async fn generate_context(
         .map_err(|e| format!("Failed to query default provider: {}", e))?
         .unwrap_or_else(|| "openrouter".to_string());
 
+    // Get selected OpenRouter model (if provider is openrouter)
+    let selected_openrouter_model: Option<String> = conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = 'ai_model_openrouter'",
+            [],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("Failed to query selected model: {}", e))?;
+
     // Get API key for the provider (demo mode doesn't need one)
     let api_key = if default_provider == "demo" {
         None
@@ -327,7 +337,7 @@ pub async fn generate_context(
     let provider: Box<dyn AiProvider> = match default_provider.as_str() {
         "openrouter" => {
             let key = api_key.ok_or("API key required for OpenRouter")?;
-            Box::new(OpenRouterProvider::new(key))
+            Box::new(OpenRouterProvider::new(key, selected_openrouter_model))
         }
         "demo" => {
             // Lambda URL from compile-time config
