@@ -25,11 +25,11 @@ name = "ronin-observer"
 path = "src/bin/observer.rs"
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2.2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
-tauri-plugin-opener = "2"
+tauri = { version = "2.2", features = [] }
+tauri-plugin-opener = "2.2"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -37,7 +37,7 @@ rusqlite = { version = "0.37.0", features = ["bundled"] }
 rusqlite_migration = "2.3.0"
 r2d2 = "0.8.10"
 r2d2_sqlite = "0.31.0"
-tauri-plugin-dialog = "2.4.2"
+tauri-plugin-dialog = "2.2"
 walkdir = "2"
 dirs = "5.0"
 chrono = "0.4"
