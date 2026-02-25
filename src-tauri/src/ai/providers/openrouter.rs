@@ -36,6 +36,7 @@ impl OpenRouterProvider {
     }
 
     /// Get models with fallback logic (for backward compatibility)
+    #[allow(dead_code)]
     fn get_models() -> Vec<&'static str> {
         vec![
             "xiaomi/mimo-v2-flash:free",
