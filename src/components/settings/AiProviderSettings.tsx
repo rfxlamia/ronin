@@ -11,6 +11,7 @@
 
 import { useEffect, useCallback, useState } from 'react';
 import { Label } from '@/components/ui/label';
+import { useDebounce } from '@/hooks/useDebounce';
 import { ProviderSelector } from './ProviderSelector';
 import { ApiKeyInput } from './ApiKeyInput';
 import { ConnectionStatus } from './ConnectionStatus';
@@ -53,6 +54,7 @@ export function AiProviderSettings() {
 
   // Local state for model search query
   const [localModelQuery, setLocalModelQuery] = useState('');
+  const debouncedModelQuery = useDebounce(localModelQuery, 300);
 
   // Load providers on mount
   useEffect(() => {
@@ -70,9 +72,9 @@ export function AiProviderSettings() {
   useEffect(() => {
     if (defaultProvider === 'openrouter') {
       void loadProviderModel('openrouter');
-      void loadOpenRouterModels(localModelQuery);
+      void loadOpenRouterModels(debouncedModelQuery);
     }
-  }, [defaultProvider, loadProviderModel, loadOpenRouterModels, localModelQuery]);
+  }, [defaultProvider, loadProviderModel, loadOpenRouterModels, debouncedModelQuery]);
 
   const handleProviderChange = useCallback(
     async (providerId: string) => {
@@ -99,11 +101,10 @@ export function AiProviderSettings() {
   }, [defaultProvider, testConnection]);
 
   const handleModelSearch = useCallback(
-    async (query: string) => {
+    (query: string) => {
       setLocalModelQuery(query);
-      await loadOpenRouterModels(query);
     },
-    [setLocalModelQuery, loadOpenRouterModels]
+    [setLocalModelQuery]
   );
 
   const handleModelSelect = useCallback(

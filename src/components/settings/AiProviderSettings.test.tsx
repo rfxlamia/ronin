@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { AiProviderSettings } from './AiProviderSettings';
 import { useAiStore } from '@/stores/aiStore';
 
@@ -39,7 +39,7 @@ vi.mock('./ModelSelector', () => ({
     <div data-testid="model-selector">
       <input
         data-testid="model-search"
-        placeholder="Search model"
+        placeholder="Search OpenRouter model (e.g. glm, qwen, gemini)"
         onChange={(e) => onQueryChange(e.target.value)}
       />
     </div>
@@ -117,5 +117,74 @@ describe('AiProviderSettings', () => {
     });
 
     expect(screen.getByTestId('demo-mode-stats')).toBeInTheDocument();
+  });
+});
+
+describe('AiProviderSettings model search', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    // Reset store state
+    useAiStore.setState({
+      providers: [
+        { id: 'openrouter', name: 'OpenRouter', is_configured: true, is_default: true },
+        { id: 'demo', name: 'Demo', is_configured: true, is_default: false },
+      ],
+      defaultProvider: 'openrouter',
+      isLoading: false,
+      error: null,
+      availableModels: [],
+      selectedModelByProvider: {},
+      modelQuery: '',
+      isLoadingModels: false,
+      modelError: null,
+      apiKeyStatus: {},
+      connectionStatus: {},
+      connectionError: {},
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should debounce model search API calls', () => {
+    const loadOpenRouterModels = vi.fn().mockResolvedValue(undefined);
+    const loadProviders = vi.fn().mockResolvedValue(undefined);
+    const loadProviderModel = vi.fn().mockResolvedValue(undefined);
+
+    useAiStore.setState({
+      loadProviders,
+      loadProviderModel,
+      loadOpenRouterModels,
+    });
+
+    render(<AiProviderSettings />);
+
+    // Initial load triggers once
+    act(() => {
+      vi.advanceTimersByTime(0);
+    });
+    expect(loadProviders).toHaveBeenCalled();
+
+    const searchInput = screen.getByPlaceholderText('Search OpenRouter model (e.g. glm, qwen, gemini)');
+
+    // Clear initial call count
+    loadOpenRouterModels.mockClear();
+
+    // Type rapidly (simulating typing)
+    fireEvent.change(searchInput, { target: { value: 'gpt' } });
+
+    // Should not call API immediately after typing (debounce hasn't fired)
+    expect(loadOpenRouterModels).not.toHaveBeenCalled();
+
+    // Advance timers by 300ms (debounce delay)
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    // Now API should be called once with final value
+    expect(loadOpenRouterModels).toHaveBeenCalledTimes(1);
+    expect(loadOpenRouterModels).toHaveBeenCalledWith('gpt');
   });
 });
