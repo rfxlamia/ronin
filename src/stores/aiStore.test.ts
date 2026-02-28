@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
 import { useAiStore } from './aiStore';
 

@@ -240,29 +240,27 @@ describe('Cleanup race condition — unmount before listeners register', () => {
 
     it('should not call listeners after unmount if Promise resolves late', async () => {
         // Simulasi: listen() sangat lambat resolve
-        let resolveListen!: () => void;
-        const slowListenPromise = new Promise<void>((resolve) => {
+        let resolveListen!: (unlisten: () => void) => void;
+        const slowListenPromise = new Promise<() => void>((resolve) => {
             resolveListen = resolve;
         });
 
         // Override mock listen agar lambat
         const { listen } = await import('@tauri-apps/api/event');
-        vi.mocked(listen).mockImplementation((_event, _cb) =>
-            slowListenPromise.then(() => vi.fn())
-        );
+        vi.mocked(listen).mockImplementation(() => slowListenPromise);
 
         const { unmount } = renderHook(() => useAiContext(1));
 
         // Unmount SEBELUM listen resolve
         unmount();
 
-        // Resolve SETELAH unmount
-        resolveListen();
+        // Resolve SETELAH unmount dengan mock unlisten function
+        resolveListen(vi.fn());
         await vi.advanceTimersByTimeAsync(50);
 
         // Test ini verifikasi tidak ada error "setState on unmounted component"
         // Jika isMounted flag tidak ada, listeners bisa terdaftar dan aktif setelah unmount
-        // Ini tidak akan fail secara visible, tapi verifikasi pattern via struktur kode
+        // Ini tidak akan fail secara visible, tapi verifikasi utama: tidak ada console.error
         expect(true).toBe(true); // Placeholder — verifikasi utama: tidak ada console.error
     });
 

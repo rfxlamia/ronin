@@ -188,7 +188,7 @@ describe('debounce on focus/visibility events', () => {
 
         mockInvoke.mockResolvedValue(mockStatus);
 
-        const { result } = renderHook(() => useGitStatus('/path/to/project'));
+        renderHook(() => useGitStatus('/path/to/project'));
 
         // Tunggu initial fetch
         await act(async () => {

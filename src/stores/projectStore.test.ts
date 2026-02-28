@@ -10,9 +10,12 @@ const mockProject = (overrides: Partial<Project> = {}): Project => ({
     id: 1,
     name: 'test-project',
     path: '/path/to/project',
+    type: 'git',
+    created_at: '2026-01-01',
+    updated_at: '2026-01-01',
     isArchived: false,
     healthStatus: 'active',
-    lastActivity: '2026-01-01',
+    lastActivityAt: '2026-01-01',
     ...overrides,
 });
 
