@@ -83,3 +83,28 @@ describe('settingsStore', () => {
         });
     });
 });
+
+describe('API key security — key must not be stored in plain state', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('loadApiKey must not store decrypted key in state', async () => {
+        vi.mocked(invoke).mockResolvedValueOnce('sk-or-v1-real-key-value');
+
+        await useSettingsStore.getState().loadApiKey();
+
+        // API key TIDAK boleh ada di state setelah loadApiKey
+        const state = useSettingsStore.getState() as unknown as Record<string, unknown>;
+        expect(state['apiKey']).toBeUndefined();
+    });
+
+    it('saveApiKey must not store key in state after save', async () => {
+        vi.mocked(invoke).mockResolvedValueOnce(undefined);
+
+        await useSettingsStore.getState().saveApiKey('sk-or-v1-some-key');
+
+        const state = useSettingsStore.getState() as unknown as Record<string, unknown>;
+        expect(state['apiKey']).toBeUndefined();
+    });
+});

@@ -3,7 +3,6 @@ import { invoke } from '@tauri-apps/api/core';
 
 interface SettingsState {
     oathShown: boolean;
-    apiKey: string | null;
     isLoadingKey: boolean;
     setOathShown: (shown: boolean) => void;
     checkOathStatus: () => Promise<void>;
@@ -16,7 +15,6 @@ interface SettingsState {
 
 export const useSettingsStore = create<SettingsState>((set) => ({
     oathShown: true,
-    apiKey: null,
     isLoadingKey: false,
     setOathShown: (shown) => set({ oathShown: shown }),
     checkOathStatus: async () => {
@@ -30,21 +28,17 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     loadApiKey: async () => {
         set({ isLoadingKey: true });
         try {
-            const key = await invoke<string | null>('get_api_key');  // SECURE: Decrypts from database
-            set({ apiKey: key, isLoadingKey: false });
+            await invoke<string | null>('get_api_key');  // SECURE: Decrypts from database
+            set({ isLoadingKey: false });
         } catch (e) {
             console.error('Failed to load API key:', e);
-            set({ apiKey: null, isLoadingKey: false });
+            set({ isLoadingKey: false });
         }
     },
     saveApiKey: async (key: string) => {
         try {
-            // Basic validation
-            if (!key || !key.startsWith('sk-or-v1-')) {
-                return false;
-            }
+            if (!key?.trim()) return false;
             await invoke('set_api_key', { key });  // SECURE: Encrypts before storing
-            set({ apiKey: key });
             return true;
         } catch (e) {
             console.error('Failed to save API key:', e);
@@ -54,7 +48,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     removeApiKey: async () => {
         try {
             await invoke('delete_api_key');  // SECURE: Deletes encrypted key
-            set({ apiKey: null });
         } catch (e) {
             console.error('Failed to remove API key:', e);
         }
