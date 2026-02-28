@@ -178,7 +178,7 @@ export function useAiContext(projectId: number | null) {
         if (isMounted) {
           unlistenFns.push(unChunk, unComplete, unError);
         } else {
-          // Komponen sudah unmount sebelum listeners terdaftar
+          // Component unmounted before listeners were registered
           unChunk();
           unComplete();
           unError();

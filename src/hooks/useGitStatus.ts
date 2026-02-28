@@ -2,6 +2,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { GitDisplayStatus } from '@/types/git';
 
+const FOCUS_DEBOUNCE_MS = 300;
+
 /** Hook to fetch Git status for a project path */
 export function useGitStatus(projectPath: string | null) {
     const [status, setStatus] = useState<GitDisplayStatus | null>(null);
@@ -42,7 +44,7 @@ export function useGitStatus(projectPath: string | null) {
 
         const debouncedFetch = () => {
             if (debounceRef.current) clearTimeout(debounceRef.current);
-            debounceRef.current = setTimeout(fetchStatus, 300);
+            debounceRef.current = setTimeout(fetchStatus, FOCUS_DEBOUNCE_MS);
         };
 
         const handleVisibilityChange = () => {
