@@ -160,9 +160,7 @@ export function estimateTokens(text) {
 export function exceedsTokenLimit(requestBody) {
     const messages = requestBody.messages || [];
     const totalChars = messages.reduce((sum, msg) => {
-        return sum + (msg.content?.length || 0);
+        return sum + (typeof msg.content === 'string' ? msg.content.length : 0);
     }, 0);
-
-    const estimatedTokens = estimateTokens(totalChars);
-    return estimatedTokens > TOKEN_LIMIT;
+    return Math.ceil(totalChars / 4) > TOKEN_LIMIT;
 }
