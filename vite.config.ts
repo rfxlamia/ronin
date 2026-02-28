@@ -14,6 +14,11 @@ export default defineConfig(async () => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    'import.meta.env.VITE_DEMO_LAMBDA_URL': JSON.stringify(
+      process.env.VITE_DEMO_LAMBDA_URL ?? ''
+    ),
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

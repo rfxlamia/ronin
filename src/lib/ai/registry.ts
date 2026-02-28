@@ -21,7 +21,7 @@ export const PROVIDER_REGISTRY: ProviderConfig[] = [
   {
     id: 'demo',
     name: 'Demo Mode (Limited)',
-    baseUrl: process.env.DEMO_LAMBDA_URL || "https://dkm5aeebsg7dggdpwoovlbzjde0ayxyh.lambda-url.ap-southeast-2.on.aws/",
+    baseUrl: import.meta.env.VITE_DEMO_LAMBDA_URL ?? '',
     requiresKey: false,
     isDefault: false,
   },
