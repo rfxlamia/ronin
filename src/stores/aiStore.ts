@@ -11,6 +11,16 @@ import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import type { ProviderInfo, DemoQuota, OpenRouterModelSummary } from '@/types/ai';
 
+function getInitialUpgradePromptDismissed(): boolean {
+  try {
+    const dismissedUntil = localStorage.getItem('demo-upgrade-dismissed-until');
+    if (!dismissedUntil) return false;
+    return Date.now() < parseInt(dismissedUntil, 10);
+  } catch {
+    return false;
+  }
+}
+
 interface AiStore {
   // State
   providers: ProviderInfo[];
@@ -61,8 +71,7 @@ export const useAiStore = create<AiStore>((set, get) => ({
   isLoading: false,
   error: null,
   demoQuota: null,
-  upgradePromptDismissed:
-    localStorage.getItem('demo-upgrade-dismissed') === 'true',
+  upgradePromptDismissed: getInitialUpgradePromptDismissed(),
 
   // Settings state (Story 4.25-3)
   apiKeyStatus: {},
@@ -177,7 +186,6 @@ export const useAiStore = create<AiStore>((set, get) => ({
   // Dismiss upgrade prompt for 24 hours (Story 4.25-2)
   dismissUpgradePrompt: () => {
     const dismissedUntil = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-    localStorage.setItem('demo-upgrade-dismissed', 'true');
     localStorage.setItem('demo-upgrade-dismissed-until', dismissedUntil.toString());
     set({ upgradePromptDismissed: true });
   },
