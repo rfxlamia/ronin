@@ -107,85 +107,92 @@ export function useAiContext(projectId: number | null) {
   useEffect(() => {
     if (!projectId) return;
 
-    // Trigger generation when projectId becomes available
+    let isMounted = true;
+    const unlistenFns: Array<() => void> = [];
+
     generateContext();
 
-    const unlistenPromises = Promise.all([
-      listen('ai-chunk', (event: { payload: { text: string } }) => {
-        setState((prev) => {
-          // CRITICAL: Ignore chunks that arrive after complete or error
-          // This prevents race condition where late chunks cause blinking
-          if (prev.contextState !== 'streaming') {
-            return prev;
-          }
-          return {
-            ...prev,
-            contextState: 'streaming',
-            contextText: prev.contextText + event.payload.text,
-          };
-        });
-      }),
+    const setup = async () => {
+      try {
+        const [unChunk, unComplete, unError] = await Promise.all([
+          listen('ai-chunk', (event: { payload: { text: string } }) => {
+            setState((prev) => {
+              if (prev.contextState !== 'streaming') return prev;
+              return {
+                ...prev,
+                contextState: 'streaming',
+                contextText: prev.contextText + event.payload.text,
+              };
+            });
+          }),
 
-      listen(
-        'ai-complete',
-        (event: {
-          payload: {
-            text: string;
-            attribution: {
-              commits: number;
-              files: number;
-              sources: string[];
-              devlog_lines?: number;
-              ai_sessions?: number;
-            };
-            cached?: boolean;
-          };
-        }) => {
-          // Transform snake_case from backend to camelCase for frontend
-          const attr = event.payload.attribution;
-          const transformedAttribution: Attribution = {
-            commits: attr.commits,
-            files: attr.files,
-            sources: attr.sources,
-            devlogLines: attr.devlog_lines,
-            aiSessions: attr.ai_sessions,
-          };
+          listen(
+            'ai-complete',
+            (event: {
+              payload: {
+                text: string;
+                attribution: {
+                  commits: number;
+                  files: number;
+                  sources: string[];
+                  devlog_lines?: number;
+                  ai_sessions?: number;
+                };
+                cached?: boolean;
+              };
+            }) => {
+              const attr = event.payload.attribution;
+              const transformedAttribution: Attribution = {
+                commits: attr.commits,
+                files: attr.files,
+                sources: attr.sources,
+                devlogLines: attr.devlog_lines,
+                aiSessions: attr.ai_sessions,
+              };
 
-          setState((prev) => ({
-            ...prev,
-            contextState: 'complete',
-            // Keep the accumulated streamed text; only use payload text for cached responses
-            // or if no text was accumulated (edge case)
-            contextText: prev.contextText || event.payload.text || '',
-            attribution: transformedAttribution,
-            isCached: event.payload.cached || false,
-            error: null,
-          }));
+              setState((prev) => ({
+                ...prev,
+                contextState: 'complete',
+                contextText: prev.contextText || event.payload.text || '',
+                attribution: transformedAttribution,
+                isCached: event.payload.cached || false,
+                error: null,
+              }));
+            }
+          ),
+
+          listen('ai-error', (event: { payload: { message: string } }) => {
+            setState((prev) => {
+              if (prev.contextState === 'complete') return prev;
+              const parsed = parseError(event.payload.message);
+              return {
+                ...prev,
+                contextState: 'error',
+                error: event.payload.message,
+                parsedError: parsed,
+              };
+            });
+          }),
+        ]);
+
+        if (isMounted) {
+          unlistenFns.push(unChunk, unComplete, unError);
+        } else {
+          // Komponen sudah unmount sebelum listeners terdaftar
+          unChunk();
+          unComplete();
+          unError();
         }
-      ),
+      } catch (err) {
+        console.error('[useAiContext] Failed to register listeners:', err);
+      }
+    };
 
-      listen('ai-error', (event: { payload: { message: string } }) => {
-        setState((prev) => {
-          // CRITICAL: Ignore errors that arrive after complete
-          // This prevents race condition where late errors cause blinking
-          if (prev.contextState === 'complete') {
-            return prev;
-          }
-          const parsed = parseError(event.payload.message);
-          return {
-            ...prev,
-            contextState: 'error',
-            error: event.payload.message,
-            parsedError: parsed,
-          };
-        });
-      }),
-    ]);
+    setup();
 
     return () => {
-      unlistenPromises.then((listeners) => {
-        listeners.forEach((unlisten) => unlisten());
-      });
+      isMounted = false;
+      unlistenFns.forEach((fn) => fn());
     };
   }, [projectId, generateContext]);
 
