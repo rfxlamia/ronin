@@ -44,3 +44,7 @@ _bmad/
 
 # Worktrees
 .worktrees/
+
+# serverless cache
+.aws-sam/
+lambda-deploy.zip
