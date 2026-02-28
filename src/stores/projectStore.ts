@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { invoke } from '@tauri-apps/api/core';
 
 import type { Project } from '@/types/project';
@@ -100,23 +101,24 @@ export const useProjectStore = create<ProjectStore>((set) => ({
 /**
  * Selector hook that returns filtered projects based on search query and filter status
  * Performs client-side filtering for <100ms response time (NFR5)
+ * Uses useShallow to prevent unnecessary re-renders from multiple subscriptions
  */
-export const useFilteredProjects = (): Project[] => {
-    const projects = useProjectStore((state) => state.projects);
-    const searchQuery = useProjectStore((state) => state.searchQuery);
-    const filterStatus = useProjectStore((state) => state.filterStatus);
+export const useFilteredProjects = (): Project[] =>
+    useProjectStore(
+        useShallow(({ projects, searchQuery, filterStatus }) =>
+            projects.filter((p) => {
+                // Search filter (case-insensitive name matching)
+                const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return projects.filter(p => {
-        // Search filter (case-insensitive name matching)
-        const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+                // Status filter logic
+                const matchesStatus =
+                    filterStatus === 'all'
+                        ? !p.isArchived // All = non-archived projects
+                        : filterStatus === 'archived'
+                          ? p.isArchived // Archived = only archived
+                          : !p.isArchived && p.healthStatus === filterStatus; // Active/Dormant
 
-        // Status filter logic
-        const matchesStatus = filterStatus === 'all'
-            ? !p.isArchived  // All = non-archived projects
-            : filterStatus === 'archived'
-                ? p.isArchived  // Archived = only archived
-                : !p.isArchived && p.healthStatus === filterStatus;  // Active/Dormant
-
-        return matchesSearch && matchesStatus;
-    });
-};
+                return matchesSearch && matchesStatus;
+            })
+        )
+    );
