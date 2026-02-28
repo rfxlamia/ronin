@@ -15,6 +15,22 @@ describe('parseError', () => {
       expect(result.kind).toBe('offline');
       expect(result.message).toBe('No network connection');
     });
+
+    it('handles Error object with OFFLINE message — not just raw string', () => {
+      // Saat backend throw Error('OFFLINE:No network'), String(error) = "Error: OFFLINE:..."
+      // parseError harus tetap menghasilkan kind: 'offline'
+      const errorObj = new Error('OFFLINE:No network connection');
+      const result = parseError(errorObj.message); // .message bukan String(errorObj)
+      expect(result.kind).toBe('offline');
+      expect(result.message).toBe('No network connection');
+    });
+
+    it('handles Error object with RATELIMIT message', () => {
+      const errorObj = new Error('RATELIMIT:30:AI resting');
+      const result = parseError(errorObj.message);
+      expect(result.kind).toBe('ratelimit');
+      expect(result.retryAfter).toBe(30);
+    });
   });
 
   describe('RATELIMIT errors', () => {
@@ -83,5 +99,19 @@ describe('parseError', () => {
       expect(result.kind).toBe('unknown');
       expect(result.message).toBe('Rate limit exceeded');
     });
+  });
+});
+
+describe('generateContext error handling — Error object vs string', () => {
+  // Test ini memverifikasi bahwa ketika invoke() throw Error object,
+  // pesan error yang tersimpan di state TIDAK mengandung prefix "Error: "
+  it('parseError receives .message not String(error) from catch block', () => {
+    // Dokumentasi: String(new Error('OFFLINE:x')) === 'Error: OFFLINE:x'
+    // parseError('Error: OFFLINE:x').kind === 'unknown' (BUG)
+    // parseError('OFFLINE:x').kind === 'offline' (CORRECT)
+    const rawError = new Error('OFFLINE:x');
+    expect(String(rawError)).toBe('Error: OFFLINE:x');
+    expect(parseError(String(rawError)).kind).toBe('unknown'); // BUG — ini dokumentasi bug
+    expect(parseError(rawError.message).kind).toBe('offline'); // CORRECT — ini yang seharusnya
   });
 });

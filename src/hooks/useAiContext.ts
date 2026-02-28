@@ -93,7 +93,7 @@ export function useAiContext(projectId: number | null) {
       await invoke('generate_context', { projectId });
     } catch (error) {
       console.error('Failed to invoke generate_context:', error);
-      const errorMessage = String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       const parsed = parseError(errorMessage);
       setState((prev) => ({
         ...prev,
