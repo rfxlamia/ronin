@@ -166,3 +166,56 @@ describe('useGitStatus', () => {
         });
     });
 });
+
+describe('debounce on focus/visibility events', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('deduplicates rapid visibilitychange + focus events into one call', async () => {
+        const mockStatus = {
+            branch: 'main',
+            uncommittedFiles: 0,
+            unpushedCommits: 0,
+            lastCommitTimestamp: 1703318400,
+            hasRemote: true,
+        };
+
+        mockInvoke.mockResolvedValue(mockStatus);
+
+        const { result } = renderHook(() => useGitStatus('/path/to/project'));
+
+        // Tunggu initial fetch
+        await act(async () => {
+            await vi.runAllTimersAsync();
+        });
+
+        const callCountAfterMount = mockInvoke.mock.calls.length;
+
+        // Simulasi rapid focus + visibilitychange (keduanya fire dalam waktu singkat)
+        act(() => {
+            Object.defineProperty(document, 'visibilityState', {
+                value: 'visible',
+                writable: true,
+            });
+            document.dispatchEvent(new Event('visibilitychange'));
+            window.dispatchEvent(new Event('focus'));
+        });
+
+        // Sebelum debounce window lewat, hanya boleh ada 0 tambahan call
+        expect(mockInvoke.mock.calls.length).toBe(callCountAfterMount);
+
+        // Setelah 300ms debounce
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(350);
+        });
+
+        // Hanya 1 tambahan call, bukan 2
+        expect(mockInvoke.mock.calls.length).toBe(callCountAfterMount + 1);
+    });
+});

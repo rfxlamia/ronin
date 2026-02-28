@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { GitDisplayStatus } from '@/types/git';
 
 /** Hook to fetch Git status for a project path */
@@ -34,24 +34,30 @@ export function useGitStatus(projectPath: string | null) {
         fetchStatus();
     }, [fetchStatus]);
 
-    // Refetch on window focus/visibility change
+    // Refetch on window focus/visibility change — debounced to prevent double-fire
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     useEffect(() => {
         if (!projectPath) return;
 
+        const debouncedFetch = () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            debounceRef.current = setTimeout(fetchStatus, 300);
+        };
+
         const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
-                fetchStatus();
-            }
+            if (document.visibilityState === 'visible') debouncedFetch();
         };
 
         const handleFocus = () => {
-            fetchStatus();
+            debouncedFetch();
         };
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
         window.addEventListener('focus', handleFocus);
 
         return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('focus', handleFocus);
         };
