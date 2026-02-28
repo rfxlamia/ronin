@@ -190,6 +190,17 @@ export const handler = awslambda.streamifyResponse(async (event, responseStream,
             'Access-Control-Expose-Headers': 'X-RateLimit-Remaining-Hourly, X-RateLimit-Remaining-Daily, X-RateLimit-Reset'
         };
 
+        // Validate request body size BEFORE parsing (prevent CPU exhaustion via nested JSON)
+        if (event.body && event.body.length > 20480) {
+            metadata.statusCode = 413;
+            responseStream.write(JSON.stringify({
+                error: 'payload_too_large',
+                message: 'Request payload exceeds 20KB limit'
+            }));
+            responseStream.end();
+            return;
+        }
+
         // Parse request body
         let requestBody;
         try {
@@ -199,17 +210,6 @@ export const handler = awslambda.streamifyResponse(async (event, responseStream,
             responseStream.write(JSON.stringify({
                 error: 'invalid_request',
                 message: 'Invalid JSON in request body'
-            }));
-            responseStream.end();
-            return;
-        }
-
-        // Validate request body size (20KB limit)
-        if (event.body && event.body.length > 20480) {
-            metadata.statusCode = 413;
-            responseStream.write(JSON.stringify({
-                error: 'payload_too_large',
-                message: 'Request payload exceeds 20KB limit'
             }));
             responseStream.end();
             return;
