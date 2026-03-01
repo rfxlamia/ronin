@@ -5,6 +5,21 @@ All notable changes to Ronin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **OpenRouter Model Selection**: Users can now choose specific OpenRouter models in Settings
+  - Searchable model picker with real-time filtering
+  - Model list fetched from OpenRouter `/api/v1/models` API
+  - Selected model persisted to SQLite database
+  - Fallback model chain (selected → xiaomi/mimo-v2-flash:free → z-ai/glm-4.5-air:free → openai/gpt-oss-20b:free)
+
+### Fixed
+
+- **UTF-8 Handling**: Fixed panic when processing Git commits with multi-byte UTF-8 characters (e.g., ✅ emoji)
+- **Tauri Version Alignment**: Aligned npm and Rust crate versions to prevent compatibility warnings
+
 ## [0.1.0-alpha] - 2025-12-24
 
 ### Overview
