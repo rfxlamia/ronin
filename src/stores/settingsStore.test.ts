@@ -107,4 +107,19 @@ describe('API key security — key must not be stored in plain state', () => {
         const state = useSettingsStore.getState() as unknown as Record<string, unknown>;
         expect(state['apiKey']).toBeUndefined();
     });
+
+    it('accepts keys that do not start with sk-or-v1- prefix', async () => {
+        const mockInvoke = vi.mocked(invoke);
+        mockInvoke.mockResolvedValue(undefined);
+
+        const result = await useSettingsStore.getState().saveApiKey('sk-ant-abc123');
+
+        expect(result).toBe(true);
+        expect(mockInvoke).toHaveBeenCalledWith('set_api_key', { key: 'sk-ant-abc123' });
+    });
+
+    it('rejects empty or whitespace-only key', async () => {
+        const result = await useSettingsStore.getState().saveApiKey('   ');
+        expect(result).toBe(false);
+    });
 });
