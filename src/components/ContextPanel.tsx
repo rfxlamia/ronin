@@ -240,6 +240,13 @@ function ErrorDisplay({ parsedError, onRetry, cachedText, cachedAttribution }: E
 }
 
 export function ContextPanel({ state, text, attribution, error, parsedError, onRetry, cachedText, cachedAttribution, className }: ContextPanelProps) {
+    // Memoize markdown rendering to prevent re-parsing on state changes
+    // Must be before early returns to follow Rules of Hooks
+    const markdownContent = useMemo(() => {
+        if (!text) return null;
+        return <ReactMarkdown>{text}</ReactMarkdown>;
+    }, [text]);
+
     if (state === 'idle') return null;
 
     // Show error state with enhanced UI
@@ -263,11 +270,6 @@ export function ContextPanel({ state, text, attribution, error, parsedError, onR
     }
 
     // Streaming and complete states share the same DOM structure to prevent remounting
-    // Memoize markdown rendering to prevent re-parsing on state changes
-    const markdownContent = useMemo(() => {
-        if (!text) return null;
-        return <ReactMarkdown>{text}</ReactMarkdown>;
-    }, [text]);
 
     return (
         <div className={cn("p-4 bg-card max-h-[400px] overflow-auto will-change-scroll", className)}>
