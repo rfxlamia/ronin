@@ -98,6 +98,9 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+
+  /* Layout Spacing */
+  --spacing-header: 73px;
 }
 
 /* ===== ROOT CSS VARIABLES ===== */

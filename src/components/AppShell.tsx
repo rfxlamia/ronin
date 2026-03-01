@@ -45,7 +45,7 @@ export function AppShell({ children }: AppShellProps) {
             </header>
 
             {/* Main Content Area - Padding for fixed header */}
-            <main className="flex-1 overflow-auto animate-fade-in pt-[73px]">
+            <main className="flex-1 overflow-auto animate-fade-in pt-header">
                 {children}
             </main>
         </div>
