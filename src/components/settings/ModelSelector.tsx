@@ -50,14 +50,20 @@ export function ModelSelector({
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {models.map((model) => (
-            <SelectItem key={model.id} value={model.id}>
-              <div className="flex flex-col">
-                <span>{model.name}</span>
-                <span className="text-xs text-muted-foreground">{model.id}</span>
-              </div>
-            </SelectItem>
-          ))}
+          {models.length === 0 ? (
+            <div className="py-4 text-center text-sm text-muted-foreground">
+              {isLoading ? 'Loading models...' : 'No models found'}
+            </div>
+          ) : (
+            models.map((model) => (
+              <SelectItem key={model.id} value={model.id}>
+                <div className="flex flex-col">
+                  <span>{model.name}</span>
+                  <span className="text-xs text-muted-foreground">{model.id}</span>
+                </div>
+              </SelectItem>
+            ))
+          )}
         </SelectContent>
       </Select>
     </div>
