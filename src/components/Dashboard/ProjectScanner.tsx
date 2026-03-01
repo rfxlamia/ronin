@@ -60,34 +60,29 @@ export const ProjectScanner = ({ onImportComplete }: ProjectScannerProps) => {
   const handleImportSelected = async () => {
     if (selectedProjects.size === 0) return;
 
-    try {
-      const importedProjects: Project[] = [];
+    const results = await Promise.allSettled(
+      [...selectedProjects].map(async (path) => {
+        const project: Project = await invoke('add_project', { path });
+        addProject(project);
+        return project;
+      })
+    );
 
-      // Import each selected project
-      for (const path of selectedProjects) {
-        try {
-          // Use the existing add_project command which handles resurrection of soft-deleted projects
-          const project: Project = await invoke('add_project', { path });
-          importedProjects.push(project);
-          // Add to store immediately so Dashboard updates
-          addProject(project);
-        } catch (err) {
-          console.error(`Failed to import project at ${path}:`, err);
-          // Continue with other projects even if one fails
-        }
-      }
+    const failed = results.filter((r) => r.status === 'rejected');
+    const succeeded = results
+      .filter((r): r is PromiseFulfilledResult<Project> => r.status === 'fulfilled')
+      .map((r) => r.value);
 
-      if (onImportComplete) {
-        onImportComplete(importedProjects);
-      }
+    if (failed.length > 0) {
+      setError(`${failed.length} project(s) failed to import. ${succeeded.length} succeeded.`);
+    }
 
-      // Reset the scanner after successful import
+    if (succeeded.length > 0) {
+      onImportComplete?.(succeeded);
       setScannedProjects([]);
       setSelectedProjects(new Set());
-    } catch (err) {
-      console.error('Error importing projects:', err);
-      setError('Failed to import selected projects. Please try again.');
     }
+    // Jika semua gagal: scanner tetap terbuka agar user bisa retry
   };
 
   return (

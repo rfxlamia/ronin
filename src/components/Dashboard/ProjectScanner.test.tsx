@@ -290,6 +290,50 @@ describe('ProjectScanner', () => {
                 ]);
             });
         });
+
+        it('shows error count when some imports fail but others succeed', async () => {
+            const mockProjects = [
+                { path: '/home/user/projects/p1', name: 'p1' },
+                { path: '/home/user/projects/p2', name: 'p2' },
+                { path: '/home/user/projects/p3', name: 'p3' },
+            ];
+
+            mockInvoke
+                .mockResolvedValueOnce(mockProjects) // scan_projects
+                .mockRejectedValueOnce(new Error('Disk error'))  // p1 fails
+                .mockResolvedValueOnce({ id: 2, path: '/home/user/projects/p2', name: 'p2', type: 'git', created_at: '', updated_at: '' })
+                .mockResolvedValueOnce({ id: 3, path: '/home/user/projects/p3', name: 'p3', type: 'git', created_at: '', updated_at: '' });
+
+            render(<ProjectScanner />);
+            fireEvent.click(getScanButton());
+            await waitFor(() => { expect(screen.getByText('p1')).toBeInTheDocument(); });
+
+            fireEvent.click(screen.getByRole('button', { name: /Import Selected/ }));
+
+            await waitFor(() => {
+                expect(screen.getByText(/1 project\(s\) failed to import/)).toBeInTheDocument();
+            });
+        });
+
+        it('keeps scanner open when ALL imports fail', async () => {
+            const mockProjects = [{ path: '/home/user/projects/p1', name: 'p1' }];
+
+            mockInvoke
+                .mockResolvedValueOnce(mockProjects)
+                .mockRejectedValueOnce(new Error('Disk error'));
+
+            render(<ProjectScanner />);
+            fireEvent.click(getScanButton());
+            await waitFor(() => { expect(screen.getByText('p1')).toBeInTheDocument(); });
+
+            fireEvent.click(screen.getByRole('button', { name: /Import Selected/ }));
+
+            await waitFor(() => {
+                // Scanner list masih terlihat (tidak direset)
+                expect(screen.getByText('p1')).toBeInTheDocument();
+                expect(screen.getByText(/failed to import/)).toBeInTheDocument();
+            });
+        });
     });
 
     describe('Accessibility', () => {
