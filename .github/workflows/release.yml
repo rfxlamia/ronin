@@ -69,6 +69,8 @@ jobs:
         run: cd src-tauri && cargo clean
 
       - name: Build app
+        env:
+          VITE_DEMO_LAMBDA_URL: ${{ secrets.VITE_DEMO_LAMBDA_URL }}
         run: npm run tauri build
 
       - name: Create Release
