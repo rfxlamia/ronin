@@ -15,10 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Selected model persisted to SQLite database
   - Fallback model chain (selected → xiaomi/mimo-v2-flash:free → z-ai/glm-4.5-air:free → openai/gpt-oss-20b:free)
 
+### Security
+
+- Fixed security vulnerabilities in demo mode proxy
+
 ### Fixed
 
-- **UTF-8 Handling**: Fixed panic when processing Git commits with multi-byte UTF-8 characters (e.g., ✅ emoji)
-- **Tauri Version Alignment**: Aligned npm and Rust crate versions to prevent compatibility warnings
+- Improved app stability and responsiveness
+- Smoother AI context loading with better error handling
+- Reduced unnecessary background operations
+- **Model Search Debounce**: Fixed lag when typing in OpenRouter model search input
+- **UTF-8 Handling**: Fixed panic when processing Git commits with emoji
+- **Tauri Version Alignment**: Fixed compatibility warnings
+- **Better Error Messages**: Import failures now show clearer details to help diagnose issues
+- **Improved Model Selector**: Added helpful empty states when no models are found
+- **Date Display**: Fixed edge cases where dates might display incorrectly
+- **Wider API Key Support**: Accepts more API key formats from different providers
 
 ## [0.1.0-alpha] - 2025-12-24
 
