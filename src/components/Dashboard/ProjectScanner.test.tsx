@@ -312,6 +312,7 @@ describe('ProjectScanner', () => {
 
             await waitFor(() => {
                 expect(screen.getByText(/1 project\(s\) failed to import/)).toBeInTheDocument();
+                expect(screen.getByText(/Disk error/)).toBeInTheDocument();
             });
         });
 

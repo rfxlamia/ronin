@@ -74,7 +74,13 @@ export const ProjectScanner = ({ onImportComplete }: ProjectScannerProps) => {
       .map((r) => r.value);
 
     if (failed.length > 0) {
-      setError(`${failed.length} project(s) failed to import. ${succeeded.length} succeeded.`);
+      const failedReasons = failed
+        .map((r) => (r.reason instanceof Error ? r.reason.message : String(r.reason)))
+        .filter((msg, idx, arr) => arr.indexOf(msg) === idx); // deduplicate
+      setError(
+        `${failed.length} project(s) failed to import. ${succeeded.length} succeeded.` +
+        (failedReasons.length > 0 ? ` Errors: ${failedReasons.join(', ')}` : '')
+      );
     }
 
     if (succeeded.length > 0) {

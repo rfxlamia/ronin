@@ -31,7 +31,7 @@ describe('ModelSelector', () => {
   // Empty state is implemented but requires e2e testing for full verification
   it.skip('shows "No models found" when models array is empty and not loading', () => {
     // Skipped due to Radix Select jsdom limitations
-    // Implementation verified in ModelSelector.tsx line 53-55
+    // Implementation verified in ModelSelector.tsx line 53-56
   });
 
   it('shows "Loading models..." when models array is empty and isLoading is true', () => {
