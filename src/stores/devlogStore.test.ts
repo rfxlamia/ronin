@@ -171,4 +171,24 @@ describe('devlogStore', () => {
     expect(state.lastKnownMtime).toBeNull();
     expect(state.cursorPosition).toEqual({ line: 1, column: 1 });
   });
+
+  describe('cacheVersion', () => {
+    it('implements true LRU — evicts least recently accessed, not least recently inserted', () => {
+      // Fill cache to 10 items
+      for (let i = 1; i <= 10; i++) {
+        useDevlogStore.getState().cacheVersion(`hash${i}`, `content${i}`);
+      }
+
+      // Access hash1 to make it recently used
+      useDevlogStore.getState().cacheVersion('hash1', 'content1-updated');
+
+      // Add item 11 — should evict hash2 (LRU), not hash1
+      useDevlogStore.getState().cacheVersion('hash11', 'content11');
+
+      const cache = useDevlogStore.getState().versionCache;
+      expect(Object.keys(cache)).toContain('hash1');  // recently used → kept
+      expect(Object.keys(cache)).not.toContain('hash2'); // LRU → evicted
+      expect(Object.keys(cache)).toContain('hash11'); // newest → kept
+    });
+  });
 });

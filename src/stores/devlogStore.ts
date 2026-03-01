@@ -162,14 +162,14 @@ export const useDevlogStore = create<DevlogStore>((set) => ({
   setViewMode: (viewMode) => set({ viewMode }),
 
   cacheVersion: (hash, content) => set((state) => {
-    const newCache = { ...state.versionCache, [hash]: content };
-    // LRU-like eviction (simple implementation: remove oldest key)
-    const keys = Object.keys(newCache);
-    if (keys.length > 10) {
-      const keyToRemove = keys[0];
-      delete newCache[keyToRemove];
+    // Map preserves insertion order — delete then re-insert = move to end (most recently used)
+    const cache = new Map(Object.entries(state.versionCache));
+    cache.delete(hash);
+    cache.set(hash, content);
+    if (cache.size > 10) {
+      cache.delete(cache.keys().next().value!); // evict least recently used (first entry)
     }
-    return { versionCache: newCache };
+    return { versionCache: Object.fromEntries(cache) };
   }),
 
   selectVersion: (selectedVersionHash) => set({ selectedVersionHash }),
