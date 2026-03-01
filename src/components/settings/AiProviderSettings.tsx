@@ -68,13 +68,19 @@ export function AiProviderSettings() {
     }
   }, [defaultProvider, getApiKeyStatus]);
 
-  // Load OpenRouter models and selected model when provider is openrouter
+  // Effect 1: Load selected model hanya saat provider berubah
   useEffect(() => {
     if (defaultProvider === 'openrouter') {
       void loadProviderModel('openrouter');
+    }
+  }, [defaultProvider, loadProviderModel]);
+
+  // Effect 2: Load model list saat search query berubah
+  useEffect(() => {
+    if (defaultProvider === 'openrouter') {
       void loadOpenRouterModels(debouncedModelQuery);
     }
-  }, [defaultProvider, loadProviderModel, loadOpenRouterModels, debouncedModelQuery]);
+  }, [defaultProvider, loadOpenRouterModels, debouncedModelQuery]);
 
   const handleProviderChange = useCallback(
     async (providerId: string) => {

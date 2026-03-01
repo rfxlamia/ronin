@@ -187,4 +187,39 @@ describe('AiProviderSettings model search', () => {
     expect(loadOpenRouterModels).toHaveBeenCalledTimes(1);
     expect(loadOpenRouterModels).toHaveBeenCalledWith('gpt');
   });
+
+  it('does NOT call loadProviderModel when model search query changes', async () => {
+    const loadProviderModel = vi.fn().mockResolvedValue(undefined);
+    const loadOpenRouterModels = vi.fn().mockResolvedValue(undefined);
+    const loadProviders = vi.fn().mockResolvedValue(undefined);
+
+    useAiStore.setState({
+      loadProviders,
+      loadProviderModel,
+      loadOpenRouterModels,
+      defaultProvider: 'openrouter',
+    });
+
+    render(<AiProviderSettings />);
+
+    // Advance timers to let initial effects run
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+
+    // Clear call count after initial mount
+    loadProviderModel.mockClear();
+
+    // Simulate typing in model search (triggers debouncedModelQuery change)
+    const searchInput = screen.getByTestId('model-search');
+    fireEvent.change(searchInput, { target: { value: 'gpt' } });
+
+    // After debounce, loadOpenRouterModels should be called but NOT loadProviderModel
+    act(() => {
+      vi.advanceTimersByTime(400); // wait for debounce (300ms)
+    });
+
+    expect(loadProviderModel).not.toHaveBeenCalled(); // not called on search
+    expect(loadOpenRouterModels).toHaveBeenCalledWith('gpt');
+  });
 });
