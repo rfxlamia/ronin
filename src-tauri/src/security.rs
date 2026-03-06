@@ -47,6 +47,15 @@ pub fn get_or_create_key() -> Result<[u8; 32], String> {
                 .map_err(|e| format!("Failed to set key file permissions: {}", e))?;
         }
 
+        #[cfg(windows)]
+        {
+            // Windows does not support Unix-style permissions.
+            // The key file is protected by being in the user's AppData directory
+            // and the key itself is used for AES-256-GCM encryption at rest.
+            // For production hardening, consider using Windows DPAPI or ACLs.
+            eprintln!("[security] Key file created without explicit ACL restriction on Windows. File is in user-specific AppData directory.");
+        }
+
         Ok(key)
     }
 }
