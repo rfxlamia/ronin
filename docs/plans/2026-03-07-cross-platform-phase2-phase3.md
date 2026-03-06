@@ -14,69 +14,25 @@
 
 ## Phase 2: Polished Cross-Platform UX
 
-### Task 1: Create platform shortcut helper utility
+### Task 1: Verify platform shortcut helper utility exists
+
+> **NOTE:** `src/lib/platform.ts` already exists (created in Phase 1) with `getModifierSymbol()` and `formatShortcut()`. This task is verification-only.
 
 **Files:**
-- Create: `src/lib/platform.ts`
+- Verify: `src/lib/platform.ts` (already exists with 42 lines)
 - Reference: `src/stores/platformStore.ts` (exists, has `os` field and `isMacOS()` etc.)
 
-**Step 1: Create the utility file**
+**Step 1: Verify the file exists and exports are correct**
 
-```typescript
-// src/lib/platform.ts
-import { usePlatformStore } from '@/stores/platformStore';
-
-/**
- * Returns the platform-appropriate modifier key label.
- * macOS: uses symbols (⌘, ⌥, ⇧)
- * Linux/Windows: uses text (Ctrl, Alt, Shift)
- */
-export function getModifierSymbol(modifier: 'ctrl' | 'shift' | 'alt'): string {
-    const os = usePlatformStore.getState().os;
-    if (os === 'macos') {
-        switch (modifier) {
-            case 'ctrl': return '⌘';
-            case 'shift': return '⇧';
-            case 'alt': return '⌥';
-        }
-    }
-    switch (modifier) {
-        case 'ctrl': return 'Ctrl';
-        case 'shift': return 'Shift';
-        case 'alt': return 'Alt';
-    }
-}
-
-/**
- * Formats a shortcut string for the current platform.
- * Example: formatShortcut('Ctrl', 'Shift', 'D')
- *   macOS -> "⌘⇧D"
- *   Linux/Windows -> "Ctrl+Shift+D"
- */
-export function formatShortcut(...keys: string[]): string {
-    const os = usePlatformStore.getState().os;
-    const mapped = keys.map(k => {
-        const lower = k.toLowerCase();
-        if (lower === 'ctrl' || lower === 'cmd') return getModifierSymbol('ctrl');
-        if (lower === 'shift') return getModifierSymbol('shift');
-        if (lower === 'alt' || lower === 'option') return getModifierSymbol('alt');
-        return k;
-    });
-    return os === 'macos' ? mapped.join('') : mapped.join('+');
-}
-```
+Run: `grep -n "export function" src/lib/platform.ts`
+Expected: `getModifierSymbol` and `formatShortcut` both exported.
 
 **Step 2: Verify TypeScript compiles**
 
 Run: `npx tsc --noEmit`
 Expected: No errors
 
-**Step 3: Commit**
-
-```bash
-git add src/lib/platform.ts
-git commit -m "feat: add platform-aware shortcut label utility"
-```
+No commit needed — file already exists.
 
 ---
 
@@ -84,7 +40,7 @@ git commit -m "feat: add platform-aware shortcut label utility"
 
 **Files:**
 - Modify: `src/components/devlog/DevlogButton.tsx:39` (aria-label)
-- Modify: `src/components/Dashboard/GitControls.tsx:188` (push tooltip)
+- Modify: `src/components/Dashboard/GitControls.tsx:188` (push tooltip — currently hardcoded to macOS `⌘⇧P`)
 
 **Step 1: Update DevlogButton**
 
@@ -96,6 +52,8 @@ In `src/components/devlog/DevlogButton.tsx`:
   ```
 
 **Step 2: Update GitControls**
+
+> **Note:** GitControls L188 currently has hardcoded macOS symbol `⌘⇧P`, while DevlogButton L39 has text `Ctrl+Shift+D`. Both are wrong — they should use `formatShortcut()` for dynamic platform-aware rendering.
 
 In `src/components/Dashboard/GitControls.tsx`:
 - Add import: `import { formatShortcut } from '@/lib/platform';`
@@ -131,7 +89,9 @@ git commit -m "feat: use platform-aware shortcut labels in DevlogButton and GitC
 
 **Step 1: Add metaKey test cases**
 
-Read `src/hooks/useHotkeys.test.ts` first to understand the existing pattern. Then add these tests after the existing test cases:
+Read `src/hooks/useHotkeys.test.ts` first to understand the existing pattern (uses `renderHook` + `addEventListenerSpy`). The new tests below use `document.dispatchEvent` which also works because `useHotkeys` registers a `document.addEventListener('keydown', ...)` handler. Verify both approaches trigger the handler before committing.
+
+Add these tests after the existing test cases:
 
 ```typescript
 it('should fire callback when metaKey is pressed instead of ctrlKey (macOS Cmd)', () => {
@@ -193,12 +153,14 @@ const handleOpenExtensions = () => {
 };
 ```
 
-With:
+With (using static import to match pattern in `ApiKeyInput.tsx`):
 
 ```tsx
+import { openUrl } from '@tauri-apps/plugin-opener';
+
+// ... then in the handler:
 const handleOpenExtensions = async () => {
     try {
-        const { openUrl } = await import('@tauri-apps/plugin-opener');
         await openUrl('https://extensions.gnome.org/');
     } catch {
         // Fallback for dev mode / browser testing
@@ -206,6 +168,8 @@ const handleOpenExtensions = async () => {
     }
 };
 ```
+
+> **Note:** `ApiKeyInput.tsx` uses static import `import { openUrl } from '@tauri-apps/plugin-opener'` (L13). Use the same pattern here for consistency. The try/catch handles the dev-mode fallback gracefully.
 
 **Step 2: Verify TypeScript compiles**
 
@@ -228,7 +192,9 @@ git commit -m "fix: use Tauri opener plugin instead of window.open for GNOME Ext
 
 **Step 1: Find and update the inotify error handling**
 
-Search for `inotify` in `src-tauri/src/observer/watcher.rs`. Wrap the Linux-specific error hint in `#[cfg(target_os = "linux")]` and add a generic fallback:
+Search for `inotify` in `src-tauri/src/observer/watcher.rs`. Wrap the Linux-specific error hint in `#[cfg(target_os = "linux")]` and add a generic fallback.
+
+> **Important:** Both `#[cfg]` blocks below are mutually exclusive compile-time substitutions — only one compiles per target. They must be placed at the same scope level, **replacing** the original `if` block (not wrapping it).
 
 ```rust
 // Before (approximately):
@@ -284,9 +250,11 @@ After the existing `#[cfg(unix)]` block (around line 48), add:
     // The key file is protected by being in the user's AppData directory
     // and the key itself is used for AES-256-GCM encryption at rest.
     // For production hardening, consider using Windows DPAPI or ACLs.
-    eprintln!("[security] Note: Key file created without explicit ACL restriction on Windows. File is in user-specific AppData directory.");
+    log::warn!("[security] Key file created without explicit ACL restriction on Windows. File is in user-specific AppData directory.");
 }
 ```
+
+> **Note:** Using `log::warn!` instead of `eprintln!` for consistency with codebase logging patterns. `eprintln!` would fire on every key file creation and flood stderr.
 
 **Step 2: Verify Rust compiles**
 
@@ -373,6 +341,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
+            libxdo-dev \
             build-essential \
             curl \
             wget \
@@ -472,25 +441,17 @@ git commit -m "ci: add cross-platform cargo check for macOS and Windows"
 
 ---
 
-### Task 9: Verify bundle target config
+### Task 9: Verify bundle target config (merged into Phase 3 gate)
 
-**Files:**
-- Reference: `src-tauri/tauri.conf.json` (already has `"targets": "all"`)
-- Reference: `src-tauri/tauri.macos.conf.json` (created in Phase 1)
+> **NOTE:** This is a verification-only task — no code changes needed. Can be combined with the Phase 3 Verification Gate below.
 
-**Step 1: Verify configs**
-
-Read both files and confirm:
-1. `tauri.conf.json` has `"bundle": { "targets": "all" }` -- this tells Tauri to produce all formats the build OS supports
-2. `tauri.macos.conf.json` correctly overrides window settings without conflicting with bundle config
-3. Icon files referenced in `tauri.conf.json` (`icons/icon.icns`, `icons/icon.ico`, PNG files) all exist in `src-tauri/icons/`
-
-**Step 2: Verify icons exist**
+**Verify configs:**
+1. `src-tauri/tauri.conf.json` has `"bundle": { "targets": "all" }` — produces all formats per build OS
+2. `src-tauri/tauri.macos.conf.json` (created in Phase 1) overrides window settings without conflicting with bundle config
+3. Icon files referenced in `tauri.conf.json` all exist in `src-tauri/icons/`
 
 Run: `ls -la src-tauri/icons/icon.icns src-tauri/icons/icon.ico src-tauri/icons/32x32.png src-tauri/icons/128x128.png src-tauri/icons/128x128@2x.png`
 Expected: All files exist
-
-No code changes needed -- this is a verification-only task.
 
 ---
 
@@ -508,12 +469,12 @@ The full verification requires actually pushing a tag and watching CI run. For l
 
 | Task | Description | Phase |
 |------|-------------|-------|
-| 1 | Create `src/lib/platform.ts` shortcut helper | 2 |
+| 1 | ~~Create~~ Verify `src/lib/platform.ts` shortcut helper (already exists) | 2 |
 | 2 | Apply shortcut labels to DevlogButton + GitControls | 2 |
 | 3 | Add metaKey test cases to useHotkeys.test.ts | 2 |
-| 4 | Replace window.open with Tauri opener plugin | 2 |
-| 5 | Platform-aware watcher error messages | 2 |
-| 6 | Windows encryption key file warning | 2 |
-| 7 | Convert release.yml to build matrix | 3 |
+| 4 | Replace window.open with Tauri opener plugin (static import) | 2 |
+| 5 | Platform-aware watcher error messages (`#[cfg]` scoping) | 2 |
+| 6 | Windows encryption key file warning (`log::warn!`) | 2 |
+| 7 | Convert release.yml to build matrix (+`libxdo-dev`) | 3 |
 | 8 | Add cross-platform cargo check to CI | 3 |
-| 9 | Verify bundle target config | 3 |
+| 9 | Verify bundle target config (verification-only) | 3 |
