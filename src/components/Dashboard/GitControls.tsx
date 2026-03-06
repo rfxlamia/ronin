@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { GitCommitHorizontal, Upload, Loader2 } from 'lucide-react';
+import { GitCommitHorizontal, Upload, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -22,7 +22,7 @@ interface GitControlsProps {
     status: GitDisplayStatus | null;
 }
 
-type Mode = 'idle' | 'editing' | 'submitting';
+type Mode = 'idle' | 'editing' | 'submitting' | 'generating';
 
 export function GitControls({ project, onSuccess, status }: GitControlsProps) {
     const [mode, setMode] = useState<Mode>('idle');
@@ -143,6 +143,24 @@ export function GitControls({ project, onSuccess, status }: GitControlsProps) {
         setMode('idle');
     };
 
+    const handleGenerate = async () => {
+        setMode('generating');
+        try {
+            const generated = await invoke<string>('generate_commit_message', {
+                projectPath: project.path,
+            });
+            setMessage(generated);
+            setMode('editing');
+            // Autofocus textarea setelah generate
+            setTimeout(() => textareaRef.current?.focus(), 0);
+        } catch (error) {
+            const errorMessage = String(error);
+            toast.error(`Could not generate: ${errorMessage}`, { duration: 5000 });
+            setMode('editing');
+            // message TIDAK di-clear — draft manual user tetap ada
+        }
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         // Enter without Shift (includes Cmd/Ctrl+Enter): submit
         // Shift+Enter is NOT prevented, allowing new lines
@@ -246,12 +264,26 @@ export function GitControls({ project, onSuccess, status }: GitControlsProps) {
                 onKeyDown={handleKeyDown}
                 placeholder={placeholderText}
                 className="min-h-[60px] font-sans text-sm resize-none"
-                disabled={mode === 'submitting' || hasConflicts}
+                disabled={mode === 'submitting' || mode === 'generating' || hasConflicts}
             />
             <div className="flex gap-2">
                 <Button
+                    onClick={handleGenerate}
+                    disabled={mode === 'generating' || mode === 'submitting'}
+                    variant="outline"
+                    size="sm"
+                    title="Generate commit message with AI"
+                    className="font-serif"
+                >
+                    {mode === 'generating' ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                        <Sparkles className="h-4 w-4" />
+                    )}
+                </Button>
+                <Button
                     onClick={handleCommit}
-                    disabled={!message.trim() || mode === 'submitting' || hasConflicts}
+                    disabled={!message.trim() || mode === 'submitting' || mode === 'generating' || hasConflicts}
                     size="sm"
                     className="flex-1 font-serif"
                     title={hasConflicts ? 'Cannot commit with conflicts' : ''}
@@ -269,7 +301,7 @@ export function GitControls({ project, onSuccess, status }: GitControlsProps) {
                     onClick={handleCancel}
                     variant="outline"
                     size="sm"
-                    disabled={mode === 'submitting'}
+                    disabled={mode === 'submitting' || mode === 'generating'}
                     className="font-serif"
                 >
                     Cancel
