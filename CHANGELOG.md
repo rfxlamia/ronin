@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **AI-Generated Commit Messages**: Sparkle button in commit editor for AI-powered commit message generation
+  - Analyzes `git diff HEAD` to understand changes
+  - Uses configured AI provider (OpenRouter or Demo mode)
+  - Follows conventional commits format (feat:, fix:, chore:, etc.)
+  - Enforces 72-character limit with smart truncation
+  - Non-streaming response for instant results
+  - Preserves manual draft on error
+
 - **OpenRouter Model Selection**: Users can now choose specific OpenRouter models in Settings
   - Searchable model picker with real-time filtering
   - Model list fetched from OpenRouter `/api/v1/models` API
