@@ -23,7 +23,7 @@ interface MarkdownEditorProps {
 // Custom keymap for markdown shortcuts
 const markdownKeymap = keymap.of([
   {
-    key: 'Ctrl-b',
+    key: 'Mod-b',
     run: (view) => {
       const { from, to } = view.state.selection.main;
       const selectedText = view.state.sliceDoc(from, to);
@@ -35,7 +35,7 @@ const markdownKeymap = keymap.of([
     },
   },
   {
-    key: 'Ctrl-i',
+    key: 'Mod-i',
     run: (view) => {
       const { from, to } = view.state.selection.main;
       const selectedText = view.state.sliceDoc(from, to);

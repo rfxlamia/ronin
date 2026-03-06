@@ -23,6 +23,7 @@ use std::process::{Child, Command};
 use std::sync::Arc;
 use tokio::io::AsyncBufReadExt;
 use tokio::io::BufReader;
+#[cfg(unix)]
 use tokio::net::UnixListener;
 use tokio::sync::Mutex;
 
@@ -32,6 +33,7 @@ pub struct ObserverManager {
     socket_path: PathBuf,
     is_running: Arc<Mutex<bool>>,
     // Story 6.5: Write-half of socket for sending settings to daemon
+    #[cfg(unix)]
     socket_write: Arc<Mutex<Option<tokio::net::unix::OwnedWriteHalf>>>,
 }
 
@@ -45,8 +47,9 @@ impl ObserverManager {
     pub fn new() -> Self {
         Self {
             daemon_process: Arc::new(Mutex::new(None)),
-            socket_path: PathBuf::from("/tmp/ronin-observer.sock"),
+            socket_path: std::env::temp_dir().join("ronin-observer.sock"),
             is_running: Arc::new(Mutex::new(false)),
+            #[cfg(unix)]
             socket_write: Arc::new(Mutex::new(None)), // Story 6.5
         }
     }
@@ -130,7 +133,7 @@ impl ObserverManager {
             eprintln!("[observer-manager] Stopping daemon (PID: {})", child.id());
 
             // Try graceful shutdown first
-            #[cfg(unix)]
+            #[cfg(target_os = "linux")]
             {
                 // Send SIGTERM
                 unsafe {
@@ -161,7 +164,7 @@ impl ObserverManager {
                     .map_err(|e| format!("Failed to kill daemon: {}", e))?;
             }
 
-            #[cfg(not(unix))]
+            #[cfg(not(target_os = "linux"))]
             {
                 child
                     .kill()
@@ -187,6 +190,7 @@ impl ObserverManager {
 
     /// Send settings update to daemon (Story 6.5)
     /// Settings sync happens live without restart
+    #[cfg(unix)]
     pub async fn send_settings_update(
         &self,
         settings: crate::observer::types::SettingsUpdate,
@@ -228,7 +232,17 @@ impl ObserverManager {
         }
     }
 
+    #[cfg(not(unix))]
+    pub async fn send_settings_update(
+        &self,
+        _settings: crate::observer::types::SettingsUpdate,
+    ) -> Result<(), String> {
+        eprintln!("[observer-manager] Settings update not supported on this platform");
+        Ok(())
+    }
+
     /// Background task to handle IPC messages from daemon
+    #[cfg(unix)]
     async fn handle_ipc_messages(
         listener: UnixListener,
         db_pool: crate::db::DbPool,
@@ -501,7 +515,7 @@ mod tests {
         assert!(!manager.is_running().await);
         assert_eq!(
             manager.socket_path,
-            std::path::PathBuf::from("/tmp/ronin-observer.sock")
+            std::env::temp_dir().join("ronin-observer.sock")
         );
     }
 

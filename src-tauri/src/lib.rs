@@ -130,6 +130,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             greet,
+            commands::platform::get_platform_info,
             commands::aggregator::get_project_context,
             commands::projects::add_project,
             commands::projects::get_projects,

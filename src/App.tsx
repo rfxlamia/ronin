@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@/components/theme-provider';
 import { RoninLoader } from '@/components/RoninLoader';
@@ -9,10 +9,17 @@ import { TestContextPanel } from '@/pages/TestContextPanel';
 import { DevlogButton } from '@/components/devlog/DevlogButton';
 import { DevlogModal } from '@/components/devlog/DevlogModal';
 import { Toaster } from 'sonner';
+import { usePlatformStore } from '@/stores/platformStore';
 
 function App() {
   const [loadingComplete, setLoadingComplete] = useState(false);
   const handleLoadingComplete = useCallback(() => setLoadingComplete(true), []);
+  const initPlatform = usePlatformStore((s) => s.init);
+
+  // Initialize platform detection early (during loading screen)
+  useEffect(() => {
+    initPlatform();
+  }, [initPlatform]);
 
   if (!loadingComplete) {
     return (

@@ -43,15 +43,15 @@ pub fn init_db() -> Result<DbPool, String> {
 }
 
 /// Get the database file path
-/// TODO: Accept AppHandle and use Tauri's app_data_dir() for proper cross-platform support
+/// Uses dirs::data_dir() for cross-platform support:
+///   Linux:   ~/.local/share/ronin/ronin.db
+///   macOS:   ~/Library/Application Support/ronin/ronin.db
+///   Windows: C:\Users\<name>\AppData\Roaming\ronin\ronin.db
 fn get_db_path() -> Result<PathBuf, String> {
-    let home =
-        std::env::var("HOME").map_err(|_| "Could not determine HOME directory".to_string())?;
+    let data_dir =
+        dirs::data_dir().ok_or_else(|| "Could not determine data directory".to_string())?;
 
-    let db_dir = PathBuf::from(home)
-        .join(".local")
-        .join("share")
-        .join("ronin");
+    let db_dir = data_dir.join("ronin");
 
     Ok(db_dir.join("ronin.db"))
 }

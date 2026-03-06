@@ -1029,7 +1029,8 @@ pub async fn scan_projects<R: tauri::Runtime>(
         .map_err(|e| format!("Failed to get home directory: {}", e))?;
 
     // Common project locations - include both cases and variations
-    let scan_paths = [
+    #[allow(unused_mut)] // mut needed for platform-specific pushes on macOS/Windows
+    let mut scan_paths = vec![
         // Standard variations (case-sensitive on Linux)
         home_dir.join("Projects"),
         home_dir.join("projects"),
@@ -1046,6 +1047,18 @@ pub async fn scan_projects<R: tauri::Runtime>(
         home_dir.join("git"),
         home_dir.join(".local").join("share"),
     ];
+
+    // macOS-specific paths
+    #[cfg(target_os = "macos")]
+    {
+        scan_paths.push(home_dir.join("Developer"));
+    }
+    // Windows-specific paths
+    #[cfg(target_os = "windows")]
+    {
+        scan_paths.push(home_dir.join("source").join("repos"));
+        scan_paths.push(home_dir.join("Documents"));
+    }
 
     // Use spawn_blocking to run the synchronous walkdir operations
     task::spawn_blocking(move || {

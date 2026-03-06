@@ -162,12 +162,12 @@ pub async fn run_x11_observer() -> Result<(), Box<dyn std::error::Error>> {
     eprintln!("[observer] Atoms initialized");
 
     // Connect to Unix socket (retry with backoff if main app isn't ready yet)
-    let socket_path = "/tmp/ronin-observer.sock";
+    let socket_path = std::env::temp_dir().join("ronin-observer.sock");
     let mut socket = None;
     for attempt in 1..=5 {
-        match UnixStream::connect(socket_path).await {
+        match UnixStream::connect(&socket_path).await {
             Ok(stream) => {
-                eprintln!("[observer] Connected to Unix socket: {}", socket_path);
+                eprintln!("[observer] Connected to Unix socket: {:?}", socket_path);
                 socket = Some(stream);
                 break;
             }

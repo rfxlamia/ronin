@@ -85,12 +85,12 @@ pub async fn run_wayland_observer() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Connect to Unix socket (retry with backoff if main app isn't ready yet)
-    let socket_path = "/tmp/ronin-observer.sock";
+    let socket_path = std::env::temp_dir().join("ronin-observer.sock");
     let mut socket = None;
     for attempt in 1..=5 {
-        match UnixStream::connect(socket_path).await {
+        match UnixStream::connect(&socket_path).await {
             Ok(stream) => {
-                eprintln!("[observer] Connected to Unix socket: {}", socket_path);
+                eprintln!("[observer] Connected to Unix socket: {:?}", socket_path);
                 socket = Some(stream);
                 break;
             }
@@ -236,10 +236,10 @@ pub async fn run_wayland_observer() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Send an "extension_missing" event to the main app
 async fn send_extension_missing_event() -> Result<(), Box<dyn std::error::Error>> {
-    let socket_path = "/tmp/ronin-observer.sock";
+    let socket_path = std::env::temp_dir().join("ronin-observer.sock");
 
     // Try to connect to socket (might fail if app isn't running yet)
-    match UnixStream::connect(socket_path).await {
+    match UnixStream::connect(&socket_path).await {
         Ok(mut socket) => {
             let event = WindowEvent {
                 event_type: "extension_missing".to_string(),
@@ -356,8 +356,8 @@ mod tests {
     #[test]
     fn test_socket_path_constant() {
         // Verify the socket path is consistent with main app
-        let socket_path = "/tmp/ronin-observer.sock";
-        assert_eq!(socket_path, "/tmp/ronin-observer.sock");
+        let socket_path = std::env::temp_dir().join("ronin-observer.sock");
+        assert!(socket_path.ends_with("ronin-observer.sock"));
     }
 
     #[test]

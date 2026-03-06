@@ -55,7 +55,7 @@ export function ObserverDebugControls() {
                 {observerLoading ? 'Loading...' : (observerRunning ? 'Stop Daemon' : 'Start Daemon')}
             </Button>
             <p className="text-xs text-muted-foreground">
-                X11 window tracking for context recovery
+                Window tracking for context recovery
             </p>
         </div>
     );
