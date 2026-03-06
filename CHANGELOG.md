@@ -9,7 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **AI-Generated Commit Messages**: Sparkle button in commit editor for AI-powered commit message generation
+- **Cross-Platform Build Matrix**: Release pipeline now builds on Linux, macOS, and Windows using `tauri-apps/tauri-action`
+  - macOS universal binary (`universal-apple-darwin`) covering Intel + Apple Silicon
+  - Windows installer support
+  - Per-platform Cargo dependency caching for faster builds
+
+- **Cross-Platform CI**: GitHub Actions CI now runs `cargo check` on all 3 platforms (Linux, macOS, Windows) on every push/PR
+
+- **Platform-Aware Keyboard Shortcuts**: Shortcut labels now adapt per OS
+  - macOS: uses symbols (`⌘⇧D`, `⌘⇧P`)
+  - Linux/Windows: uses text (`Ctrl+Shift+D`, `Ctrl+Shift+P`)
+  - Applied to DevlogButton aria-label and GitControls push tooltip
+
+- **macOS Hotkey Support**: Global hotkeys now respond to `metaKey` (Cmd) in addition to `ctrlKey`, enabling native macOS keyboard shortcuts
+
+### Fixed
+
+- **Tauri Opener Plugin**: GNOME Extensions link now uses `@tauri-apps/plugin-opener` instead of `window.open` for correct cross-platform browser handling
+
+- **Platform-Aware File Watcher Errors**: Error messages for file watcher failures are now OS-specific
+  - Linux: hints to increase `fs.inotify.max_user_watches`
+  - macOS/Windows: generic watcher resource limit guidance
+
+- **Windows Security**: Added warning when encryption key file is created on Windows without explicit ACL restriction (informational — file is in user-specific AppData directory)
+
+### Security
+
+- Improved encryption key file handling awareness on Windows (see above)
+
+### AI-Generated Commit Messages
   - Analyzes `git diff HEAD` to understand changes
   - Uses configured AI provider (OpenRouter or Demo mode)
   - Follows conventional commits format (feat:, fix:, chore:, etc.)
