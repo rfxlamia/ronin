@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
+import { formatShortcut } from '@/lib/platform';
 import type { Project } from '@/types/project';
 import type { GitDisplayStatus } from '@/types/git';
 
@@ -185,7 +186,7 @@ export function GitControls({ project, onSuccess, status }: GitControlsProps) {
         if (status.isEmpty) return 'No commits to push yet';
         if (!status.hasRemote) return 'No remote configured';
         if (!hasUnpushedCommits) return 'No unpushed commits';
-        return 'Push to remote (⌘⇧P)';
+        return `Push to remote (${formatShortcut('Ctrl', 'Shift', 'P')})`;
     };
 
     if (mode === 'idle') {

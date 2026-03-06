@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useDevlogStore } from '@/stores/devlogStore';
 import { useProjectStore } from '@/stores/projectStore';
 import { useHotkeys } from '@/hooks/useHotkeys';
+import { formatShortcut } from '@/lib/platform';
 import { useCallback } from 'react';
 
 export function DevlogButton() {
@@ -36,7 +37,7 @@ export function DevlogButton() {
       onClick={handleOpen}
       size="icon-lg"
       className="fixed bottom-8 right-8 z-50 h-14 w-14 rounded-full bg-[#CC785C] text-white shadow-lg hover:bg-[#b86a50] focus-visible:ring-[#CC785C]/50"
-      aria-label="Open DEVLOG editor (Ctrl+Shift+D)"
+      aria-label={`Open DEVLOG editor (${formatShortcut('Ctrl', 'Shift', 'D')})`}
     >
       <NotebookPen className="size-6" />
     </Button>
