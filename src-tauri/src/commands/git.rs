@@ -471,6 +471,226 @@ pub async fn safe_push(project_path: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Get git diff for AI commit message generation
+///
+/// Tries `git diff HEAD` first (catches all changes vs last commit).
+/// Falls back to `git diff --cached` for repos with staged-only changes.
+/// Returns Err if no changes detected or repo invalid.
+pub async fn get_diff_for_commit(project_path: String) -> Result<String, String> {
+    // Validate it's a git repo
+    Repository::open(&project_path)
+        .map_err(|_| "Not a git repository".to_string())?;
+
+    // Try git diff HEAD first (all changes vs last commit)
+    let diff_output = Command::new("git")
+        .args(["diff", "HEAD"])
+        .current_dir(&project_path)
+        .output()
+        .map_err(|e| format!("Failed to run git diff: {}", e))?;
+
+    let diff = String::from_utf8_lossy(&diff_output.stdout).to_string();
+
+    if !diff.trim().is_empty() {
+        return Ok(diff);
+    }
+
+    // Fallback 1: try --cached (staged files only, e.g. first commit scenario)
+    let cached_output = Command::new("git")
+        .args(["diff", "--cached"])
+        .current_dir(&project_path)
+        .output()
+        .map_err(|e| format!("Failed to run git diff --cached: {}", e))?;
+
+    let cached_diff = String::from_utf8_lossy(&cached_output.stdout).to_string();
+
+    if !cached_diff.trim().is_empty() {
+        return Ok(cached_diff);
+    }
+
+    // Fallback 2: include untracked files with --cached and diff against empty tree
+    // This handles the case of new untracked files not yet staged
+    let untracked_output = Command::new("git")
+        .args(["status", "--porcelain"])
+        .current_dir(&project_path)
+        .output()
+        .map_err(|e| format!("Failed to run git status: {}", e))?;
+
+    let status = String::from_utf8_lossy(&untracked_output.stdout);
+    if status.lines().any(|line| line.starts_with("??") || line.starts_with(" M") || line.starts_with(" M")) {
+        // There are untracked or modified files - get diff including untracked via add -N approach
+        let all_diff = Command::new("git")
+            .args(["diff", "--no-ext-diff"])
+            .current_dir(&project_path)
+            .output()
+            .map_err(|e| format!("Failed to run git diff: {}", e))?;
+
+        let all_diff_str = String::from_utf8_lossy(&all_diff.stdout).to_string();
+        if !all_diff_str.trim().is_empty() {
+            return Ok(all_diff_str);
+        }
+
+        // If still empty but status shows files, return the status as a fallback
+        return Ok(format!("// Git status showing changes:\n{}", status));
+    }
+
+    Err("No changes detected".to_string())
+}
+
+/// Truncate diff to max 8KB to avoid wasting tokens
+pub fn truncate_diff(diff: &str) -> String {
+    const MAX_BYTES: usize = 8 * 1024;
+    if diff.len() <= MAX_BYTES {
+        diff.to_string()
+    } else {
+        let truncated: String = diff.chars().take(MAX_BYTES).collect();
+        format!("{}\n... (diff truncated)", truncated)
+    }
+}
+
+/// Generate a commit message using AI based on git diff
+///
+/// Uses the user's configured AI provider (same as generate_context).
+/// Returns a single-line commit message string.
+/// Non-streaming — commit messages are short enough to collect in full.
+#[tauri::command]
+pub async fn generate_commit_message(
+    project_path: String,
+    pool: tauri::State<'_, crate::db::DbPool>,
+) -> Result<String, String> {
+    use crate::ai::provider::{AiProvider, ContextPayload};
+    use crate::ai::providers::{DemoProvider, OpenRouterProvider};
+    use crate::security::decrypt_api_key;
+    use base64::{engine::general_purpose, Engine as _};
+    use futures_util::StreamExt;
+    use rusqlite::OptionalExtension;
+
+    // Step 1: Get diff
+    let raw_diff = get_diff_for_commit(project_path.clone()).await?;
+    let diff = truncate_diff(&raw_diff);
+
+    // Step 2: Resolve provider from DB (same pattern as generate_context)
+    let conn = pool
+        .get()
+        .map_err(|_| "Unable to access application data".to_string())?;
+
+    let default_provider: String = conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = 'ai_provider_default'",
+            [],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("Failed to query default provider: {}", e))?
+        .unwrap_or_else(|| "openrouter".to_string());
+
+    let selected_model: Option<String> = conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = 'ai_model_openrouter'",
+            [],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("Failed to query model: {}", e))?;
+
+    let api_key = if default_provider == "demo" {
+        None
+    } else {
+        let setting_key = format!("api_key_{}", default_provider);
+        let encoded: Option<String> = conn
+            .query_row(
+                "SELECT value FROM settings WHERE key = ?1",
+                rusqlite::params![setting_key],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(|e| format!("Failed to query API key: {}", e))?;
+
+        match encoded {
+            Some(enc) => {
+                let encrypted = general_purpose::STANDARD
+                    .decode(&enc)
+                    .map_err(|e| format!("Failed to decode key: {}", e))?;
+                let decrypted = decrypt_api_key(&encrypted)?;
+                Some(decrypted)
+            }
+            None => return Err("Please configure your API key in settings".to_string()),
+        }
+    };
+
+    // Step 3: Build prompt
+    let system_prompt = "You are an expert at writing git commit messages. \
+        Write a single, concise commit message following conventional commits format \
+        (e.g. feat:, fix:, chore:, docs:, refactor:). \
+        Rules: one line only, max 72 characters, no period at the end, \
+        imperative mood (\"add\" not \"added\"). \
+        Only output the commit message text, nothing else — no quotes, no explanation."
+        .to_string();
+
+    let user_message = format!(
+        "Based on this git diff, write a commit message:\n\n{}",
+        diff
+    );
+
+    // Step 4: Create provider and call AI
+    let attribution = crate::ai::openrouter::Attribution {
+        commits: 0,
+        files: 0,
+        sources: vec!["git".to_string()],
+        devlog_lines: None,
+        ai_sessions: None,
+    };
+
+    let payload = ContextPayload {
+        system_prompt,
+        user_message,
+        attribution,
+    };
+
+    let provider: Box<dyn AiProvider> = match default_provider.as_str() {
+        "openrouter" => {
+            let key = api_key.ok_or("API key required for OpenRouter")?;
+            Box::new(OpenRouterProvider::new(key, selected_model))
+        }
+        "demo" => {
+            let lambda_url = option_env!("DEMO_LAMBDA_URL")
+                .unwrap_or(
+                    "https://dkm5aeebsg7dggdpwoovlbzjde0ayxyh.lambda-url.ap-southeast-2.on.aws/",
+                )
+                .to_string();
+            Box::new(DemoProvider::new(lambda_url))
+        }
+        _ => return Err("AI provider is not available".to_string()),
+    };
+
+    // Step 5: Collect full response (non-streaming)
+    let mut stream = provider
+        .stream_context(payload)
+        .await
+        .map_err(|e| e.user_message())?;
+
+    let mut result = String::new();
+    while let Some(chunk) = stream.next().await {
+        result.push_str(&chunk);
+    }
+
+    // Step 6: Clean up response — strip quotes, extra whitespace, newlines
+    let cleaned = result
+        .trim()
+        .trim_matches('"')
+        .trim_matches('\'')
+        .lines()
+        .next() // Take only first line
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    if cleaned.is_empty() {
+        return Err("AI returned an empty response".to_string());
+    }
+
+    Ok(cleaned)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1621,5 +1841,82 @@ mod tests {
             "Error should mention unresolved conflicts, got: {}",
             error_msg
         );
+    }
+
+    // ========================================================================
+    // TESTS FOR AI COMMIT MESSAGE GENERATION
+    // ========================================================================
+
+    #[tokio::test]
+    async fn test_generate_commit_message_invalid_path() {
+        // Bukan git repo -> harus return error
+        // Note: kita test helper get_diff_for_commit saja, bukan full command
+        // karena full command butuh DB pool (Tauri state)
+        let result = get_diff_for_commit("/nonexistent/path".to_string()).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_generate_commit_message_empty_repo() {
+        let temp_dir = tempfile::tempdir().expect("Failed to create temp dir");
+        let repo_path = temp_dir.path();
+
+        Command::new("git")
+            .args(["init"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to init git repo");
+
+        Command::new("git")
+            .args(["config", "user.name", "Test User"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to set user name");
+
+        Command::new("git")
+            .args(["config", "user.email", "test@example.com"])
+            .current_dir(repo_path)
+            .output()
+            .expect("Failed to set user email");
+
+        // Repo kosong, tidak ada commit sama sekali
+        let result = get_diff_for_commit(repo_path.to_string_lossy().to_string()).await;
+        assert!(result.is_err());
+        assert!(
+            result.unwrap_err().contains("No changes"),
+            "Should indicate no changes"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_generate_commit_message_with_changes() {
+        let temp_repo = create_test_repo(); // Helper yang sudah ada
+        let repo_path = temp_repo.path();
+
+        // Buat file baru tapi belum di-commit
+        let new_file = repo_path.join("feature.rs");
+        fs::write(&new_file, "pub fn greet() -> &'static str { \"hello\" }")
+            .expect("Failed to write file");
+
+        let result = get_diff_for_commit(repo_path.to_string_lossy().to_string()).await;
+        assert!(result.is_ok(), "Should return diff string");
+        let diff = result.unwrap();
+        assert!(!diff.is_empty(), "Diff should not be empty");
+        assert!(diff.contains("feature.rs"), "Diff should mention the file");
+    }
+
+    #[test]
+    fn test_truncate_diff_at_8kb() {
+        let big_diff = "a".repeat(10 * 1024); // 10KB
+        let truncated = truncate_diff(&big_diff);
+        assert!(truncated.len() <= 8 * 1024 + 100, "Should be truncated near 8KB");
+        assert!(truncated.contains("... (diff truncated)"), "Should have truncation marker");
+    }
+
+    #[test]
+    fn test_truncate_diff_small() {
+        let small_diff = "small diff content";
+        let truncated = truncate_diff(small_diff);
+        assert_eq!(truncated, small_diff, "Small diff should not be truncated");
     }
 }

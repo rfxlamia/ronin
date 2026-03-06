@@ -154,6 +154,7 @@ pub fn run() {
             commands::git::get_git_context,
             commands::git::commit_changes,
             commands::git::safe_push,
+            commands::git::generate_commit_message,
             commands::ide::open_in_ide,
             commands::ai::set_api_key,
             commands::ai::get_api_key,
