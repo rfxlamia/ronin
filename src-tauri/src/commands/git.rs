@@ -516,7 +516,13 @@ pub async fn get_diff_for_commit(project_path: String) -> Result<String, String>
         .map_err(|e| format!("Failed to run git status: {}", e))?;
 
     let status = String::from_utf8_lossy(&untracked_output.stdout);
-    if status.lines().any(|line| line.starts_with("??") || line.starts_with(" M") || line.starts_with(" M")) {
+    if status.lines().any(|line| {
+        line.starts_with("??") ||  // untracked
+        line.starts_with(" M") ||  // modified (unstaged)
+        line.starts_with("M ") ||  // modified (staged)
+        line.starts_with("A ") ||  // added (staged)
+        line.starts_with(" D")     // deleted
+    }) {
         // There are untracked or modified files - get diff including untracked via add -N approach
         let all_diff = Command::new("git")
             .args(["diff", "--no-ext-diff"])
@@ -687,6 +693,13 @@ pub async fn generate_commit_message(
     if cleaned.is_empty() {
         return Err("AI returned an empty response".to_string());
     }
+
+    // Enforce 72 char limit (conventional commits standard)
+    let cleaned = if cleaned.len() > 72 {
+        format!("{}...", &cleaned[..69])
+    } else {
+        cleaned
+    };
 
     Ok(cleaned)
 }
