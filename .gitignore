@@ -38,9 +38,22 @@ coverage/
 .claude/
 .augment/
 .agent/
+.agents/
 _bmad/
 .clinerules/
 .opencode/
+_bmad-output/
+.crush/
+.cursor/
+.iflow/
+.kilocode/
+.roo/
+.rovodev/
+.trae/
+.windsurf/
+.kilocodemodes
+.github/agents/
+.github/prompts/
 
 # Worktrees
 .worktrees/
