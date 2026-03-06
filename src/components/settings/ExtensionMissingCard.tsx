@@ -2,6 +2,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, ExternalLink, X } from 'lucide-react';
 import { useState } from 'react';
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 interface ExtensionMissingCardProps {
     onSkip?: () => void;
@@ -25,9 +26,13 @@ export function ExtensionMissingCard({ onSkip }: ExtensionMissingCardProps) {
         onSkip?.();
     };
 
-    const handleOpenExtensions = () => {
-        // Open GNOME Extensions website in default browser
-        window.open('https://extensions.gnome.org/', '_blank');
+    const handleOpenExtensions = async () => {
+        try {
+            await openUrl('https://extensions.gnome.org/');
+        } catch {
+            // Fallback for dev mode / browser testing
+            window.open('https://extensions.gnome.org/', '_blank');
+        }
     };
 
     return (
