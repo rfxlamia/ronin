@@ -91,4 +91,31 @@ describe('useHotkeys', () => {
 
     expect(callback).toHaveBeenCalled();
   });
+
+  it('should fire callback when metaKey is pressed instead of ctrlKey (macOS Cmd)', () => {
+    const callback = vi.fn();
+    renderHook(() => useHotkeys('D', callback, { ctrl: true, shift: true }));
+
+    const event = new KeyboardEvent('keydown', {
+      key: 'D',
+      metaKey: true,
+      shiftKey: true,
+      bubbles: true,
+    });
+    document.dispatchEvent(event);
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not fire when neither ctrlKey nor metaKey is pressed', () => {
+    const callback = vi.fn();
+    renderHook(() => useHotkeys('D', callback, { ctrl: true, shift: true }));
+
+    const event = new KeyboardEvent('keydown', {
+      key: 'D',
+      shiftKey: true,
+      bubbles: true,
+    });
+    document.dispatchEvent(event);
+    expect(callback).not.toHaveBeenCalled();
+  });
 });
