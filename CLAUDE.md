@@ -140,6 +140,14 @@ src/
 - **OS**: Linux (Ubuntu 22.04+), X11 or Wayland (GNOME)
 - **System deps**: libwebkit2gtk-4.1-dev, libxdo-dev, libayatana-appindicator3-dev
 
+## Working Directory Guidelines
+
+- **Verifikasi `pwd` sebelum menjalankan command**
+  - Selalu gunakan `cd` ke directory target dan absolute path
+  - Contoh: `cd src-tauri && cargo test` atau `cargo test --manifest-path src-tauri/Cargo.toml`
+  - Hindari asumsi working directory saat ini
+  - Jika ragu, verifikasi dengan `pwd` terlebih dahulu
+
 ## Development Notes
 
 - The `autobins = false` in Cargo.toml prevents observer binaries from being auto-discovered
