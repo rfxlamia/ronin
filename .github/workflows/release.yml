@@ -38,6 +38,17 @@ jobs:
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
+      - name: Cache Rust
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            src-tauri/target/
+          key: ${{ matrix.platform }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Install system dependencies (Linux only)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
@@ -58,6 +69,10 @@ jobs:
 
       - name: Run frontend tests
         run: npm test
+
+      - name: Run Rust tests
+        run: cargo test
+        working-directory: src-tauri
 
       - name: Build and release
         uses: tauri-apps/tauri-action@v0
