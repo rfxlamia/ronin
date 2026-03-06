@@ -84,11 +84,23 @@ impl WatcherManager {
                 project_id, e
             );
 
-            // Check if it's an inotify limit error
+            // Check if it's a file watcher limit error
+            #[cfg(target_os = "linux")]
             if err_msg.contains("inotify") || err_msg.contains("watch limit") {
                 eprintln!(
                     "[file-watcher] WARNING: {} - System watch limit may be reached. \
-                    Consider increasing fs.inotify.max_user_watches",
+                    Consider increasing fs.inotify.max_user_watches with: \
+                    sudo sysctl -w fs.inotify.max_user_watches=524288",
+                    err_msg
+                );
+            } else {
+                eprintln!("[file-watcher] ERROR: {}", err_msg);
+            }
+            #[cfg(not(target_os = "linux"))]
+            if err_msg.contains("watch") || err_msg.contains("limit") || err_msg.contains("resource") {
+                eprintln!(
+                    "[file-watcher] WARNING: {} - File watcher limit may have been reached. \
+                    Try closing other applications or reducing the number of watched projects.",
                     err_msg
                 );
             } else {
