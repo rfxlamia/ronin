@@ -16,11 +16,11 @@ const renderWithRouter = (children: React.ReactNode) => {
 };
 
 describe('AppShell', () => {
-    it('should render Ronin logo image', () => {
+    it('should render Ronin logo in Libre Baskerville', () => {
         renderWithRouter(<AppShell><div>Test Content</div></AppShell>);
-        const logo = screen.getByAltText('Ronin');
+        const logo = screen.getByText('Ronin');
         expect(logo).toBeInTheDocument();
-        expect(logo).toHaveAttribute('src', '/assets/logo/ronin-logo.svg');
+        expect(logo).toHaveClass('font-serif');
     });
 
     it('should have data-tauri-drag-region on header', () => {

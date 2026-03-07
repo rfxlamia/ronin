@@ -24,11 +24,9 @@ export function AppShell({ children }: AppShellProps) {
                 className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between py-4 border-b border-border bg-card ${isMacOS ? 'pl-20 pr-6' : 'px-6'}`}
             >
                 {/* Logo area */}
-                <img 
-                    src="/assets/logo/ronin-logo.svg" 
-                    alt="Ronin" 
-                    className="h-8 select-none pointer-events-none" 
-                />
+                <h1 className="text-2xl font-serif font-bold text-foreground select-none pointer-events-none">
+                    Ronin
+                </h1>
                 {/* Non-draggable controls area */}
                 <nav className="flex items-center gap-2">
                     {isOnSettings ? (
