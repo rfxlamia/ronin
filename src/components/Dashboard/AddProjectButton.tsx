@@ -11,45 +11,29 @@ export function AddProjectButton() {
     const [localError, setLocalError] = useState<string | null>(null);
     const addProject = useProjectStore((state) => state.addProject);
     const setError = useProjectStore((state) => state.setError);
-    const projects = useProjectStore((state) => state.projects);
 
     const handleAddProject = async () => {
         try {
             setIsProcessing(true);
             setError(null);
             setLocalError(null);
-            console.log('[AddProject] Starting add project flow...');
-            console.log('[AddProject] Current projects in store:', projects.length);
 
-            // Open native folder picker
-            console.log('[AddProject] Opening folder picker...');
             const selectedPath = await open({
                 directory: true,
                 multiple: false,
                 title: 'Select Project Folder',
             });
 
-            // User cancelled
             if (!selectedPath) {
-                console.log('[AddProject] User cancelled folder picker');
                 setIsProcessing(false);
                 return;
             }
 
-            console.log('[AddProject] Selected path:', selectedPath);
-
-            // Call Rust backend to add project
-            console.log('[AddProject] Calling Rust add_project command...');
             const project = await invoke<Project>('add_project', {
                 path: selectedPath,
             });
 
-            console.log('[AddProject] Received project from backend:', project);
-
-            // Update store with new project
-            console.log('[AddProject] Adding project to store...');
             addProject(project);
-            console.log('[AddProject] Project added successfully!');
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             setError(errorMessage);
