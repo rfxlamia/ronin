@@ -30,7 +30,7 @@ export function ProjectDetailContent({
     onOpenInIDE,
 }: ProjectDetailContentProps) {
     return (
-        <div className="bg-muted/20 p-4 space-y-4">
+        <div className="bg-muted/20 p-4 space-y-4" data-testid="project-detail-content">
             <ContextPanel
                 state={contextState}
                 text={contextText}
@@ -61,7 +61,7 @@ export function ProjectDetailContent({
     );
 }
 
-function GitControlsWrapper({ project }: { project: Project }) {
+export function GitControlsWrapper({ project }: { project: Project }) {
     const { status, refresh } = useGitStatus(project.path);
 
     if (!status || (status.uncommittedFiles === 0 && status.unpushedCommits === 0)) {

@@ -1,7 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ProjectDetailContent } from './ProjectDetailContent';
 import type { Project } from '@/types/project';
+
+beforeEach(() => {
+    // Reset to default state before each test
+    mockGitStatus = { uncommittedFiles: 2, unpushedCommits: 0 };
+});
 
 // Mock ContextPanel
 vi.mock('@/components/ContextPanel', () => ({
@@ -24,10 +29,12 @@ vi.mock('./GitControls', () => ({
     GitControls: () => <div data-testid="git-controls" />,
 }));
 
-// Mock useGitStatus
+// Mock useGitStatus - will be overridden per test
+let mockGitStatus = { uncommittedFiles: 2, unpushedCommits: 0 };
+
 vi.mock('@/hooks/useGitStatus', () => ({
     useGitStatus: () => ({
-        status: { uncommittedFiles: 2, unpushedCommits: 0 },
+        status: mockGitStatus,
         refresh: vi.fn(),
     }),
 }));
@@ -84,5 +91,17 @@ describe('ProjectDetailContent', () => {
     it('shows Opening... when isOpeningIDE is true', () => {
         render(<ProjectDetailContent {...defaultProps} isOpeningIDE={true} />);
         expect(screen.getByText('Opening...')).toBeInTheDocument();
+    });
+
+    it('does not render GitControls when there are no uncommitted changes', () => {
+        mockGitStatus = { uncommittedFiles: 0, unpushedCommits: 0 };
+        render(<ProjectDetailContent {...defaultProps} />);
+        expect(screen.queryByTestId('git-controls')).not.toBeInTheDocument();
+    });
+
+    it('renders GitControls when there are unpushed commits', () => {
+        mockGitStatus = { uncommittedFiles: 0, unpushedCommits: 3 };
+        render(<ProjectDetailContent {...defaultProps} />);
+        expect(screen.getByTestId('git-controls')).toBeInTheDocument();
     });
 });
