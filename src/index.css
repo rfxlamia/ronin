@@ -106,6 +106,7 @@
 /* ===== ROOT CSS VARIABLES ===== */
 :root {
   --radius: 0.5rem;
+  --header-height: 73px;
 }
 
 /* ===== DARK MODE ===== */
