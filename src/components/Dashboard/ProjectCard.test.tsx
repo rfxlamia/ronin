@@ -14,6 +14,7 @@ global.ResizeObserver = class ResizeObserver {
 let mockContextState: 'idle' | 'streaming' | 'complete' | 'error' = 'idle';
 let mockContextText = '';
 let mockAttribution: { commits: number; files: number; sources: string[] } | null = null;
+let mockCardDisplayMode: 'collapsible' | 'modal' = 'collapsible';
 
 // Helper to set mock state from tests
 export const setMockAiState = (
@@ -63,6 +64,23 @@ vi.mock('@/stores/projectStore', () => ({
         };
         return selector(state);
     }
+}));
+
+// Mock settingsStore
+vi.mock('@/stores/settingsStore', () => ({
+    useSettingsStore: (selector: any) => {
+        const state = {
+            cardDisplayMode: mockCardDisplayMode,
+        };
+        return selector(state);
+    }
+}));
+
+// Mock ProjectDetailDialog
+vi.mock('./ProjectDetailDialog', () => ({
+    ProjectDetailDialog: ({ project, open }: any) => (
+        open ? <div data-testid="project-detail-dialog">{project.name}</div> : null
+    ),
 }));
 
 describe('ProjectCard', () => {
@@ -204,6 +222,48 @@ describe('ProjectCard', () => {
 
             // Look for the item
             expect(screen.getByText(/remove/i)).toBeInTheDocument();
+        });
+    });
+
+    describe('Modal Mode', () => {
+        beforeEach(() => {
+            mockCardDisplayMode = 'modal';
+        });
+
+        afterEach(() => {
+            mockCardDisplayMode = 'collapsible';
+        });
+
+        it('opens modal dialog when card is clicked in modal mode', async () => {
+            render(<ProjectCard project={mockGitProject} />);
+
+            const trigger = screen.getByText('Test Project').closest('button');
+            if (!trigger) throw new Error('Trigger not found');
+
+            fireEvent.click(trigger);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(100);
+            });
+
+            expect(screen.getByTestId('project-detail-dialog')).toBeInTheDocument();
+        });
+
+        it('does not render collapsible content in modal mode', async () => {
+            mockContextState = 'streaming';
+            render(<ProjectCard project={mockGitProject} />);
+
+            const trigger = screen.getByText('Test Project').closest('button');
+            if (!trigger) throw new Error('Trigger not found');
+
+            fireEvent.click(trigger);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(100);
+            });
+
+            // Modal renders instead of inline collapsible
+            expect(screen.getByTestId('project-detail-dialog')).toBeInTheDocument();
         });
     });
 });

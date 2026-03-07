@@ -19,7 +19,6 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { HealthBadge } from './HealthBadge';
-import { ContextPanel } from '@/components/ContextPanel';
 import { calculateDaysSince, formatDaysSince } from '@/lib/utils/dateUtils';
 import { calculateProjectHealth } from '@/lib/logic/projectHealth';
 import type { Project } from '@/types/project';
@@ -28,9 +27,9 @@ import { useProjectStore } from '@/stores/projectStore';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { useAiContext } from '@/hooks/useAiContext';
-import { GitStatusDisplay } from './GitStatusDisplay';
-import { GitControls } from './GitControls';
-import { useGitStatus } from '@/hooks/useGitStatus';
+import { ProjectDetailContent } from './ProjectDetailContent';
+import { ProjectDetailDialog } from './ProjectDetailDialog';
+import { useSettingsStore } from '@/stores/settingsStore';
 import { invoke } from '@tauri-apps/api/core';
 
 interface ProjectCardProps {
@@ -50,6 +49,8 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
     const archiveProject = useProjectStore((state) => state.archiveProject);
     const restoreProject = useProjectStore((state) => state.restoreProject);
     const removeProject = useProjectStore((state) => state.removeProject);
+
+    const cardDisplayMode = useSettingsStore((s) => s.cardDisplayMode);
 
     const handleArchive = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -88,9 +89,9 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
     // Ref for click-outside detection
     const cardRef = useRef<HTMLDivElement>(null);
 
-    // Click outside to close
+    // Click outside to close (only in collapsible mode)
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen || cardDisplayMode !== 'collapsible') return;
 
         const handleClickOutside = (event: MouseEvent) => {
             if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
@@ -107,7 +108,7 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
             clearTimeout(timeoutId);
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isOpen]);
+    }, [isOpen, cardDisplayMode]);
 
     const TypeIcon = project.type === 'git' ? GitBranch : Folder;
     const daysSinceActivity = calculateDaysSince(
@@ -123,10 +124,10 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
                     className={cn(
                         "transition-all duration-200",
                         "hover:shadow-md hover:border-[#CC785C]/50",
-                        isOpen && "z-20 shadow-lg rounded-b-none border-b-0"
+                        isOpen && cardDisplayMode === 'collapsible' && "z-20 shadow-lg rounded-b-none border-b-0"
                     )}
                 >
-                    <Collapsible open={isOpen} onOpenChange={handleOpenChange}>
+                    <Collapsible open={cardDisplayMode === 'collapsible' ? isOpen : false} onOpenChange={handleOpenChange}>
                         <div className="relative">
                             {/* Dropdown Menu - positioned absolutely */}
                             <div className="absolute top-4 right-4 z-10">
@@ -221,48 +222,48 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
                             </CollapsibleTrigger>
                         </div>
 
-                        {/* Collapsible Content - Overlay Mode */}
-                        <CollapsibleContent
-                            className={cn(
-                                "absolute left-0 right-0 top-full -mt-px",
-                                "z-30 bg-card border border-t-0 border-border rounded-b-lg shadow-xl",
-                                "data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out"
-                            )}
-                        >
-                            <div className="bg-muted/20 p-4 space-y-4">
-                                <ContextPanel
-                                    state={contextState}
-                                    text={contextText}
-                                    attribution={contextState === 'complete' && attribution ? attribution : undefined}
-                                    onRetry={retry}
-                                    error={error || undefined}
-                                    parsedError={parsedError || undefined}
+                        {/* Collapsible Content - Only in collapsible mode */}
+                        {cardDisplayMode === 'collapsible' && (
+                            <CollapsibleContent
+                                className={cn(
+                                    "absolute left-0 right-0 top-full -mt-px",
+                                    "z-30 bg-card border border-t-0 border-border rounded-b-lg shadow-xl",
+                                    "data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out"
+                                )}
+                            >
+                                <ProjectDetailContent
+                                    project={project}
+                                    contextState={contextState}
+                                    contextText={contextText}
+                                    attribution={attribution}
+                                    error={error}
+                                    parsedError={parsedError}
+                                    retry={retry}
+                                    isOpeningIDE={isOpeningIDE}
+                                    onOpenInIDE={handleOpenInIDE}
                                 />
-
-                                {/* Git Status Display for Git projects */}
-                                {project.type === 'git' && (
-                                    <div className="pt-2 border-t border-border/50">
-                                        <GitStatusDisplay projectPath={project.path} />
-                                    </div>
-                                )}
-
-                                {/* Git Controls for Git projects with uncommitted changes */}
-                                {project.type === 'git' && (
-                                    <GitControlsWrapper project={project} />
-                                )}
-
-                                <Button
-                                    className="w-full font-serif"
-                                    onClick={handleOpenInIDE}
-                                    disabled={isOpeningIDE}
-                                >
-                                    {isOpeningIDE ? 'Opening...' : 'Open in IDE'}
-                                </Button>
-                            </div>
-                        </CollapsibleContent>
+                            </CollapsibleContent>
+                        )}
                     </Collapsible>
                 </Card>
             </div>
+
+            {/* Project Detail Dialog - Only in modal mode */}
+            {cardDisplayMode === 'modal' && (
+                <ProjectDetailDialog
+                    project={project}
+                    open={isOpen}
+                    onOpenChange={handleOpenChange}
+                    contextState={contextState}
+                    contextText={contextText}
+                    attribution={attribution}
+                    error={error}
+                    parsedError={parsedError}
+                    retry={retry}
+                    isOpeningIDE={isOpeningIDE}
+                    onOpenInIDE={handleOpenInIDE}
+                />
+            )}
 
             {/* Remove Confirmation Dialog */}
             {showRemoveDialog && (
@@ -290,18 +291,3 @@ export const ProjectCard = memo(function ProjectCard({ project }: ProjectCardPro
         </>
     );
 });
-
-// Wrapper component to use useGitStatus hook and conditionally render GitControls
-function GitControlsWrapper({ project }: { project: Project }) {
-    const { status, refresh } = useGitStatus(project.path);
-
-    // Show controls if there are uncommitted files OR unpushed commits
-    // This ensures:
-    // - Commit button appears when there are uncommitted files
-    // - Push button appears when there are unpushed commits
-    if (!status || (status.uncommittedFiles === 0 && status.unpushedCommits === 0)) {
-        return null;
-    }
-
-    return <GitControls project={project} onSuccess={refresh} status={status} />;
-}
