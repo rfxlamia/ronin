@@ -84,6 +84,42 @@ describe('settingsStore', () => {
     });
 });
 
+describe('cardDisplayMode', () => {
+    it('should default to collapsible', () => {
+        const state = useSettingsStore.getState();
+        expect(state.cardDisplayMode).toBe('collapsible');
+    });
+
+    it('loadCardDisplayMode sets mode from backend', async () => {
+        vi.mocked(invoke).mockResolvedValueOnce('modal');
+
+        await useSettingsStore.getState().loadCardDisplayMode();
+
+        expect(invoke).toHaveBeenCalledWith('get_setting', { key: 'card_display_mode' });
+        expect(useSettingsStore.getState().cardDisplayMode).toBe('modal');
+    });
+
+    it('loadCardDisplayMode defaults to collapsible when null', async () => {
+        vi.mocked(invoke).mockResolvedValueOnce(null);
+
+        await useSettingsStore.getState().loadCardDisplayMode();
+
+        expect(useSettingsStore.getState().cardDisplayMode).toBe('collapsible');
+    });
+
+    it('setCardDisplayMode persists and updates state', async () => {
+        vi.mocked(invoke).mockResolvedValueOnce(undefined);
+
+        await useSettingsStore.getState().setCardDisplayMode('modal');
+
+        expect(invoke).toHaveBeenCalledWith('update_setting', {
+            key: 'card_display_mode',
+            value: 'modal',
+        });
+        expect(useSettingsStore.getState().cardDisplayMode).toBe('modal');
+    });
+});
+
 describe('API key security — key must not be stored in plain state', () => {
     beforeEach(() => {
         vi.clearAllMocks();

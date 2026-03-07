@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 interface SettingsState {
     oathShown: boolean;
     isLoadingKey: boolean;
+    cardDisplayMode: 'collapsible' | 'modal';
     setOathShown: (shown: boolean) => void;
     checkOathStatus: () => Promise<void>;
     markOathShown: () => Promise<void>;
@@ -11,11 +12,14 @@ interface SettingsState {
     saveApiKey: (key: string) => Promise<boolean>;
     removeApiKey: () => Promise<void>;
     testApiKey: (key: string) => Promise<boolean>;
+    loadCardDisplayMode: () => Promise<void>;
+    setCardDisplayMode: (mode: 'collapsible' | 'modal') => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
     oathShown: true,
     isLoadingKey: false,
+    cardDisplayMode: 'collapsible',
     setOathShown: (shown) => set({ oathShown: shown }),
     checkOathStatus: async () => {
         const val = await invoke<string | null>('get_setting', { key: 'oath_shown' });
@@ -62,5 +66,13 @@ export const useSettingsStore = create<SettingsState>((set) => ({
             console.error('API connection test failed:', errorMsg);
             throw new Error(errorMsg);
         }
-    }
+    },
+    loadCardDisplayMode: async () => {
+        const val = await invoke<string | null>('get_setting', { key: 'card_display_mode' });
+        set({ cardDisplayMode: (val === 'modal' ? 'modal' : 'collapsible') });
+    },
+    setCardDisplayMode: async (mode) => {
+        await invoke('update_setting', { key: 'card_display_mode', value: mode });
+        set({ cardDisplayMode: mode });
+    },
 }));
