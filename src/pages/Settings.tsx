@@ -51,7 +51,7 @@ export function Settings() {
         setShowExtensionCard(false);
     };
 
-    const [activeSection, _setActiveSection] = useState('settings-ai-provider');
+    const [activeSection, setActiveSection] = useState('settings-ai-provider');
 
     const scrollToSection = useCallback((id: string) => {
         const el = document.getElementById(id);
@@ -68,6 +68,50 @@ export function Settings() {
         { id: 'settings-silent-observer', label: 'Silent Observer' },
         { id: 'settings-philosophy', label: 'Philosophy' },
     ];
+
+    useEffect(() => {
+        const sectionIds = settingsSections.map((s) => s.id);
+        const elements = sectionIds
+            .map((id) => document.getElementById(id))
+            .filter(Boolean) as HTMLElement[];
+
+        if (elements.length === 0) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                // Find the topmost visible section
+                const visible = entries
+                    .filter((e) => e.isIntersecting)
+                    .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+                if (visible.length > 0) {
+                    setActiveSection(visible[0].target.id);
+                }
+            },
+            {
+                rootMargin: '-80px 0px -50% 0px',
+                threshold: 0,
+            }
+        );
+
+        elements.forEach((el) => observer.observe(el));
+
+        // Edge case: force-activate last item when scrolled to bottom
+        const handleScroll = () => {
+            const scrollBottom = window.innerHeight + window.scrollY;
+            const docHeight = document.documentElement.scrollHeight;
+            if (docHeight - scrollBottom < 50) {
+                setActiveSection(sectionIds[sectionIds.length - 1]);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => {
+            observer.disconnect();
+            window.removeEventListener('scroll', handleScroll);
+        };
+    }, [settingsSections.length, showExtensionCard]);
 
     return (
         <div className="p-8">
