@@ -1,185 +1,236 @@
 # 浪人 Ronin
 
->  Project HQ for Linux developers who lose context switching between multiple projects
+> Project HQ for developers who lose context switching between side projects
 
 [![CI](https://github.com/rfxlamia/ronin/actions/workflows/ci.yml/badge.svg)](https://github.com/rfxlamia/ronin/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.1.0--alpha-blue)
+![Version](https://img.shields.io/badge/version-0.1.0--beta-orange)
 ![License](https://img.shields.io/badge/license-MPL--2.0-blue)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey)
 
-**⚠️ Alpha Release** - Basic functionality working, expect rough edges and bugs.
----
-
-## What Problem Does This Solve?
-
-You have 5+ side projects. You return to one after 3 weeks. You spend 2 hours re-reading your own code just to remember *why* you wrote it that way and *what* you were planning next.
-
-**Ronin gives you instant context recovery in <10 seconds.**
-
-Open any dormant project → AI analyzes your last 20 commits + notes → tells you exactly where you left off and what to do next.
+**🚧 Beta Release** — Core features stable. Cross-platform builds (macOS/Windows) are new in this release — expect occasional rough edges.
 
 ---
 
-## Philosophy: The Five Pillars of Ronin (義勇仁礼智)
+## What is Ronin?
 
-Ronin is built on five core principles from the samurai code:
+You have 5+ side projects. You return to one after three weeks away. You spend the next two hours re-reading your own code just to remember *why* you wrote it that way — and *what* you were planning to do next.
 
-- **義 (Gi) - Righteous Code:** Local-first architecture, no surveillance, opt-in behavioral tracking
-- **勇 (Yu) - Courageous Autonomy:** AI suggests never commands, proactive stuck pattern detection
-- **仁 (Jin) - Compassionate Craft:** Empathetic error messages, no productivity shaming
-- **礼 (Rei) - Ritual & Discipline:** Dashboard as morning ritual, structured workflows
-- **智 (Chi) - Strategic Resourcefulness:** <200MB memory footprint, works on 8GB laptops
+**Ronin gives you instant context recovery.**
 
-See [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md) for full philosophy documentation.
+Open any dormant project → AI reads your last 20 commits + your DEVLOG notes → tells you exactly where you left off and what to do next. In under 10 seconds.
+
+Ronin is a **local-first desktop app** built on Tauri. Your data never leaves your machine. There is no account, no subscription, and no cloud sync. Just you and your projects.
+
+---
+
+## Screenshots
+
+<!-- SCREENSHOT: Dashboard overview showing project grid with health statuses -->
+> 📸 *Dashboard — coming soon*
+
+<!-- SCREENSHOT: AI context recovery panel open on a dormant project -->
+> 📸 *AI Context Recovery — coming soon*
+
+<!-- SCREENSHOT: DEVLOG markdown editor in-app -->
+> 📸 *DEVLOG Editor — coming soon*
+
+<!-- SCREENSHOT: Settings page with OpenRouter model selector -->
+> 📸 *Settings & Model Selection — coming soon*
+
+---
+
+## Features (v0.1.0-beta)
+
+| Feature | Description |
+|---|---|
+| 📊 **Project Dashboard** | Health indicators (Active / Dormant / Stuck) with auto-sorting |
+| 🤖 **AI Context Recovery** | Resume any dormant project in <10 seconds with AI-powered summaries |
+| ✍️ **AI Commit Messages** | Generate conventional commit messages from your git diff |
+| 📝 **DEVLOG Editor** | In-app Markdown editor that syncs with `DEVLOG.md` in your repo |
+| 🔀 **Git Integration** | View status, stage, commit, and push — all without leaving Ronin |
+| 🧠 **Model Selection** | Choose any OpenRouter model with live search and free fallback chain |
+| 📁 **Generic Folder Mode** | Track non-Git projects too (file count, last modified, dormancy) |
+| 🖥️ **System Tray + Hotkey** | Minimize to tray, summon with `Ctrl+Alt+R` (or `Cmd+Alt+R` on macOS) |
+| 🌗 **Dark / Light Mode** | Follows system preference |
+
+**Supported Platforms (v0.1.0-beta):**
+
+| Platform | Status | Format |
+|---|---|---|
+| Linux (Ubuntu 22.04+, Debian 11+, Arch, Fedora) | ✅ Stable | `.deb`, `.AppImage` |
+| macOS (Intel + Apple Silicon) | 🆕 Beta | `.dmg` (unsigned — see note below) |
+| Windows | 🆕 Beta | `.msi`, `.exe` |
 
 ---
 
 ## Installation
 
-### For Users (Recommended)
-
 Download the latest release from [GitHub Releases](https://github.com/rfxlamia/ronin/releases).
 
-#### Option 1: Debian/Ubuntu (.deb package)
+### Linux
+
+**Option 1: .deb package (Debian/Ubuntu)**
 
 ```bash
-# Download the .deb file from releases
-wget https://github.com/rfxlamia/ronin/releases/download/v0.1.0-alpha/ronin_0.1.0-alpha_amd64.deb
-
-# Install
-sudo dpkg -i ronin_0.1.0-alpha_amd64.deb
-
-# Fix dependencies if needed
-sudo apt-get install -f
-
-# Launch
+wget https://github.com/rfxlamia/ronin/releases/download/v0.1.0-beta/ronin_0.1.0-beta_amd64.deb
+sudo dpkg -i ronin_0.1.0-beta_amd64.deb
+sudo apt-get install -f   # fix dependencies if needed
 ronin
 ```
 
-**Supported Distributions:**
-- Ubuntu 22.04+ ✅
-- Debian 11+ ✅
-- Linux Mint 21+ ✅
-- Pop!_OS 22.04+ ✅
+Tested on Ubuntu 22.04+, Debian 11+, Linux Mint 21+, Pop!_OS 22.04+.
 
-#### Option 2: AppImage (Distro-Agnostic)
+**Option 2: AppImage (any distro)**
 
 ```bash
-# Download the AppImage from releases
-wget https://github.com/rfxlamia/ronin/releases/download/v0.1.0-alpha/ronin_0.1.0-alpha_amd64.AppImage
-
-# Make executable
-chmod +x ronin_0.1.0-alpha_amd64.AppImage
-
-# Run
-./ronin_0.1.0-alpha_amd64.AppImage
+wget https://github.com/rfxlamia/ronin/releases/download/v0.1.0-beta/ronin_0.1.0-beta_amd64.AppImage
+chmod +x ronin_0.1.0-beta_amd64.AppImage
+./ronin_0.1.0-beta_amd64.AppImage
 ```
 
-**Works on:**
-- Any Linux distribution (Ubuntu, Fedora, Arch, etc.)
-- No installation or admin privileges required
-- Portable and self-contained
+No install or admin privileges needed.
+
+### macOS
+
+> ⚠️ **Unsigned App** — Ronin is not yet code-signed with an Apple Developer certificate. When you open the `.dmg`, macOS will warn you about an "unidentified developer". To bypass this and run the app:
+>
+> ```bash
+> xattr -cr /Applications/Ronin.app
+> ```
+>
+> We are working on obtaining an Apple Developer certificate to remove this warning.  
+> [Help fund it via GitHub Sponsors ↓](#support--sponsorship)
+
+Download `ronin_0.1.0-beta_universal.dmg` from Releases, open it, and drag Ronin to Applications.
+
+### Windows
+
+Download `ronin_0.1.0-beta_x64-setup.exe` from Releases and run the installer. Windows SmartScreen may warn about an unsigned app — click **More info → Run anyway**.
 
 ---
 
 ## Quick Start
 
-1. **Launch Ronin** (or press `Ctrl+Alt+R`)
+1. **Launch Ronin** (or press `Ctrl+Alt+R` / `Cmd+Alt+R`)
 
 2. **Add your first project:**
    - Click "Add Project"
    - Select any folder (Git repo or plain folder)
-   - Ronin auto-detects project type
+   - Ronin auto-detects the project type
 
-3. **Recover context from dormant project:**
-   - Click on project card
-   - AI analyzes commits + notes
-   - Get actionable summary in seconds
+3. **Recover context from a dormant project:**
+   - Click any project card
+   - Click "Where was I?"
+   - AI reads your last 20 commits + DEVLOG and tells you what to do next
 
-4. **Set up AI (required for context recovery):**
+4. **Set up AI (for context recovery):**
    - Settings → API Configuration
-   - Get free OpenRouter key: https://openrouter.ai
-   - Paste key (encrypted locally with AES-256)
-   - OR you can use demo mode (no API key required) for free usage 
+   - Get a free key at [openrouter.ai](https://openrouter.ai)
+   - Paste it in (stored encrypted with AES-256-GCM, never leaves your device)
+   - **No API key?** Use Demo Mode — limited but free, no sign-up needed
 
 ---
 
-## Current Features (v0.1-alpha)
+## Philosophy: The Five Pillars (義勇仁礼智)
 
-- ✅ Dashboard with health indicators (Active/Dormant/Stuck)
-- ✅ Git integration (status, one-click commit/push)
-- ✅ AI context recovery from commit history
-- ✅ DEVLOG markdown editor (syncs with repo)
-- ✅ Generic folder support (works for non-Git projects)
-- ✅ System tray + global hotkey
-- ✅ Dark/light mode
+Ronin is built on five principles from the samurai code:
+
+- **義 (Gi) — Righteous Code:** Local-first. No telemetry. Opt-in behavioral tracking only.
+- **勇 (Yu) — Courageous Autonomy:** AI suggests, never commands. You stay in control.
+- **仁 (Jin) — Compassionate Craft:** Empathetic error messages. No productivity shaming.
+- **礼 (Rei) — Ritual & Discipline:** The dashboard as a morning ritual. Structured context.
+- **智 (Chi) — Strategic Resourcefulness:** Lightweight footprint. Works on any 8GB laptop.
+
+Full philosophy: [vdocs/PHILOSOPHY.md](vdocs/PHILOSOPHY.md)
 
 ---
 
-## Known Limitations
+## Roadmap
 
-- **Linux only** - X11 and Wayland (GNOME) supported. Windows/macOS planned.
-- **Requires API key** - Free tier available at OpenRouter, but needs internet.
-- **Alpha quality** - Expect bugs, performance issues, UI quirks.
-- **No team features** - Single-user only for now.
+### Near Term (v0.2)
+- Silent Observer — background window tracking for automatic context (Linux, then macOS)
+- Wayland KDE support
+- Archive / hide projects
+- Task extraction from commit messages
+
+### Mid Term (v0.3)
+- Multi-workspace support
+- Built-in task checklist per project
+- File change detection (notify on project drift)
+- Browser extension for Silent Observer context
+
+### Future (v1.0+)
+- Team mode & async context handoff
+- Jira / Linear / Notion integration
+- Local SLM option (no API key, fully offline)
+- AI task extraction from free-form documents
+- macOS and Windows Silent Observer backends
+
+---
+
+## Support & Sponsorship
+
+Ronin is free, open-source, and built solo in spare time.
+
+### Help Fund macOS Code Signing
+
+Distributing a properly signed macOS app requires an **Apple Developer Program** membership at **$99/year**. Without it, every macOS user sees the "unidentified developer" warning and needs to run a terminal command just to open the app.
+
+If Ronin is useful to you — or you just want to see it grow — consider sponsoring on GitHub:
+
+**[❤️ Sponsor on GitHub](https://github.com/sponsors/rfxlamia)**
+
+Sponsorship directly covers:
+- Apple Developer Program certificate (code signing for macOS)
+- Infrastructure costs for the demo mode proxy
 
 ---
 
 ## Development
 
-**Tech Stack:** Rust/Tauri backend + React/TypeScript frontend
+**Prerequisites:** Node 20+, Rust 1.75+, system libraries (Linux: `libwebkit2gtk-4.1-dev`, `libxdo-dev`, `libayatana-appindicator3-dev`)
 
 ```bash
-# Prerequisites: Node 20+, Rust 1.75+, Linux build tools
 git clone https://github.com/rfxlamia/ronin.git
 cd ronin
 npm install
 npm run tauri dev
 ```
 
+**Other commands:**
+
+```bash
+npm test              # Run all Vitest tests
+npm run lint          # TypeScript type check + ESLint
+npm run tauri build   # Build release binary for current platform
+```
+
 ---
 
-## Feedback & Support
+## Feedback & Contributing
 
 - **Bug reports:** [GitHub Issues](https://github.com/rfxlamia/ronin/issues)
 - **Feature requests:** [GitHub Discussions](https://github.com/rfxlamia/ronin/discussions)
-- **Documentation:** [docs/](docs/)
+- **Docs:** [docs/](docs/)
+
+Contributions welcome. See [CLAUDE.md](CLAUDE.md) for architecture and conventions.
 
 ---
 
 ## License
 
-This project is licensed under the **Mozilla Public License 2.0 (MPL-2.0)**.
+**Mozilla Public License 2.0 (MPL-2.0)** — See [LICENSE](LICENSE)
 
-See [LICENSE](LICENSE) for full text.
-
-**Summary:**
-- ✅ Free to use, modify, and distribute
-- ✅ Can be used in proprietary software
-- ✅ File-level copyleft (modifications to MPL files must remain MPL)
-- ✅ Patent grant included
+Free to use, modify, and distribute. Modifications to MPL-licensed files must remain MPL. Can be used in proprietary software.
 
 ---
 
 ## Acknowledgments
 
-Built with:
-- [Tauri](https://tauri.app/) - Desktop application framework
-- [React](https://react.dev/) - UI framework
-- [shadcn/ui](https://ui.shadcn.com/) - Component library
-- [OpenRouter](https://openrouter.ai/) - AI API aggregation
-- Philosophy inspired by Bushido (武士道) and Japanese craftsmanship principles
+Built with [Tauri](https://tauri.app/), [React](https://react.dev/), [shadcn/ui](https://ui.shadcn.com/), and [OpenRouter](https://openrouter.ai/). Philosophy inspired by Bushido (武士道) and Japanese craftsmanship principles.
 
 ---
 
-## Contact
-
-Created by V - [@v](https://github.com/rfxlamia)
-
-For questions or feedback:
-- Open an issue: [GitHub Issues](https://github.com/rfxlamia/ronin/issues)
-- Check documentation: [docs/](docs/)
-- Read the philosophy: [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md)
-
----
+Created by V — [@rfxlamia](https://github.com/rfxlamia)
 
 *"A ronin without a master must become their own sensei."*
