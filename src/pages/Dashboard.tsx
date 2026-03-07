@@ -22,6 +22,7 @@ export function Dashboard() {
     const oathShown = useSettingsStore((state) => state.oathShown);
     const checkOathStatus = useSettingsStore((state) => state.checkOathStatus);
     const markOathShown = useSettingsStore((state) => state.markOathShown);
+    const loadCardDisplayMode = useSettingsStore((state) => state.loadCardDisplayMode);
     const [showOathModal, setShowOathModal] = useState(false);
 
     // Calculate number of skeleton cards based on window width
@@ -34,6 +35,11 @@ export function Dashboard() {
     useEffect(() => {
         checkOathStatus();
     }, [checkOathStatus]);
+
+    // Load card display mode setting on mount
+    useEffect(() => {
+        loadCardDisplayMode();
+    }, [loadCardDisplayMode]);
 
     // Fetch projects from database on mount
     useEffect(() => {
