@@ -13,7 +13,7 @@
 
 ## What is Ronin?
 
-![ronin-logo](/home/v/project/ronin/vdocs/ronin-logo.png)
+![ronin-logo](vdocs/ronin-logo.png)
 
 You have 5+ side projects. You return to one after three weeks away. You spend the next two hours re-reading your own code just to remember *why* you wrote it that way — and *what* you were planning to do next.
 
@@ -27,19 +27,19 @@ Ronin is a **local-first desktop app** built on Tauri. Your data never leaves yo
 
 ## Screenshots
 
-<!-- SCREENSHOT: Dashboard overview showing project grid with health statuses -->![dashboard](/home/v/project/ronin/vdocs/image/dashboard.png)
+<!-- SCREENSHOT: Dashboard overview showing project grid with health statuses -->![dashboard](vdocs/image/dashboard.png)
 
 > 📸 *Dashboard*
 
-<!-- SCREENSHOT: AI context recovery panel open on a dormant project -->![ai-context-ss](/home/v/project/ronin/vdocs/image/ai-context-ss.png)
+<!-- SCREENSHOT: AI context recovery panel open on a dormant project -->![ai-context-ss](vdocs/image/ai-context-ss.png)
 
 > 📸 *AI Context Recovery*
 
-<!-- SCREENSHOT: DEVLOG markdown editor in-app -->![devlog](/home/v/project/ronin/vdocs/image/devlog.png)
+<!-- SCREENSHOT: DEVLOG markdown editor in-app -->![devlog](vdocs/image/devlog.png)
 
 > 📸 *DEVLOG Editor*
 
-<!-- SCREENSHOT: Settings page with OpenRouter model selector -->![settings-page](/home/v/project/ronin/vdocs/image/settings-page.png)
+<!-- SCREENSHOT: Settings page with OpenRouter model selector -->![settings-page](vdocs/image/settings-page.png)
 
 > 📸 *Settings & Model Selection*
 
