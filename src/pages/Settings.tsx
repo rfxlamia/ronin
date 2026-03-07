@@ -6,6 +6,7 @@ import { AiProviderSettings } from '@/components/settings/AiProviderSettings';
 import { ExtensionMissingCard } from '@/components/settings/ExtensionMissingCard';
 import { PrivacySettings } from '@/components/settings/PrivacySettings';
 import { usePlatformStore } from '@/stores/platformStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 // Detect if running in Wayland environment (Linux only)
 // Uses backend-driven platform detection for reliability
@@ -21,6 +22,14 @@ export function Settings() {
     const [showExtensionCard, setShowExtensionCard] = useState(false);
     const [extensionSkipped, setExtensionSkipped] = useState(false);
     const isLinux = usePlatformStore((s) => s.isLinux)();
+
+    const cardDisplayMode = useSettingsStore((s) => s.cardDisplayMode);
+    const loadCardDisplayMode = useSettingsStore((s) => s.loadCardDisplayMode);
+    const setCardDisplayMode = useSettingsStore((s) => s.setCardDisplayMode);
+
+    useEffect(() => {
+        loadCardDisplayMode();
+    }, [loadCardDisplayMode]);
 
     // Check if we should show the extension missing card (Linux only)
     useEffect(() => {
@@ -70,6 +79,48 @@ export function Settings() {
                 <div className="flex items-center gap-3">
                     <span className="text-sm font-sans">Theme:</span>
                     <ModeToggle />
+                </div>
+            </section>
+
+            {/* Card Display Section */}
+            <section className="mb-8">
+                <h3 className="text-xl font-serif font-bold mb-3">Card Display</h3>
+                <p className="text-muted-foreground mb-4">
+                    Choose how project details appear when you click a card.
+                </p>
+                <div className="space-y-3">
+                    <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors has-[:checked]:border-[#CC785C] has-[:checked]:bg-[#CC785C]/5">
+                        <input
+                            type="radio"
+                            name="cardDisplayMode"
+                            value="collapsible"
+                            checked={cardDisplayMode === 'collapsible'}
+                            onChange={() => setCardDisplayMode('collapsible')}
+                            className="mt-1 accent-[#CC785C]"
+                        />
+                        <div>
+                            <span className="font-sans font-medium">Inline Expand</span>
+                            <p className="text-sm text-muted-foreground">
+                                Card expands in place to show details below it.
+                            </p>
+                        </div>
+                    </label>
+                    <label className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors has-[:checked]:border-[#CC785C] has-[:checked]:bg-[#CC785C]/5">
+                        <input
+                            type="radio"
+                            name="cardDisplayMode"
+                            value="modal"
+                            checked={cardDisplayMode === 'modal'}
+                            onChange={() => setCardDisplayMode('modal')}
+                            className="mt-1 accent-[#CC785C]"
+                        />
+                        <div>
+                            <span className="font-sans font-medium">Popup Modal</span>
+                            <p className="text-sm text-muted-foreground">
+                                Opens a centered popup with a two-column layout.
+                            </p>
+                        </div>
+                    </label>
                 </div>
             </section>
 
