@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { RoninOathModal } from '@/components/RoninOathModal';
 import { ModeToggle } from '@/components/mode-toggle';
@@ -51,7 +51,14 @@ export function Settings() {
         setShowExtensionCard(false);
     };
 
-    const [activeSection, setActiveSection] = useState('settings-ai-provider');
+    const [activeSection, setActiveSection] = useState(() =>
+        showExtensionCard ? 'settings-extension' : 'settings-ai-provider'
+    );
+
+    // Sync active section when extension card visibility changes
+    useEffect(() => {
+        setActiveSection(showExtensionCard ? 'settings-extension' : 'settings-ai-provider');
+    }, [showExtensionCard]);
 
     const scrollToSection = useCallback((id: string) => {
         const el = document.getElementById(id);
@@ -60,14 +67,14 @@ export function Settings() {
         }
     }, []);
 
-    const settingsSections = [
+    const settingsSections = useMemo(() => [
         ...(showExtensionCard ? [{ id: 'settings-extension', label: 'Extension Setup' }] : []),
         { id: 'settings-ai-provider', label: 'AI Provider' },
         { id: 'settings-appearance', label: 'Appearance' },
         { id: 'settings-card-display', label: 'Card Display' },
         { id: 'settings-silent-observer', label: 'Silent Observer' },
         { id: 'settings-philosophy', label: 'Philosophy' },
-    ];
+    ], [showExtensionCard]);
 
     useEffect(() => {
         const sectionIds = settingsSections.map((s) => s.id);
@@ -111,7 +118,7 @@ export function Settings() {
             observer.disconnect();
             window.removeEventListener('scroll', handleScroll);
         };
-    }, [settingsSections.length, showExtensionCard]);
+    }, [settingsSections]);
 
     return (
         <div className="p-8">
