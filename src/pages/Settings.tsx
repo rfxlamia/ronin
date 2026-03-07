@@ -9,20 +9,12 @@ import { SettingsSidebar } from '@/components/settings/SettingsSidebar';
 import { usePlatformStore } from '@/stores/platformStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 
-// Detect if running in Wayland environment (Linux only)
-// Uses backend-driven platform detection for reliability
-function isWaylandEnvironment(): boolean {
-    // Only relevant on Linux -- navigator.userAgent heuristic for Wayland
-    // TODO: Replace with proper backend query (e.g., check XDG_SESSION_TYPE env var via Tauri command)
-    const userAgent = navigator.userAgent.toLowerCase();
-    return userAgent.includes('wayland') || userAgent.includes('gnome');
-}
-
 export function Settings() {
     const [showOath, setShowOath] = useState(false);
     const [showExtensionCard, setShowExtensionCard] = useState(false);
     const [extensionSkipped, setExtensionSkipped] = useState(false);
     const isLinux = usePlatformStore((s) => s.isLinux)();
+    const isWayland = usePlatformStore((s) => s.isWayland)();
 
     const cardDisplayMode = useSettingsStore((s) => s.cardDisplayMode);
     const loadCardDisplayMode = useSettingsStore((s) => s.loadCardDisplayMode);
@@ -32,18 +24,16 @@ export function Settings() {
         loadCardDisplayMode();
     }, [loadCardDisplayMode]);
 
-    // Check if we should show the extension missing card (Linux only)
+    // Check if we should show the extension missing card (Linux + Wayland only)
     useEffect(() => {
         if (!isLinux) {
             setShowExtensionCard(false);
             return;
         }
-        // Only check Wayland detection on Linux
-        const wayland = isWaylandEnvironment();
         const skipped = localStorage.getItem('ronin_extension_skipped') === 'true';
         setExtensionSkipped(skipped);
-        setShowExtensionCard(wayland && !skipped);
-    }, [isLinux]);
+        setShowExtensionCard(isWayland && !skipped);
+    }, [isLinux, isWayland]);
 
     const handleExtensionSkip = () => {
         localStorage.setItem('ronin_extension_skipped', 'true');
