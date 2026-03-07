@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Settings Sidebar Outline**: Added sticky sidebar to Settings page for quick navigation between sections
+  - Active section highlighting with IntersectionObserver-based tracking
+  - Smooth scroll to section on click
+  - Hidden on mobile (< md breakpoint)
+  - Sections: Extension Setup, AI Provider, Appearance, Card Display, Silent Observer, Philosophy
+
 - **Cross-Platform Build Matrix**: Release pipeline now builds on Linux, macOS, and Windows using `tauri-apps/tauri-action`
   - macOS universal binary (`universal-apple-darwin`) covering Intel + Apple Silicon
   - Windows installer support
