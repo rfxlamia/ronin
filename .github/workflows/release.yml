@@ -75,7 +75,7 @@ jobs:
         working-directory: src-tauri
 
       - name: Build and release
-        uses: tauri-apps/tauri-action@dev
+        uses: tauri-apps/tauri-action@850c373b94f35e16e4de61cbb9f6e4876af8c0b4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VITE_DEMO_LAMBDA_URL: ${{ secrets.VITE_DEMO_LAMBDA_URL }}
