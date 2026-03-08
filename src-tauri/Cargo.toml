@@ -1,6 +1,6 @@
 [package]
 name = "ronin"
-version = "0.1.1-beta"
+version = "0.1.4"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
