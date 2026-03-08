@@ -70,4 +70,5 @@ zbus = { version = "4", features = ["tokio"] }
 
 [dev-dependencies]
 tempfile = "3"
+serial_test = "3.0"
 
