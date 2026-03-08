@@ -1282,6 +1282,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(windows, ignore = "Windows CI runners don't support Git hooks consistently")]
     async fn test_commit_changes_pre_commit_hook_failure() {
         let temp_repo = create_test_repo();
         let repo_path = temp_repo.path();

@@ -103,9 +103,11 @@ async fn main() {
 #[cfg(target_os = "linux")]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use std::env;
 
     #[test]
+    #[serial]
     fn test_detect_backend_x11() {
         env::set_var("XDG_SESSION_TYPE", "x11");
         env::set_var("XDG_CURRENT_DESKTOP", "ubuntu:GNOME");
@@ -115,6 +117,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_detect_backend_wayland_gnome() {
         env::set_var("XDG_SESSION_TYPE", "wayland");
         env::set_var("XDG_CURRENT_DESKTOP", "GNOME");
@@ -124,6 +127,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_detect_backend_wayland_gnome_mixed_case() {
         env::remove_var("XDG_SESSION_TYPE");
         env::set_var("XDG_SESSION_TYPE", "wayland");
@@ -134,6 +138,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_detect_backend_wayland_kde() {
         env::set_var("XDG_SESSION_TYPE", "wayland");
         env::set_var("XDG_CURRENT_DESKTOP", "KDE");
@@ -146,6 +151,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_detect_backend_unknown() {
         env::set_var("XDG_SESSION_TYPE", "unknown");
         env::set_var("XDG_CURRENT_DESKTOP", "unknown");
