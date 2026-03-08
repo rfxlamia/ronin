@@ -27,19 +27,23 @@ Ronin is a **local-first desktop app** built on Tauri. Your data never leaves yo
 
 ## Screenshots
 
-<!-- SCREENSHOT: Dashboard overview showing project grid with health statuses -->![dashboard](vdocs/image/dashboard.png)
+<!-- SCREENSHOT: Dashboard overview showing project grid with health statuses -->
+![dashboard](vdocs/image/dashboard.png)
 
 > 📸 *Dashboard*
 
-<!-- SCREENSHOT: AI context recovery panel open on a dormant project -->![ai-context-ss](vdocs/image/ai-context-ss.png)
+<!-- SCREENSHOT: AI context recovery panel open on a dormant project -->
+![ai-context-ss](vdocs/image/ai-context-ss.png)
 
 > 📸 *AI Context Recovery*
 
-<!-- SCREENSHOT: DEVLOG markdown editor in-app -->![devlog](vdocs/image/devlog.png)
+<!-- SCREENSHOT: DEVLOG markdown editor in-app -->
+![devlog](vdocs/image/devlog.png)
 
 > 📸 *DEVLOG Editor*
 
-<!-- SCREENSHOT: Settings page with OpenRouter model selector -->![settings-page](vdocs/image/settings-page.png)
+<!-- SCREENSHOT: Settings page with OpenRouter model selector -->
+![settings-page](vdocs/image/settings-page.png)
 
 > 📸 *Settings & Model Selection*
 
